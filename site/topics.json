@@ -1,10 +1,30 @@
 [
   {
+    "slug": "bayesian-optimization",
+    "title": "Bayesian Optimization",
+    "blurb": "How to find the best settings of an expensive black-box function in a few dozen tries \u2014 Gaussian process surrogates and acquisition functions derived by hand, a live GP playground, and the 2024\u201326 fights over high dimensions and LLMs. Every paper arXiv-verified.",
+    "date": "2026-08-02",
+    "tags": [
+      "optimization",
+      "Gaussian processes",
+      "SOTA 2026"
+    ],
+    "explainer": "2026-08-02-bayesian-optimization.html",
+    "review": "2026-08-02-bayesian-optimization-review.html",
+    "cheatsheet": "2026-08-02-bo-cheatsheet.html",
+    "anki": "bayesian-optimization.apkg",
+    "lab": "https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/bayesian-optimization"
+  },
+  {
     "slug": "diffusion-language-models",
     "title": "Diffusion Language Models",
-    "blurb": "Why frontier LLMs type one token at a time, and how diffusion lets them paint the whole answer instead — from Gaussian noise to masked tokens to Mercury, grounded in the nine papers on Inception Labs' about page.",
+    "blurb": "Why frontier LLMs type one token at a time, and how diffusion lets them paint the whole answer instead \u2014 from Gaussian noise to masked tokens to Mercury, grounded in the nine papers on Inception Labs' about page.",
     "date": "2026-08-01",
-    "tags": ["generative models", "NLP", "9 papers"],
+    "tags": [
+      "generative models",
+      "NLP",
+      "9 papers"
+    ],
     "explainer": "2026-08-01-diffusion-language-models.html",
     "review": "2026-08-02-diffusion-review.html",
     "cheatsheet": "2026-08-02-dllm-cheatsheet.html",

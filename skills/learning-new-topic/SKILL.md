@@ -17,9 +17,17 @@ sources have a hidden narrative (e.g. "these nine papers are the founders' resea
 it and make it the spine of the page.
 
 **If the user only names a topic**: run a literature survey FIRST — it is the raw material for the
-whole page. Do not write from memory alone; search (WebSearch/WebFetch; Semantic Scholar or
-Google Scholar for citation counts; arXiv and Hugging Face papers for ML topics; recent survey
-papers are gold — they've done the curation for you) and assemble four lists:
+whole page. Do not write from memory alone. **Primary tool: the arXiv API**
+(`http://export.arxiv.org/api/query`): verify every paper you plan to cite with a
+`ti:"<exact title>"` query (returns the exact title, arXiv id, submission date, first author);
+find the current SOTA with `sortBy=submittedDate&sortOrder=descending` sweeps on
+`ti:"<topic>"` and thematic sub-queries; find recent surveys with `ti:<topic> AND (ti:survey OR
+ti:review OR ti:tutorial)`. Respect the API etiquette (~1 request / 3 s — batch queries in one
+python script with time.sleep, not shell sleep). arXiv has no citation counts, so state citation
+magnitudes as approximate (~) from reputation, or omit them; classics that predate arXiv
+(pre-~1992 or journal-only) are cited by venue directly. WebSearch/WebFetch supplement for
+non-arXiv sources (books, Nature/Science papers, software docs). Recent survey papers are gold —
+they've done the curation for you. Assemble four lists:
 
 1. **The seminal paper(s)** — the work that founded the topic (and its key precursor if the
    origin story needs it). Read it, or at minimum its abstract, intro, and main theorem/figure:

@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Background — Fifty Evaluations to Find the Best: Bayesian Optimization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>:root {
+  --bg: #ffffff; --fg: #000000; --muted: #555e66; --line: #e1e5ea;
+  --accent: #063c92; --link: #053075; --accent-soft: #eef2fb;
+  --ok: #168551; --ok-soft: #e9f5ee; --fail: #b03434; --fail-soft: #faeceb;
+  --warn-soft: #fdf6e3; --warn-line: #c9a227;
+  --code-bg: #f6f8fa; --box-bg: #f8f9fb; --mast: #f5f5f5;
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --accent: #7d9fdd; --link: #8fb0e8; --accent-soft: #1b2540;
+  --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
+  --warn-soft: #33290f; --warn-line: #a8842e;
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --bg: #000000; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --accent: #7d9fdd; --link: #8fb0e8; --accent-soft: #1b2540;
+  --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
+  --warn-soft: #33290f; --warn-line: #a8842e;
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.75 Merriweather, Georgia, 'Palatino Linotype', serif;
+  -webkit-font-smoothing: antialiased;
+}
+/* masthead */
+.masthead { background: var(--mast); border-bottom: 1px solid var(--line); }
+.mast-inner { max-width: 1160px; margin: 0 auto; padding: .55rem 1.4rem;
+  display: flex; align-items: baseline; gap: 1.4rem; flex-wrap: wrap; }
+.mast-title { font-weight: 700; font-size: .98rem; }
+.mast-title a { color: var(--fg); text-decoration: none; }
+.mast-nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap;
+  align-items: baseline; }
+.mast-nav a { color: var(--muted); text-decoration: none; font-size: .85rem; }
+.mast-nav a:hover { color: var(--link); text-decoration: underline; }
+.theme-toggle { border: 1px solid var(--line); background: var(--bg);
+  color: var(--fg); border-radius: 8px; cursor: pointer;
+  padding: .05rem .5rem; font-size: .85rem; line-height: 1.5; }
+.theme-toggle:hover { border-color: var(--accent); }
+/* layout */
+.wrap { max-width: 950px; margin: 0 auto; padding: 2.2rem 1.4rem 5rem; }
+.layout { max-width: 1160px; margin: 0 auto; padding: 0 1.4rem 4rem;
+  display: grid; grid-template-columns: 235px minmax(0, 1fr); gap: 2.6rem; }
+main.content { min-width: 0; padding-top: 1.6rem; }
+/* top nav row */
+.topnav { display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: .8rem;
+  margin-bottom: 1.4rem; border-bottom: 1px solid var(--line);
+  padding-bottom: .6rem; }
+.topnav a { color: var(--muted); text-decoration: none; }
+.topnav a:hover { color: var(--link); text-decoration: underline; }
+.topnav .tn-next { margin-left: auto; }
+/* sidebar */
+aside.sidebar { position: sticky; top: 0; align-self: start;
+  max-height: 100vh; overflow-y: auto; padding: 1.8rem 0 2rem;
+  font-size: .84rem; line-height: 1.55; }
+.side-topic { font-weight: 700; margin-bottom: .7rem; font-size: .9rem; }
+.side-topic a { color: var(--accent); text-decoration: none; }
+.side-topic a:hover { text-decoration: underline; }
+aside.sidebar ol { list-style: none; margin: 0; padding: 0;
+  border-left: 2px solid var(--line); }
+aside.sidebar ol > li { padding: .22rem 0 .22rem .8rem; margin-left: -2px;
+  border-left: 2px solid transparent; }
+aside.sidebar ol > li.cur { border-left-color: var(--accent); }
+aside.sidebar ol > li > a { color: var(--muted); text-decoration: none; }
+aside.sidebar ol > li.cur > a { color: var(--accent); font-weight: 700; }
+aside.sidebar ol > li > a:hover { color: var(--link); }
+aside.sidebar ul { list-style: none; margin: .3rem 0 .1rem; padding: 0 0 0 .9rem; }
+aside.sidebar ul li { padding: .12rem 0; }
+aside.sidebar ul a { color: var(--muted); text-decoration: none; font-size: .8rem; }
+aside.sidebar ul li.cur a { color: var(--accent); font-weight: 700; }
+aside.sidebar ul a:hover { color: var(--link); }
+.side-foot { margin-top: 1rem; }
+.side-foot a { color: var(--muted); text-decoration: none; font-size: .8rem; }
+.side-foot a:hover { color: var(--link); }
+@media (max-width: 920px) {
+  .layout { grid-template-columns: 1fr; gap: 0; }
+  aside.sidebar { position: static; max-height: none; margin-top: 1.4rem;
+    padding: .9rem 1.1rem; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--box-bg); }
+}
+/* headings */
+header.pagehead { padding-bottom: 1rem; margin-bottom: 1.2rem; }
+.part-eyebrow { color: var(--ok); font-weight: 700; font-size: .82rem;
+  margin: 0 0 .35rem; letter-spacing: .02em; }
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 .5rem; font-weight: 700; }
+.subtitle { color: var(--muted); font-size: 1.02rem; margin: 0; }
+.repo { color: var(--muted); font-size: .8rem; margin-top: .55rem; }
+h2 { font-size: 1.12rem; color: var(--accent); font-weight: 700;
+  border-bottom: 1px solid var(--accent); padding-bottom: .3rem;
+  margin: 2.4rem 0 1rem; }
+h3 { font-size: 1rem; color: var(--ok); font-weight: 700; margin: 1.9rem 0 .5rem; }
+h4 { font-size: .95rem; margin: 1.5rem 0 .4rem; color: var(--fg); }
+p, ul, ol { margin: 0 0 1rem; }
+li { margin-bottom: .35rem; }
+a { color: var(--link); }
+nav.toc { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1rem 1.3rem; margin-bottom: 2.2rem; }
+nav.toc .toc-title { font-weight: 700; font-size: .78rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: .4rem; }
+nav.toc ol { margin: 0; padding-left: 1.2rem; }
+nav.toc a { color: var(--link); text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
+section { margin-bottom: 3rem; }
+code { background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 4px; padding: .08em .35em; font-size: .84em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+pre { background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: .9rem 1.1rem; overflow-x: auto;
+  white-space: pre-wrap; font-size: .82rem; line-height: 1.5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+pre code { background: none; border: none; padding: 0; font-size: inherit; }
+table { border-collapse: collapse; margin: 1rem 0; width: 100%;
+  font-size: .88rem; display: block; overflow-x: auto; }
+th, td { border: 1px solid var(--line); padding: .45rem .7rem;
+  text-align: left; vertical-align: top; }
+th { background: var(--box-bg); font-weight: 700; }
+.callout { background: var(--accent-soft); border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0; padding: .8rem 1.1rem; margin: 1.2rem 0; }
+.callout.warn { background: var(--warn-soft); border-left-color: var(--warn-line); }
+.callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+.diagram { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1.3rem 1.1rem; margin: 1.4rem 0;
+  overflow-x: auto; }
+.flow { display: flex; align-items: center; justify-content: center;
+  gap: .55rem; flex-wrap: wrap; margin: .4rem 0; }
+.flow.vertical { flex-direction: column; }
+.flow.left { justify-content: flex-start; }
+.box { background: var(--bg); border: 1.5px solid var(--fg); border-radius: 8px;
+  padding: .45rem .85rem; font-size: .85rem; text-align: center;
+  line-height: 1.4; }
+.box small { display: block; color: var(--muted); font-size: .76rem; }
+.box.ok { border-color: var(--ok); background: var(--ok-soft); }
+.box.fail { border-color: var(--fail); background: var(--fail-soft); }
+.box.dim { border-color: var(--line); color: var(--muted); }
+.box.accent { border-color: var(--accent); background: var(--accent-soft); }
+.arr { color: var(--muted); font-size: 1.05rem; flex-shrink: 0; }
+.caption { text-align: center; color: var(--muted); font-size: .82rem;
+  margin-top: .8rem; }
+.tag { display: inline-block; background: var(--accent-soft);
+  color: var(--accent); border-radius: 999px; padding: .05em .6em;
+  font-size: .76em; font-weight: 700; }
+.math { font-family: Georgia, 'Times New Roman', serif; text-align: center;
+  margin: 1.2rem 0; padding: .2rem 0; overflow-x: auto; font-size: 1.02rem;
+  line-height: 2.1; }
+.m { font-family: Georgia, 'Times New Roman', serif; white-space: nowrap; }
+.frac { display: inline-block; vertical-align: middle; text-align: center;
+  margin: 0 .15em; line-height: 1.25; }
+.frac .num, .frac .den { display: block; padding: 0 .3em; }
+.frac .den { border-top: 1px solid currentColor; }
+.widget { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1.1rem; margin: 1.4rem 0; }
+.widget canvas { display: block; margin: .6rem auto; max-width: 100%;
+  border-radius: 8px; }
+.wctl { display: flex; align-items: center; justify-content: center;
+  gap: .7rem; flex-wrap: wrap; margin: .5rem 0; }
+.wctl label { font-size: .84rem; color: var(--muted); }
+.wctl input[type=range] { width: min(240px, 55vw); accent-color: var(--accent); }
+.wbtn { font: inherit; font-size: .82rem; padding: .35rem .9rem;
+  border-radius: 8px; border: 1px solid var(--accent);
+  background: var(--accent-soft); color: var(--accent); cursor: pointer;
+  font-weight: 700; }
+.wbtn:hover { filter: brightness(1.05); }
+.wbtn.active { background: var(--accent); color: var(--bg); }
+.wstat { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .82rem; color: var(--muted); text-align: center; margin-top: .5rem; }
+.wchips { display: flex; flex-wrap: wrap; gap: .3rem; justify-content: center;
+  margin-top: .5rem; max-height: 130px; overflow-y: auto; }
+.wchip { font-size: .76rem; border: 1px solid var(--line); border-radius: 999px;
+  padding: .05em .55em; }
+.wchip.good { border-color: var(--ok); background: var(--ok-soft); }
+.wchip.bad { border-color: var(--fail); background: var(--fail-soft); }
+.deriv { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); padding: 1rem 1.2rem; margin: 1.4rem 0; }
+.deriv-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+  margin-bottom: .5rem; }
+.deriv-title { font-weight: 700; margin-right: auto; color: var(--accent); }
+.dstep { border-top: 1px solid var(--line); padding: .55rem 0; }
+.dstep-label { display: flex; align-items: baseline; gap: .6rem; }
+.dstep-goal { flex: 1; font-size: .92rem; }
+.dstep-toggle { flex-shrink: 0; font-size: .74rem; padding: .2rem .6rem; }
+.dstep-body { display: none; margin-top: .55rem; }
+.dstep.open .dstep-body { display: block; }
+.dstep.open .dstep-toggle { opacity: .55; }
+.cmap-edge { stroke: var(--muted); stroke-width: 1.2; opacity: .4; fill: none; }
+.cmap-edge.hl { stroke: var(--accent); opacity: 1; stroke-width: 2.4; }
+.cmap-node { cursor: pointer; }
+.cmap-node rect { fill: var(--bg); stroke: var(--line); stroke-width: 1.4; }
+.cmap-node text { fill: var(--fg); font-size: 13px;
+  font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; }
+.cmap-node.hub rect { stroke: var(--accent); stroke-width: 2; }
+.cmap-node.hl rect { stroke: var(--accent); stroke-width: 2.2; }
+.cmap-node.dim, .cmap-edge.dim { opacity: .15; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem; margin: 1.2rem 0; }
+.cheat-card { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); padding: .8rem 1rem; }
+.cheat-card h4 { margin: 0 0 .4rem; color: var(--accent); }
+.cheat-card .math { margin: .6rem 0; font-size: .95rem; }
+.cheat-card p { font-size: .86rem; margin-bottom: .4rem; }
+.quiz-heading { color: var(--accent); }
+.quiz-note { color: var(--muted); font-size: .84rem; }
+.quiz-q { border: 1px solid var(--line); border-radius: 10px;
+  padding: 1.1rem 1.3rem; margin-bottom: 1.4rem; background: var(--box-bg); }
+.quiz-q .qtext { font-weight: 700; margin-bottom: .8rem; }
+.quiz-opt { display: block; width: 100%; text-align: left; margin: .4rem 0;
+  padding: .6rem .9rem; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: var(--fg); font: inherit; font-size: .9rem;
+  cursor: pointer; transition: border-color .12s; }
+.quiz-opt:hover:not(:disabled) { border-color: var(--accent); }
+.quiz-opt:disabled { cursor: default; opacity: .75; }
+.quiz-opt.chosen-right { border-color: var(--ok); background: var(--ok-soft);
+  opacity: 1; }
+.quiz-opt.chosen-wrong { border-color: var(--fail); background: var(--fail-soft);
+  opacity: 1; }
+.quiz-opt.reveal-right { border-color: var(--ok); opacity: 1; }
+.quiz-expl { font-size: .82rem; line-height: 1.55; margin: -.15rem 0 .55rem;
+  padding: .35rem .9rem; border-left: 3px solid var(--line);
+  color: var(--muted); }
+.quiz-expl.right { border-left-color: var(--ok); color: var(--fg);
+  background: var(--ok-soft); border-radius: 0 8px 8px 0; }
+.quiz-expl.wrong { border-left-color: var(--fail); }
+.quiz-fb { margin-top: .7rem; padding: .6rem .9rem; border-radius: 8px;
+  font-size: .88rem; display: none; }
+.quiz-fb.right { display: block; background: var(--ok-soft); color: var(--fg); }
+.quiz-fb.wrong { display: block; background: var(--fail-soft); color: var(--fg); }
+.quiz-score { font-weight: 700; margin-top: 1rem; display: none; }
+.pn { display: flex; justify-content: space-between; gap: 1rem;
+  border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 1.2rem;
+  flex-wrap: wrap; }
+.pn a { text-decoration: none; font-size: .92rem; max-width: 46%; }
+.pn a:hover { text-decoration: underline; }
+.pn .pn-next { margin-left: auto; text-align: right; }
+.parts { list-style: none; padding: 0; margin: 1.4rem 0; counter-reset: part; }
+.parts li { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); margin: .6rem 0; counter-increment: part; }
+.parts li a { display: block; padding: .8rem 1.1rem; text-decoration: none;
+  color: var(--fg); }
+.parts li a:hover { color: var(--link); }
+.parts li a::before { content: counter(part) ". "; color: var(--ok);
+  font-weight: 700; }
+.startbtn { display: inline-block; background: var(--accent); color: var(--bg);
+  padding: .55rem 1.2rem; border-radius: 9px; font-weight: 700;
+  text-decoration: none; }
+.startbtn:hover { filter: brightness(1.1); }
+footer.pagefoot { color: var(--muted); font-size: .8rem;
+  border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 3rem; }
+</style>
+<script>(function(){try{var t=localStorage.getItem('theme');
+if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script src="plotly.min.js"></script>
+
+</head>
+<body>
+<div class="masthead"><div class="mast-inner">
+<span class="mast-title"><a href="index.html">← Bayesian Optimization</a></span>
+<nav class="mast-nav"><a href="2026-08-02-bayesian-optimization-review.html">Review deck</a><a href="2026-08-02-bo-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/bayesian-optimization">Tutorials</a><button id="theme-toggle" class="theme-toggle"
+ type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
+</div></div>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-02-bayesian-optimization.html">Fifty Evaluations to Find the Best: Bayesian Optimization</a></div><ol><li class="cur"><a href="2026-08-02-bayesian-optimization-background.html">Background</a><ul><li><a href="2026-08-02-bayesian-optimization-background-optimization-when-you-can-query-not-differentiate.html">Optimization when you can query, not differentiate</a></li><li><a href="2026-08-02-bayesian-optimization-background-the-budget-problem.html">The budget problem</a></li><li><a href="2026-08-02-bayesian-optimization-background-a-brief-history-1964-1998-2012.html">A brief history: 1964 → 1998 → 2012</a></li><li><a href="2026-08-02-bayesian-optimization-background-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-02-bayesian-optimization-intuition.html">Intuition</a></li><li><a href="2026-08-02-bayesian-optimization-math-gp.html">The Maths I: Gaussian Process Surrogates</a></li><li><a href="2026-08-02-bayesian-optimization-math-acq.html">The Maths II: Acquisition Functions</a></li><li><a href="2026-08-02-bayesian-optimization-papers.html">The Papers</a></li><li><a href="2026-08-02-bayesian-optimization-concept-map.html">The Concept Map</a></li><li><a href="2026-08-02-bayesian-optimization-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-02-bayesian-optimization-sources.html">Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-02-bayesian-optimization.html">&larr; Overview</a><a href="2026-08-02-bayesian-optimization.html">&#8962; Fifty Evaluations to Find the Best: Bayesian Optimization</a><a class="tn-next" href="2026-08-02-bayesian-optimization-background-optimization-when-you-can-query-not-differentiate.html">Optimization when you can query, not differentiate &rarr;</a></div><p class="part-eyebrow">Part 1 of 8</p><h1>Background</h1>
+<p>Bayesian optimization is what you reach for when every single measurement hurts: finding the
+best value of a function you cannot see inside, cannot differentiate, and can only afford to
+evaluate a few dozen times. This page builds it from the ground up &mdash; the Gaussian process
+machinery, the acquisition functions derived by hand, and the 2024&ndash;2026 research threads
+&mdash; with every paper verified against arXiv. If you already know why gradient descent
+doesn&rsquo;t apply here, skip to the second subtopic.</p>
+
+<ol class="parts"><li><a href="2026-08-02-bayesian-optimization-background-optimization-when-you-can-query-not-differentiate.html">Optimization when you can query, not differentiate</a></li><li><a href="2026-08-02-bayesian-optimization-background-the-budget-problem.html">The budget problem</a></li><li><a href="2026-08-02-bayesian-optimization-background-a-brief-history-1964-1998-2012.html">A brief history: 1964 → 1998 → 2012</a></li><li><a href="2026-08-02-bayesian-optimization-background-quiz.html">Quiz: 5 questions</a></li></ol><div class="pn"><a class="pn-prev" href="2026-08-02-bayesian-optimization.html">&larr; Overview</a><a class="pn-next" href="2026-08-02-bayesian-optimization-background-optimization-when-you-can-query-not-differentiate.html">Optimization when you can query, not differentiate &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-02 11:08:56 UTC</footer></main></div>
+<script>window.__PAGES__ = {"background": "2026-08-02-bayesian-optimization-background.html", "intuition": "2026-08-02-bayesian-optimization-intuition.html", "math-gp": "2026-08-02-bayesian-optimization-math-gp.html", "math-acq": "2026-08-02-bayesian-optimization-math-acq.html", "papers": "2026-08-02-bayesian-optimization-papers.html", "concept-map": "2026-08-02-bayesian-optimization-concept-map.html", "keep-learning": "2026-08-02-bayesian-optimization-keep-learning.html", "sources": "2026-08-02-bayesian-optimization-sources.html"};</script>
+<script>window.__QUIZZES__ = [];</script>
+<script>
+window.copyTextFallback = function (text) {
+  function legacy() {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(legacy);
+  } else legacy();
+};
+(function () {
+  const groups = window.__QUIZZES__ || [];
+  const LOGKEY = 'quizlog:' + location.pathname.split('/').pop();
+  const loadLog = () => { try { return JSON.parse(localStorage.getItem(LOGKEY)) || {}; } catch (e) { return {}; } };
+  const saveLog = (l) => { try { localStorage.setItem(LOGKEY, JSON.stringify(l)); } catch (e) {} };
+  const buildSummary = () => {
+    const log = loadLog();
+    const lines = ['Quiz results — ' + document.title + ' — ' + new Date().toISOString().slice(0, 10)];
+    let tot = 0, got = 0;
+    groups.forEach(g => {
+      const e = log[g.host];
+      if (!e) return;
+      tot += e.total; got += e.score;
+      lines.push(e.score + '/' + e.total +
+        (e.wrong.length ? '. Missed: ' + e.wrong.map(w => '"' + w + '"').join('; ') : ''));
+    });
+    lines.push('Total: ' + got + '/' + tot);
+    const miss = (loadLog().__miss) || {};
+    const rep = Object.entries(miss).filter(([, n]) => n > 1).map(([q, n]) => '"' + q + '" (x' + n + ')');
+    if (rep.length) lines.push('Repeat offenders: ' + rep.join('; '));
+    lines.push('Please quiz me again on my weak areas, harder.');
+    return lines.join('\n');
+  };
+  groups.forEach(function (group) {
+    const host = document.getElementById(group.host);
+    const data = group.questions || [];
+    if (!host || !data.length) return;
+    let answered = 0, right = 0;
+    const results = [];
+    const score = document.createElement('div');
+    score.className = 'quiz-score';
+    data.forEach((q, qi) => {
+      const card = document.createElement('div');
+      card.className = 'quiz-q';
+      const qt = document.createElement('div');
+      qt.className = 'qtext';
+      qt.innerHTML = (qi + 1) + '. ' + q.question;
+      card.appendChild(qt);
+      const fb = document.createElement('div');
+      fb.className = 'quiz-fb';
+      const opts = q.options.map((o, i) => ({ o, i }));
+      for (let i = opts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [opts[i], opts[j]] = [opts[j], opts[i]];
+      }
+      const buttons = [];
+      opts.forEach(({ o }) => {
+        const b = document.createElement('button');
+        b.className = 'quiz-opt';
+        b.innerHTML = o.text;
+        b.addEventListener('click', () => {
+          answered++;
+          buttons.forEach(x => {
+            x.disabled = true;
+            if (x.__correct) x.classList.add('reveal-right');
+            const ex = document.createElement('div');
+            ex.className = 'quiz-expl ' + (x.__correct ? 'right' : 'wrong');
+            ex.innerHTML = (x.__correct ? '<strong>✓ Correct answer.</strong> '
+                                        : '<strong>✗</strong> ') +
+                           (x.__opt.explanation || '');
+            x.insertAdjacentElement('afterend', ex);
+          });
+          if (o.correct) {
+            right++;
+            b.classList.add('chosen-right');
+            fb.className = 'quiz-fb right';
+            fb.innerHTML = '<strong>Correct.</strong> Explanations for every option are shown above.';
+          } else {
+            b.classList.add('chosen-wrong');
+            fb.className = 'quiz-fb wrong';
+            fb.innerHTML = '<strong>Not quite.</strong> The correct answer is outlined above, with explanations for every option.';
+          }
+          results.push({ q: q.question.replace(/<[^>]*>/g, ''), ok: !!o.correct });
+          if (answered === data.length) {
+            score.textContent = 'Score: ' + right + ' / ' + data.length;
+            score.style.display = 'block';
+            const log = loadLog();
+            log[group.host] = { ts: Date.now(), score: right, total: data.length,
+              wrong: results.filter(r => !r.ok).map(r => r.q) };
+            log.__miss = log.__miss || {};
+            results.filter(r => !r.ok).forEach(r => { log.__miss[r.q] = (log.__miss[r.q] || 0) + 1; });
+            saveLog(log);
+            const cp = document.createElement('button');
+            cp.className = 'wbtn'; cp.style.marginTop = '.6rem';
+            cp.textContent = 'copy results for Claude';
+            cp.addEventListener('click', () => {
+              window.copyTextFallback(buildSummary());
+              cp.textContent = 'copied \u2713';
+              setTimeout(() => { cp.textContent = 'copy results for Claude'; }, 1500);
+            });
+            score.insertAdjacentElement('afterend', cp);
+          }
+        });
+        b.__correct = !!o.correct;
+        b.__opt = o;
+        buttons.push(b);
+        card.appendChild(b);
+      });
+      card.appendChild(fb);
+      host.appendChild(card);
+    });
+    host.appendChild(score);
+  });
+})();
+</script>
+<script>
+(function () {
+  document.querySelectorAll('.dstep-toggle').forEach(b =>
+    b.addEventListener('click', () => b.closest('.dstep').classList.toggle('open')));
+  document.querySelectorAll('.deriv').forEach(d => {
+    const setAll = open => d.querySelectorAll('.dstep').forEach(s => s.classList.toggle('open', open));
+    const w = d.querySelector('.deriv-worked'), p = d.querySelector('.deriv-practice');
+    if (w) w.addEventListener('click', () => setAll(true));
+    if (p) p.addEventListener('click', () => setAll(false));
+  });
+  document.querySelectorAll('[data-copy]').forEach(b =>
+    b.addEventListener('click', () => {
+      const el = document.getElementById(b.getAttribute('data-copy'));
+      if (!el) return;
+      window.copyTextFallback(el.innerText);
+      const old = b.textContent;
+      b.textContent = 'copied \u2713';
+      setTimeout(() => { b.textContent = old; }, 1500);
+    }));
+  // light/dark toggle
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    const mode = () => {
+      const a = document.documentElement.getAttribute('data-theme');
+      if (a) return a;
+      return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    };
+    const paint = () => { btn.textContent = mode() === 'dark' ? '\u2600 light' : '\u263E dark'; };
+    btn.addEventListener('click', () => {
+      const next = mode() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+      paint();
+      window.dispatchEvent(new Event('themechange'));
+    });
+    paint();
+  }
+})();
+</script>
+<script>/* Shared helpers for explainer widgets. Load BEFORE the topic's widgets.js
+   (build_spec.py passes [widgets_lib.js, widgets.js] as the spec's scripts).
+   Exposes window.WLib = { $, cssVar, mulberry32, gauss, onTheme }. */
+window.WLib = (function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function mulberry32(a) {           // seeded PRNG for repeatable scrubbing
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function gauss(rng) {              // Box-Muller
+    var u = 0, v = 0;
+    while (u === 0) u = rng();
+    while (v === 0) v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  var redraws = [];
+  function onTheme(fn) { redraws.push(fn); }   // canvases re-render on theme flip
+  var repaint = function () { redraws.forEach(function (f) { f(); }); };
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mq.addEventListener) mq.addEventListener('change', repaint);
+  window.addEventListener('themechange', repaint);  // fired by the masthead toggle
+  return { $: $, cssVar: cssVar, mulberry32: mulberry32, gauss: gauss, onTheme: onTheme };
+})();
+</script><script>(function () {
+  'use strict';
+  var $ = WLib.$, cssVar = WLib.cssVar, mulberry32 = WLib.mulberry32,
+      gauss = WLib.gauss, onTheme = WLib.onTheme;
+
+  /* ---- tiny GP engine (shared by the widgets) ------------------------- */
+  function erf(x) {                       // Abramowitz & Stegun 7.1.26
+    var s = x < 0 ? -1 : 1; x = Math.abs(x);
+    var t = 1 / (1 + 0.3275911 * x);
+    var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t
+      - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return s * y;
+  }
+  var Phi = function (z) { return 0.5 * (1 + erf(z / Math.SQRT2)); };
+  var phi = function (z) { return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI); };
+  function rbf(a, b, ls) { var d = (a - b) / ls; return Math.exp(-0.5 * d * d); }
+
+  function inv(M) {                        // Gauss-Jordan, n <= ~40
+    var n = M.length, A = M.map(function (r, i) {
+      var e = new Array(n).fill(0); e[i] = 1; return r.slice().concat(e);
+    });
+    for (var c = 0; c < n; c++) {
+      var p = c;
+      for (var r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      var tmp = A[c]; A[c] = A[p]; A[p] = tmp;
+      var pv = A[c][c];
+      for (var j = 0; j < 2 * n; j++) A[c][j] /= pv;
+      for (r = 0; r < n; r++) if (r !== c) {
+        var f = A[r][c];
+        for (j = 0; j < 2 * n; j++) A[r][j] -= f * A[c][j];
+      }
+    }
+    return A.map(function (r) { return r.slice(n); });
+  }
+  function gpPost(grid, X, y, ls, noise) {
+    var n = X.length;
+    if (!n) return { mu: grid.map(function () { return 0; }),
+                     sd: grid.map(function () { return 1; }) };
+    var K = [];
+    for (var i = 0; i < n; i++) {
+      K.push([]);
+      for (var j = 0; j < n; j++) K[i].push(rbf(X[i], X[j], ls) + (i === j ? noise : 0));
+    }
+    var Ki = inv(K);
+    var alpha = new Array(n).fill(0);
+    for (i = 0; i < n; i++) for (j = 0; j < n; j++) alpha[i] += Ki[i][j] * y[j];
+    var mu = [], sd = [];
+    grid.forEach(function (x) {
+      var k = X.map(function (xi) { return rbf(x, xi, ls); });
+      var m = 0, q = 0;
+      for (var a = 0; a < n; a++) {
+        m += k[a] * alpha[a];
+        var t = 0;
+        for (var b = 0; b < n; b++) t += Ki[a][b] * k[b];
+        q += k[a] * t;
+      }
+      mu.push(m);
+      sd.push(Math.sqrt(Math.max(1e-10, 1 + noise - q)));
+    });
+    return { mu: mu, sd: sd };
+  }
+  function eiOf(mu, sd, best) {
+    return mu.map(function (m, i) {
+      var z = (m - best) / sd[i];
+      return (m - best) * Phi(z) + sd[i] * phi(z);
+    });
+  }
+  function lml(X, y, ls, noise) {          // log marginal likelihood
+    var n = X.length, K = [];
+    for (var i = 0; i < n; i++) {
+      K.push([]);
+      for (var j = 0; j < n; j++) K[i].push(rbf(X[i], X[j], ls) + (i === j ? noise : 0));
+    }
+    // Cholesky
+    var L = K.map(function (r) { return r.slice().fill(0); });
+    for (i = 0; i < n; i++) for (var k = 0; k <= i; k++) {
+      var s = 0;
+      for (var m = 0; m < k; m++) s += L[i][m] * L[k][m];
+      if (i === k) L[i][k] = Math.sqrt(Math.max(1e-12, K[i][i] - s));
+      else L[i][k] = (K[i][k] - s) / L[k][k];
+    }
+    var z = y.slice();                      // solve L z = y
+    for (i = 0; i < n; i++) {
+      for (k = 0; k < i; k++) z[i] -= L[i][k] * z[k];
+      z[i] /= L[i][i];
+    }
+    var quad = z.reduce(function (a, v) { return a + v * v; }, 0);
+    var logdet = 0;
+    for (i = 0; i < n; i++) logdet += 2 * Math.log(L[i][i]);
+    return -0.5 * quad - 0.5 * logdet - 0.5 * n * Math.log(2 * Math.PI);
+  }
+
+  /* ---- W-GP: drive the BO loop yourself ------------------------------- */
+  if ($('w-gp')) {
+    var CV = $('w-gp-cv'), CTX = CV.getContext('2d');
+    var W = CV.width = 660, H = CV.height = 400, SPLIT = 300; // top: f, bottom: EI
+    var LS = 0.12, NOISE = 1e-6, BUDGET = 12;
+    var F = function (x) {
+      return 1.15 * Math.sin(5.3 * x + 1.1) + 0.65 * Math.cos(11.4 * x + 0.4)
+             + 0.4 * Math.sin(2.1 * x);
+    };
+    var GRID = [];
+    for (var gi = 0; gi <= 240; gi++) GRID.push(gi / 240);
+    var TRUEBEST = Math.max.apply(null, GRID.map(F));
+    var gX = [], gY = [], revealed = false;
+    var toPx = function (x) { return x * W; };
+    var toPy = function (v) { return SPLIT / 2 - v * (SPLIT / 5.2); };
+    var draw = function () {
+      var bg = cssVar('--bg') || '#fff', line = cssVar('--line') || '#ccc';
+      var acc = cssVar('--accent') || '#063c92', ok = cssVar('--ok') || 'green';
+      var muted = cssVar('--muted') || '#777', fail = cssVar('--fail') || 'red';
+      CTX.fillStyle = bg; CTX.fillRect(0, 0, W, H);
+      CTX.strokeStyle = line;
+      CTX.strokeRect(0, 0, W, SPLIT); CTX.strokeRect(0, SPLIT + 8, W, H - SPLIT - 8);
+      var post = gpPost(GRID, gX, gY, LS, NOISE);
+      // ±2σ band
+      CTX.beginPath();
+      GRID.forEach(function (x, i) {
+        var yv = toPy(post.mu[i] + 2 * post.sd[i]);
+        i ? CTX.lineTo(toPx(x), yv) : CTX.moveTo(toPx(x), yv);
+      });
+      for (var i = GRID.length - 1; i >= 0; i--)
+        CTX.lineTo(toPx(GRID[i]), toPy(post.mu[i] - 2 * post.sd[i]));
+      CTX.closePath();
+      CTX.fillStyle = 'rgba(125,159,221,0.18)'; CTX.fill();
+      // mean
+      CTX.strokeStyle = acc; CTX.lineWidth = 2.2; CTX.beginPath();
+      GRID.forEach(function (x, i) {
+        i ? CTX.lineTo(toPx(x), toPy(post.mu[i])) : CTX.moveTo(toPx(x), toPy(post.mu[i]));
+      });
+      CTX.stroke();
+      // true function (if revealed)
+      if (revealed) {
+        CTX.strokeStyle = fail; CTX.lineWidth = 1.4; CTX.setLineDash([5, 4]);
+        CTX.beginPath();
+        GRID.forEach(function (x, i) {
+          i ? CTX.lineTo(toPx(x), toPy(F(x))) : CTX.moveTo(toPx(x), toPy(F(x)));
+        });
+        CTX.stroke(); CTX.setLineDash([]);
+      }
+      // observations
+      CTX.fillStyle = ok;
+      gX.forEach(function (x, i) {
+        CTX.beginPath(); CTX.arc(toPx(x), toPy(gY[i]), 5, 0, 7); CTX.fill();
+      });
+      // EI strip
+      if (gX.length) {
+        var best = Math.max.apply(null, gY);
+        var e = eiOf(post.mu, post.sd, best);
+        var emax = Math.max.apply(null, e) + 1e-12;
+        CTX.strokeStyle = ok; CTX.lineWidth = 2; CTX.beginPath();
+        GRID.forEach(function (x, i) {
+          var yv = H - 6 - (e[i] / emax) * (H - SPLIT - 22);
+          i ? CTX.lineTo(toPx(x), yv) : CTX.moveTo(toPx(x), yv);
+        });
+        CTX.stroke();
+        var ai = e.indexOf(Math.max.apply(null, e));
+        CTX.fillStyle = fail;
+        CTX.beginPath(); CTX.arc(toPx(GRID[ai]), H - 8 - (e[ai] / emax) * (H - SPLIT - 22), 4, 0, 7); CTX.fill();
+      }
+      CTX.fillStyle = muted;
+      CTX.font = '12px ui-monospace, Menlo, monospace';
+      CTX.fillText('posterior  μ ± 2σ' + (revealed ? '  ·  dashed = true f (hidden until revealed)' : ''), 10, 16);
+      CTX.fillText('expected improvement (red dot = argmax = next evaluation)', 10, SPLIT + 24);
+      var stat = 'evaluations: ' + gX.length + '/' + BUDGET;
+      if (gY.length) stat += '   best f = ' + Math.max.apply(null, gY).toFixed(3);
+      if (revealed && gY.length)
+        stat += '   gap to true max = ' + (TRUEBEST - Math.max.apply(null, gY)).toFixed(3);
+      $('w-gp-stat').textContent = stat;
+    };
+    var evalAt = function (x) {
+      if (gX.length >= BUDGET) return;
+      gX.push(x); gY.push(F(x)); draw();
+    };
+    CV.addEventListener('click', function (ev) {
+      var r = CV.getBoundingClientRect();
+      var x = (ev.clientX - r.left) / r.width;
+      var yy = (ev.clientY - r.top) / r.height * H;
+      if (yy <= SPLIT) evalAt(Math.min(1, Math.max(0, x)));
+    });
+    $('w-gp-bo').addEventListener('click', function () {
+      if (gX.length >= BUDGET) return;
+      if (!gX.length) { evalAt(0.31); return; }
+      var post = gpPost(GRID, gX, gY, LS, NOISE);
+      var e = eiOf(post.mu, post.sd, Math.max.apply(null, gY));
+      evalAt(GRID[e.indexOf(Math.max.apply(null, e))]);
+    });
+    $('w-gp-reveal').addEventListener('click', function () { revealed = !revealed; draw(); });
+    $('w-gp-reset').addEventListener('click', function () { gX = []; gY = []; revealed = false; draw(); });
+    draw(); onTheme(draw);
+  }
+
+  /* ---- W-KERNEL: lengthscale / noise / marginal likelihood ------------ */
+  if ($('w-kernel')) {
+    var kCv = $('w-kernel-cv'), kCtx = kCv.getContext('2d');
+    var kW = kCv.width = 660, kH = kCv.height = 280;
+    var kX = [0.08, 0.3, 0.47, 0.65, 0.9], kY = [0.6, 1.4, -0.4, -1.2, 0.9];
+    var kGrid = [];
+    for (var i = 0; i <= 200; i++) kGrid.push(i / 200);
+    var kDraw = function () {
+      var ls = Math.pow(10, $('w-kernel-ls').value / 100);   // 10^-1.7 .. 10^0
+      var noise = Math.pow(10, $('w-kernel-n').value / 100); // 10^-4 .. 10^-0.3
+      var bg = cssVar('--bg') || '#fff', acc = cssVar('--accent') || '#063c92';
+      var ok = cssVar('--ok') || 'green';
+      kCtx.fillStyle = bg; kCtx.fillRect(0, 0, kW, kH);
+      var post = gpPost(kGrid, kX, kY, ls, noise);
+      var py = function (v) { return kH / 2 - v * (kH / 6); };
+      kCtx.beginPath();
+      kGrid.forEach(function (x, i) {
+        var yv = py(post.mu[i] + 2 * post.sd[i]);
+        i ? kCtx.lineTo(x * kW, yv) : kCtx.moveTo(x * kW, yv);
+      });
+      for (i = kGrid.length - 1; i >= 0; i--)
+        kCtx.lineTo(kGrid[i] * kW, py(post.mu[i] - 2 * post.sd[i]));
+      kCtx.closePath(); kCtx.fillStyle = 'rgba(125,159,221,0.18)'; kCtx.fill();
+      kCtx.strokeStyle = acc; kCtx.lineWidth = 2.2; kCtx.beginPath();
+      kGrid.forEach(function (x, i) {
+        i ? kCtx.lineTo(x * kW, py(post.mu[i])) : kCtx.moveTo(x * kW, py(post.mu[i]));
+      });
+      kCtx.stroke();
+      kCtx.fillStyle = ok;
+      kX.forEach(function (x, i) {
+        kCtx.beginPath(); kCtx.arc(x * kW, py(kY[i]), 5, 0, 7); kCtx.fill();
+      });
+      $('w-kernel-stat').textContent =
+        'ℓ = ' + ls.toFixed(3) + '   σn² = ' + noise.toExponential(1) +
+        '   log marginal likelihood = ' + lml(kX, kY, ls, noise).toFixed(2);
+    };
+    $('w-kernel-ls').addEventListener('input', kDraw);
+    $('w-kernel-n').addEventListener('input', kDraw);
+    kDraw(); onTheme(kDraw);
+  }
+
+  /* ---- W-ACQ: acquisition calculator ----------------------------------- */
+  if ($('w-acq')) {
+    var aDraw = function () {
+      var d = $('w-acq-d').value / 100;      // Δ = μ − f*  in  [−2, 2]
+      var s = Math.max(0.05, $('w-acq-s').value / 100); // σ in [0.05, 2]
+      var b = $('w-acq-b').value / 100;      // β in [0, 4]
+      var z = d / s;
+      var eiV = d * Phi(z) + s * phi(z);
+      var piV = Phi(z);
+      var ucbV = d + b * s;
+      $('w-acq-stat').innerHTML =
+        'Δ = μ−f* = ' + d.toFixed(2) + '   σ = ' + s.toFixed(2) + '   z = Δ/σ = ' + z.toFixed(2) +
+        '<br>EI = Δ·Φ(z) + σ·φ(z) = <strong>' + eiV.toFixed(3) + '</strong>' +
+        '   ·   PI = Φ(z) = <strong>' + piV.toFixed(3) + '</strong>' +
+        '   ·   UCB−f* = Δ + βσ = <strong>' + ucbV.toFixed(3) + '</strong> (β=' + b.toFixed(1) + ')';
+      var bars = [['w-acq-ei', eiV / 2.2], ['w-acq-pi', piV], ['w-acq-ucb', (ucbV + 2) / 6]];
+      bars.forEach(function (p) {
+        $(p[0]).style.width = Math.min(100, Math.max(0, p[1] * 100)) + '%';
+      });
+    };
+    ['w-acq-d', 'w-acq-s', 'w-acq-b'].forEach(function (id) {
+      $(id).addEventListener('input', aDraw);
+    });
+    aDraw();
+  }
+
+  /* ---- W-RACE: EI vs random, Monte-Carlo episodes ---------------------- */
+  if ($('w-race-bo')) {
+    var rN = 0, rWins = 0, rGap = 0;
+    var rGrid = [];
+    for (var ri = 0; ri <= 160; ri++) rGrid.push(ri / 160);
+    var runEpisode = function () {
+      var seed = (Math.random() * 1e9) | 0;
+      var rng = mulberry32(seed);
+      var amp = [], ph = [];
+      for (var k = 1; k <= 5; k++) { amp.push((rng() * 2 - 1) / Math.sqrt(k)); ph.push(rng() * 6.283); }
+      var f = function (x) {
+        var v = 0;
+        for (var k2 = 1; k2 <= 5; k2++) v += amp[k2 - 1] * Math.sin(6.283 * k2 * x * 0.8 + ph[k2 - 1]);
+        return 1.6 * v;
+      };
+      var T = 12;
+      // random baseline
+      var bestR = -1e9;
+      for (var t = 0; t < T; t++) bestR = Math.max(bestR, f(rng()));
+      // EI-driven BO
+      var X = [0.25, 0.75], y = [f(0.25), f(0.75)];
+      for (t = 2; t < T; t++) {
+        var post = gpPost(rGrid, X, y, 0.13, 1e-6);
+        var e = eiOf(post.mu, post.sd, Math.max.apply(null, y));
+        var xn = rGrid[e.indexOf(Math.max.apply(null, e))];
+        X.push(xn); y.push(f(xn));
+      }
+      var bestB = Math.max.apply(null, y);
+      rN++; if (bestB > bestR) rWins++;
+      rGap += bestB - bestR;
+      var c = document.createElement('span');
+      c.className = 'wchip ' + (bestB > bestR ? 'good' : 'bad');
+      c.textContent = 'EI ' + bestB.toFixed(2) + ' vs rnd ' + bestR.toFixed(2);
+      var chips = $('w-race-chips');
+      chips.prepend(c);
+      while (chips.children.length > 60) chips.lastChild.remove();
+      $('w-race-stat').textContent = 'EI wins ' + rWins + '/' + rN + ' episodes (' +
+        (100 * rWins / rN).toFixed(0) + '%) · mean advantage ' + (rGap / rN).toFixed(2);
+      if (window.__racePredCheck) window.__racePredCheck(rN, rWins);
+    };
+    $('w-race-1').addEventListener('click', runEpisode);
+    $('w-race-20').addEventListener('click', function () {
+      for (var k = 0; k < 20; k++) runEpisode();
+    });
+    $('w-race-reset').addEventListener('click', function () {
+      rN = 0; rWins = 0; rGap = 0;
+      $('w-race-chips').innerHTML = '';
+      $('w-race-stat').textContent = 'no episodes yet';
+    });
+  }
+
+  /* ---- predict-before-run for the race --------------------------------- */
+  if ($('w-race-predict')) {
+    var pPicked = null, pResolved = false;
+    var pFb = $('w-race-predfb');
+    var pBtns = document.querySelectorAll('#w-race-predict [data-pred]');
+    pBtns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (pPicked) return;
+        pPicked = b.getAttribute('data-pred');
+        pBtns.forEach(function (x) { x.disabled = true; });
+        b.classList.add('active');
+        pFb.style.display = 'block';
+        pFb.textContent = 'Prediction locked in. Run at least 20 episodes to find out.';
+      });
+    });
+    window.__racePredCheck = function (n, wins) {
+      if (pResolved || !pPicked || n < 20) return;
+      pResolved = true;
+      var rate = 100 * wins / n;
+      pFb.style.display = 'block';
+      pFb.innerHTML = (pPicked === 'most' ?
+        '<strong>Your prediction was right:</strong> ' :
+        '<strong>Not what you predicted:</strong> ') +
+        'EI is winning ' + rate.toFixed(0) + '% of episodes — most, but not all. With only 12 ' +
+        'evaluations on a rough random function, a lucky uniform draw sometimes beats a ' +
+        'model-guided search; the GP can also be misled early. Sample efficiency is a ' +
+        'statistical edge, not a guarantee.';
+    };
+  }
+
+  /* ---- concept map ------------------------------------------------------ */
+  if ($('w-map')) {
+    var NODES = [
+      { id: 'expensive', x: 95, y: 100, label: 'expensive evals', sec: '#background', desc: 'Each f(x) costs minutes to days (train a model, run a reaction). The budget is dozens of evaluations, not millions — this constraint creates the whole field.' },
+      { id: 'tradeoff', x: 95, y: 220, label: 'explore vs exploit', sec: '#background', desc: 'Sample where the model is good (exploit μ) or where it is ignorant (explore σ)? Every acquisition function is one answer to this question.' },
+      { id: 'loop', x: 95, y: 340, label: 'the BO loop', sec: '#intuition', desc: 'Fit surrogate → optimize acquisition (cheap, on the model) → evaluate f (expensive) → repeat. Sample efficiency comes from spending compute to choose evaluations well.' },
+      { id: 'prior', x: 300, y: 80, label: 'GP prior', sec: '#math-gp', desc: 'A distribution over functions: any finite set of values is jointly Gaussian, with covariance given by the kernel.' },
+      { id: 'kernel', x: 300, y: 190, label: 'kernel & ℓ', sec: '#math-gp', desc: 'k(x,x′) encodes smoothness; the lengthscale ℓ is a hypothesis about how fast f varies. Wrong ℓ = confidently wrong posterior.' },
+      { id: 'posterior', x: 300, y: 300, label: 'posterior μ, σ', sec: '#math-gp', desc: 'Closed form by Gaussian conditioning: μₙ(x) = k*ᵀ(K+σₙ²I)⁻¹y, σₙ²(x) = k(x,x) − k*ᵀ(K+σₙ²I)⁻¹k*. The map of belief and ignorance.' },
+      { id: 'lml', x: 300, y: 410, label: 'marginal likelihood', sec: '#math-gp', desc: 'log p(y|X,θ) trades data fit against complexity (the log-det term) — Occam\\u2019s razor for choosing ℓ and σₙ automatically.' },
+      { id: 'ei', x: 520, y: 100, label: 'EI', sec: '#math-acq', desc: 'Expected improvement: (μ−f*)Φ(z) + σφ(z). Closed form, magnitude-aware, the default since EGO (1998). At z=0 it equals σφ(0) ≈ 0.4σ.' },
+      { id: 'piucb', x: 520, y: 200, label: 'PI & UCB', sec: '#math-acq', desc: 'PI = Φ(z) ignores improvement size; UCB = μ + βσ makes the trade-off explicit and carries GP-UCB\\u2019s no-regret theory.' },
+      { id: 'info', x: 520, y: 300, label: 'info-theoretic', sec: '#math-acq', desc: 'Entropy Search / PES / MES: pick the point that most reduces uncertainty about the optimum — principled, less myopic, costlier to compute.' },
+      { id: 'logei', x: 520, y: 400, label: 'LogEI', sec: '#math-acq', desc: 'EI and its gradients vanish numerically when improvements are unlikely; computing in log-space (NeurIPS 2023) fixed a decades-old silent failure. Modern default.' },
+      { id: 'batch', x: 520, y: 500, label: 'batch qEI', sec: '#math-acq', desc: 'Choose q points jointly via Monte-Carlo over posterior samples — parallel experiments without picking q clustered copies of the same point.' },
+      { id: 'tpe', x: 745, y: 70, label: 'TPE / SMAC', sec: '#papers', desc: 'Non-GP surrogates: TPE models p(x|good)/p(x|bad) densities (Optuna); SMAC uses random forests. Robust for conditional, high-dimensional search spaces.' },
+      { id: 'turbo', x: 745, y: 160, label: 'TuRBO', sec: '#papers', desc: 'Trust-region local BO — give up global modeling in high dimensions, run local searches that shrink and grow. NeurIPS 2019.' },
+      { id: 'saas', x: 745, y: 250, label: 'SAASBO', sec: '#papers', desc: 'Sparse axis-aligned priors on inverse lengthscales: assume few dimensions matter and let the data reveal which. UAI 2021.' },
+      { id: 'debate', x: 745, y: 340, label: 'high-dim debate', sec: '#papers', desc: '2024: "vanilla BO performs great in high dims." ICLR 2025: "standard GP is all you need." Nov 2025: "we still don\\u2019t understand high-dim BO." Live controversy.' },
+      { id: 'pfn', x: 745, y: 430, label: 'pretrained surrogates', sec: '#papers', desc: 'OptFormer, PFNs4BO, GIT-BO: replace GP fitting with one forward pass of a transformer pre-trained on synthetic functions. BO meets foundation models.' },
+      { id: 'llm', x: 745, y: 520, label: 'LLM-era BO', sec: '#papers', desc: 'LLAMBO, LLM priors for multi-objective BO — plus budget-matched studies asking when an LLM is actually worth it. The newest, least settled thread.' },
+      { id: 'software', x: 300, y: 520, label: 'BoTorch · Optuna', sec: '#papers', desc: 'BoTorch/Ax (MC acquisitions, LogEI default), Optuna (TPE), SMAC3, HEBO. Where all of the above ships to practice.' },
+      { id: 'apps', x: 95, y: 460, label: 'applications', sec: '#papers', desc: 'Hyperparameters (Snoek 2012), chemistry beating expert chemists (Shields, Nature 2021), photonics, clinical trials, self-driving labs.' }
+    ];
+    var EDGES = [
+      ['expensive', 'tradeoff'], ['tradeoff', 'loop'], ['expensive', 'loop'],
+      ['loop', 'posterior'], ['loop', 'ei'], ['prior', 'kernel'], ['prior', 'posterior'],
+      ['kernel', 'posterior'], ['kernel', 'lml'], ['posterior', 'lml'],
+      ['posterior', 'ei'], ['ei', 'piucb'], ['ei', 'logei'], ['ei', 'batch'],
+      ['posterior', 'info'], ['loop', 'tpe'], ['turbo', 'debate'], ['saas', 'debate'],
+      ['posterior', 'pfn'], ['pfn', 'llm'], ['loop', 'software'], ['software', 'apps'],
+      ['ei', 'turbo'], ['loop', 'apps']
+    ];
+    var HUBS = { loop: 1, posterior: 1, ei: 1 };
+    var svg = $('w-map-svg'), info = $('w-map-info');
+    var NSs = 'http://www.w3.org/2000/svg';
+    var byId = {};
+    NODES.forEach(function (n) { byId[n.id] = n; });
+    var edgeEls = [], nodeEls = {};
+    EDGES.forEach(function (e) {
+      var a = byId[e[0]], b = byId[e[1]];
+      var ln = document.createElementNS(NSs, 'line');
+      ln.setAttribute('x1', a.x); ln.setAttribute('y1', a.y);
+      ln.setAttribute('x2', b.x); ln.setAttribute('y2', b.y);
+      ln.setAttribute('class', 'cmap-edge');
+      ln.__ends = [e[0], e[1]];
+      svg.appendChild(ln); edgeEls.push(ln);
+    });
+    NODES.forEach(function (n) {
+      var g = document.createElementNS(NSs, 'g');
+      g.setAttribute('class', 'cmap-node' + (HUBS[n.id] ? ' hub' : ''));
+      var wpx = n.label.length * 7.2 + 22;
+      var rect = document.createElementNS(NSs, 'rect');
+      rect.setAttribute('x', n.x - wpx / 2); rect.setAttribute('y', n.y - 15);
+      rect.setAttribute('width', wpx); rect.setAttribute('height', 30);
+      rect.setAttribute('rx', 8);
+      var tx = document.createElementNS(NSs, 'text');
+      tx.setAttribute('x', n.x); tx.setAttribute('y', n.y + 4.5);
+      tx.setAttribute('text-anchor', 'middle');
+      tx.textContent = n.label;
+      g.appendChild(rect); g.appendChild(tx);
+      g.addEventListener('mouseenter', function () { highlight(n.id); });
+      g.addEventListener('mouseleave', clearHl);
+      g.addEventListener('click', function () {
+        var target = (window.__PAGES__ && window.__PAGES__[n.sec.replace('#', '')]) || n.sec;
+        info.innerHTML = '<strong>' + n.label + '.</strong> ' + n.desc +
+          ' <a href="' + target + '">jump to section →</a>';
+      });
+      svg.appendChild(g); nodeEls[n.id] = g;
+    });
+    function highlight(id) {
+      var near = {}; near[id] = 1;
+      edgeEls.forEach(function (ln) {
+        var hit = ln.__ends.indexOf(id) >= 0;
+        ln.setAttribute('class', 'cmap-edge' + (hit ? ' hl' : ' dim'));
+        if (hit) { near[ln.__ends[0]] = 1; near[ln.__ends[1]] = 1; }
+      });
+      NODES.forEach(function (n) {
+        var cls = 'cmap-node' + (HUBS[n.id] ? ' hub' : '');
+        if (n.id === id) cls += ' hl';
+        else if (!near[n.id]) cls += ' dim';
+        nodeEls[n.id].setAttribute('class', cls);
+      });
+    }
+    function clearHl() {
+      edgeEls.forEach(function (ln) { ln.setAttribute('class', 'cmap-edge'); });
+      NODES.forEach(function (n) {
+        nodeEls[n.id].setAttribute('class', 'cmap-node' + (HUBS[n.id] ? ' hub' : ''));
+      });
+    }
+  }
+})();
+</script>
+</body>
+</html>

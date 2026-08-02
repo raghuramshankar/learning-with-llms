@@ -1,0 +1,432 @@
+(function () {
+  'use strict';
+  var $ = WLib.$, cssVar = WLib.cssVar, mulberry32 = WLib.mulberry32,
+      gauss = WLib.gauss, onTheme = WLib.onTheme;
+
+  /* ---- tiny GP engine (shared by the widgets) ------------------------- */
+  function erf(x) {                       // Abramowitz & Stegun 7.1.26
+    var s = x < 0 ? -1 : 1; x = Math.abs(x);
+    var t = 1 / (1 + 0.3275911 * x);
+    var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t
+      - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return s * y;
+  }
+  var Phi = function (z) { return 0.5 * (1 + erf(z / Math.SQRT2)); };
+  var phi = function (z) { return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI); };
+  function rbf(a, b, ls) { var d = (a - b) / ls; return Math.exp(-0.5 * d * d); }
+
+  function inv(M) {                        // Gauss-Jordan, n <= ~40
+    var n = M.length, A = M.map(function (r, i) {
+      var e = new Array(n).fill(0); e[i] = 1; return r.slice().concat(e);
+    });
+    for (var c = 0; c < n; c++) {
+      var p = c;
+      for (var r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      var tmp = A[c]; A[c] = A[p]; A[p] = tmp;
+      var pv = A[c][c];
+      for (var j = 0; j < 2 * n; j++) A[c][j] /= pv;
+      for (r = 0; r < n; r++) if (r !== c) {
+        var f = A[r][c];
+        for (j = 0; j < 2 * n; j++) A[r][j] -= f * A[c][j];
+      }
+    }
+    return A.map(function (r) { return r.slice(n); });
+  }
+  function gpPost(grid, X, y, ls, noise) {
+    var n = X.length;
+    if (!n) return { mu: grid.map(function () { return 0; }),
+                     sd: grid.map(function () { return 1; }) };
+    var K = [];
+    for (var i = 0; i < n; i++) {
+      K.push([]);
+      for (var j = 0; j < n; j++) K[i].push(rbf(X[i], X[j], ls) + (i === j ? noise : 0));
+    }
+    var Ki = inv(K);
+    var alpha = new Array(n).fill(0);
+    for (i = 0; i < n; i++) for (j = 0; j < n; j++) alpha[i] += Ki[i][j] * y[j];
+    var mu = [], sd = [];
+    grid.forEach(function (x) {
+      var k = X.map(function (xi) { return rbf(x, xi, ls); });
+      var m = 0, q = 0;
+      for (var a = 0; a < n; a++) {
+        m += k[a] * alpha[a];
+        var t = 0;
+        for (var b = 0; b < n; b++) t += Ki[a][b] * k[b];
+        q += k[a] * t;
+      }
+      mu.push(m);
+      sd.push(Math.sqrt(Math.max(1e-10, 1 + noise - q)));
+    });
+    return { mu: mu, sd: sd };
+  }
+  function eiOf(mu, sd, best) {
+    return mu.map(function (m, i) {
+      var z = (m - best) / sd[i];
+      return (m - best) * Phi(z) + sd[i] * phi(z);
+    });
+  }
+  function lml(X, y, ls, noise) {          // log marginal likelihood
+    var n = X.length, K = [];
+    for (var i = 0; i < n; i++) {
+      K.push([]);
+      for (var j = 0; j < n; j++) K[i].push(rbf(X[i], X[j], ls) + (i === j ? noise : 0));
+    }
+    // Cholesky
+    var L = K.map(function (r) { return r.slice().fill(0); });
+    for (i = 0; i < n; i++) for (var k = 0; k <= i; k++) {
+      var s = 0;
+      for (var m = 0; m < k; m++) s += L[i][m] * L[k][m];
+      if (i === k) L[i][k] = Math.sqrt(Math.max(1e-12, K[i][i] - s));
+      else L[i][k] = (K[i][k] - s) / L[k][k];
+    }
+    var z = y.slice();                      // solve L z = y
+    for (i = 0; i < n; i++) {
+      for (k = 0; k < i; k++) z[i] -= L[i][k] * z[k];
+      z[i] /= L[i][i];
+    }
+    var quad = z.reduce(function (a, v) { return a + v * v; }, 0);
+    var logdet = 0;
+    for (i = 0; i < n; i++) logdet += 2 * Math.log(L[i][i]);
+    return -0.5 * quad - 0.5 * logdet - 0.5 * n * Math.log(2 * Math.PI);
+  }
+
+  /* ---- W-GP: drive the BO loop yourself ------------------------------- */
+  if ($('w-gp')) {
+    var CV = $('w-gp-cv'), CTX = CV.getContext('2d');
+    var W = CV.width = 660, H = CV.height = 400, SPLIT = 300; // top: f, bottom: EI
+    var LS = 0.12, NOISE = 1e-6, BUDGET = 12;
+    var F = function (x) {
+      return 1.15 * Math.sin(5.3 * x + 1.1) + 0.65 * Math.cos(11.4 * x + 0.4)
+             + 0.4 * Math.sin(2.1 * x);
+    };
+    var GRID = [];
+    for (var gi = 0; gi <= 240; gi++) GRID.push(gi / 240);
+    var TRUEBEST = Math.max.apply(null, GRID.map(F));
+    var gX = [], gY = [], revealed = false;
+    var toPx = function (x) { return x * W; };
+    var toPy = function (v) { return SPLIT / 2 - v * (SPLIT / 5.2); };
+    var draw = function () {
+      var bg = cssVar('--bg') || '#fff', line = cssVar('--line') || '#ccc';
+      var acc = cssVar('--accent') || '#063c92', ok = cssVar('--ok') || 'green';
+      var muted = cssVar('--muted') || '#777', fail = cssVar('--fail') || 'red';
+      CTX.fillStyle = bg; CTX.fillRect(0, 0, W, H);
+      CTX.strokeStyle = line;
+      CTX.strokeRect(0, 0, W, SPLIT); CTX.strokeRect(0, SPLIT + 8, W, H - SPLIT - 8);
+      var post = gpPost(GRID, gX, gY, LS, NOISE);
+      // ±2σ band
+      CTX.beginPath();
+      GRID.forEach(function (x, i) {
+        var yv = toPy(post.mu[i] + 2 * post.sd[i]);
+        i ? CTX.lineTo(toPx(x), yv) : CTX.moveTo(toPx(x), yv);
+      });
+      for (var i = GRID.length - 1; i >= 0; i--)
+        CTX.lineTo(toPx(GRID[i]), toPy(post.mu[i] - 2 * post.sd[i]));
+      CTX.closePath();
+      CTX.fillStyle = 'rgba(125,159,221,0.18)'; CTX.fill();
+      // mean
+      CTX.strokeStyle = acc; CTX.lineWidth = 2.2; CTX.beginPath();
+      GRID.forEach(function (x, i) {
+        i ? CTX.lineTo(toPx(x), toPy(post.mu[i])) : CTX.moveTo(toPx(x), toPy(post.mu[i]));
+      });
+      CTX.stroke();
+      // true function (if revealed)
+      if (revealed) {
+        CTX.strokeStyle = fail; CTX.lineWidth = 1.4; CTX.setLineDash([5, 4]);
+        CTX.beginPath();
+        GRID.forEach(function (x, i) {
+          i ? CTX.lineTo(toPx(x), toPy(F(x))) : CTX.moveTo(toPx(x), toPy(F(x)));
+        });
+        CTX.stroke(); CTX.setLineDash([]);
+      }
+      // observations
+      CTX.fillStyle = ok;
+      gX.forEach(function (x, i) {
+        CTX.beginPath(); CTX.arc(toPx(x), toPy(gY[i]), 5, 0, 7); CTX.fill();
+      });
+      // EI strip
+      if (gX.length) {
+        var best = Math.max.apply(null, gY);
+        var e = eiOf(post.mu, post.sd, best);
+        var emax = Math.max.apply(null, e) + 1e-12;
+        CTX.strokeStyle = ok; CTX.lineWidth = 2; CTX.beginPath();
+        GRID.forEach(function (x, i) {
+          var yv = H - 6 - (e[i] / emax) * (H - SPLIT - 22);
+          i ? CTX.lineTo(toPx(x), yv) : CTX.moveTo(toPx(x), yv);
+        });
+        CTX.stroke();
+        var ai = e.indexOf(Math.max.apply(null, e));
+        CTX.fillStyle = fail;
+        CTX.beginPath(); CTX.arc(toPx(GRID[ai]), H - 8 - (e[ai] / emax) * (H - SPLIT - 22), 4, 0, 7); CTX.fill();
+      }
+      CTX.fillStyle = muted;
+      CTX.font = '12px ui-monospace, Menlo, monospace';
+      CTX.fillText('posterior  μ ± 2σ' + (revealed ? '  ·  dashed = true f (hidden until revealed)' : ''), 10, 16);
+      CTX.fillText('expected improvement (red dot = argmax = next evaluation)', 10, SPLIT + 24);
+      var stat = 'evaluations: ' + gX.length + '/' + BUDGET;
+      if (gY.length) stat += '   best f = ' + Math.max.apply(null, gY).toFixed(3);
+      if (revealed && gY.length)
+        stat += '   gap to true max = ' + (TRUEBEST - Math.max.apply(null, gY)).toFixed(3);
+      $('w-gp-stat').textContent = stat;
+    };
+    var evalAt = function (x) {
+      if (gX.length >= BUDGET) return;
+      gX.push(x); gY.push(F(x)); draw();
+    };
+    CV.addEventListener('click', function (ev) {
+      var r = CV.getBoundingClientRect();
+      var x = (ev.clientX - r.left) / r.width;
+      var yy = (ev.clientY - r.top) / r.height * H;
+      if (yy <= SPLIT) evalAt(Math.min(1, Math.max(0, x)));
+    });
+    $('w-gp-bo').addEventListener('click', function () {
+      if (gX.length >= BUDGET) return;
+      if (!gX.length) { evalAt(0.31); return; }
+      var post = gpPost(GRID, gX, gY, LS, NOISE);
+      var e = eiOf(post.mu, post.sd, Math.max.apply(null, gY));
+      evalAt(GRID[e.indexOf(Math.max.apply(null, e))]);
+    });
+    $('w-gp-reveal').addEventListener('click', function () { revealed = !revealed; draw(); });
+    $('w-gp-reset').addEventListener('click', function () { gX = []; gY = []; revealed = false; draw(); });
+    draw(); onTheme(draw);
+  }
+
+  /* ---- W-KERNEL: lengthscale / noise / marginal likelihood ------------ */
+  if ($('w-kernel')) {
+    var kCv = $('w-kernel-cv'), kCtx = kCv.getContext('2d');
+    var kW = kCv.width = 660, kH = kCv.height = 280;
+    var kX = [0.08, 0.3, 0.47, 0.65, 0.9], kY = [0.6, 1.4, -0.4, -1.2, 0.9];
+    var kGrid = [];
+    for (var i = 0; i <= 200; i++) kGrid.push(i / 200);
+    var kDraw = function () {
+      var ls = Math.pow(10, $('w-kernel-ls').value / 100);   // 10^-1.7 .. 10^0
+      var noise = Math.pow(10, $('w-kernel-n').value / 100); // 10^-4 .. 10^-0.3
+      var bg = cssVar('--bg') || '#fff', acc = cssVar('--accent') || '#063c92';
+      var ok = cssVar('--ok') || 'green';
+      kCtx.fillStyle = bg; kCtx.fillRect(0, 0, kW, kH);
+      var post = gpPost(kGrid, kX, kY, ls, noise);
+      var py = function (v) { return kH / 2 - v * (kH / 6); };
+      kCtx.beginPath();
+      kGrid.forEach(function (x, i) {
+        var yv = py(post.mu[i] + 2 * post.sd[i]);
+        i ? kCtx.lineTo(x * kW, yv) : kCtx.moveTo(x * kW, yv);
+      });
+      for (i = kGrid.length - 1; i >= 0; i--)
+        kCtx.lineTo(kGrid[i] * kW, py(post.mu[i] - 2 * post.sd[i]));
+      kCtx.closePath(); kCtx.fillStyle = 'rgba(125,159,221,0.18)'; kCtx.fill();
+      kCtx.strokeStyle = acc; kCtx.lineWidth = 2.2; kCtx.beginPath();
+      kGrid.forEach(function (x, i) {
+        i ? kCtx.lineTo(x * kW, py(post.mu[i])) : kCtx.moveTo(x * kW, py(post.mu[i]));
+      });
+      kCtx.stroke();
+      kCtx.fillStyle = ok;
+      kX.forEach(function (x, i) {
+        kCtx.beginPath(); kCtx.arc(x * kW, py(kY[i]), 5, 0, 7); kCtx.fill();
+      });
+      $('w-kernel-stat').textContent =
+        'ℓ = ' + ls.toFixed(3) + '   σn² = ' + noise.toExponential(1) +
+        '   log marginal likelihood = ' + lml(kX, kY, ls, noise).toFixed(2);
+    };
+    $('w-kernel-ls').addEventListener('input', kDraw);
+    $('w-kernel-n').addEventListener('input', kDraw);
+    kDraw(); onTheme(kDraw);
+  }
+
+  /* ---- W-ACQ: acquisition calculator ----------------------------------- */
+  if ($('w-acq')) {
+    var aDraw = function () {
+      var d = $('w-acq-d').value / 100;      // Δ = μ − f*  in  [−2, 2]
+      var s = Math.max(0.05, $('w-acq-s').value / 100); // σ in [0.05, 2]
+      var b = $('w-acq-b').value / 100;      // β in [0, 4]
+      var z = d / s;
+      var eiV = d * Phi(z) + s * phi(z);
+      var piV = Phi(z);
+      var ucbV = d + b * s;
+      $('w-acq-stat').innerHTML =
+        'Δ = μ−f* = ' + d.toFixed(2) + '   σ = ' + s.toFixed(2) + '   z = Δ/σ = ' + z.toFixed(2) +
+        '<br>EI = Δ·Φ(z) + σ·φ(z) = <strong>' + eiV.toFixed(3) + '</strong>' +
+        '   ·   PI = Φ(z) = <strong>' + piV.toFixed(3) + '</strong>' +
+        '   ·   UCB−f* = Δ + βσ = <strong>' + ucbV.toFixed(3) + '</strong> (β=' + b.toFixed(1) + ')';
+      var bars = [['w-acq-ei', eiV / 2.2], ['w-acq-pi', piV], ['w-acq-ucb', (ucbV + 2) / 6]];
+      bars.forEach(function (p) {
+        $(p[0]).style.width = Math.min(100, Math.max(0, p[1] * 100)) + '%';
+      });
+    };
+    ['w-acq-d', 'w-acq-s', 'w-acq-b'].forEach(function (id) {
+      $(id).addEventListener('input', aDraw);
+    });
+    aDraw();
+  }
+
+  /* ---- W-RACE: EI vs random, Monte-Carlo episodes ---------------------- */
+  if ($('w-race-bo')) {
+    var rN = 0, rWins = 0, rGap = 0;
+    var rGrid = [];
+    for (var ri = 0; ri <= 160; ri++) rGrid.push(ri / 160);
+    var runEpisode = function () {
+      var seed = (Math.random() * 1e9) | 0;
+      var rng = mulberry32(seed);
+      var amp = [], ph = [];
+      for (var k = 1; k <= 5; k++) { amp.push((rng() * 2 - 1) / Math.sqrt(k)); ph.push(rng() * 6.283); }
+      var f = function (x) {
+        var v = 0;
+        for (var k2 = 1; k2 <= 5; k2++) v += amp[k2 - 1] * Math.sin(6.283 * k2 * x * 0.8 + ph[k2 - 1]);
+        return 1.6 * v;
+      };
+      var T = 12;
+      // random baseline
+      var bestR = -1e9;
+      for (var t = 0; t < T; t++) bestR = Math.max(bestR, f(rng()));
+      // EI-driven BO
+      var X = [0.25, 0.75], y = [f(0.25), f(0.75)];
+      for (t = 2; t < T; t++) {
+        var post = gpPost(rGrid, X, y, 0.13, 1e-6);
+        var e = eiOf(post.mu, post.sd, Math.max.apply(null, y));
+        var xn = rGrid[e.indexOf(Math.max.apply(null, e))];
+        X.push(xn); y.push(f(xn));
+      }
+      var bestB = Math.max.apply(null, y);
+      rN++; if (bestB > bestR) rWins++;
+      rGap += bestB - bestR;
+      var c = document.createElement('span');
+      c.className = 'wchip ' + (bestB > bestR ? 'good' : 'bad');
+      c.textContent = 'EI ' + bestB.toFixed(2) + ' vs rnd ' + bestR.toFixed(2);
+      var chips = $('w-race-chips');
+      chips.prepend(c);
+      while (chips.children.length > 60) chips.lastChild.remove();
+      $('w-race-stat').textContent = 'EI wins ' + rWins + '/' + rN + ' episodes (' +
+        (100 * rWins / rN).toFixed(0) + '%) · mean advantage ' + (rGap / rN).toFixed(2);
+      if (window.__racePredCheck) window.__racePredCheck(rN, rWins);
+    };
+    $('w-race-1').addEventListener('click', runEpisode);
+    $('w-race-20').addEventListener('click', function () {
+      for (var k = 0; k < 20; k++) runEpisode();
+    });
+    $('w-race-reset').addEventListener('click', function () {
+      rN = 0; rWins = 0; rGap = 0;
+      $('w-race-chips').innerHTML = '';
+      $('w-race-stat').textContent = 'no episodes yet';
+    });
+  }
+
+  /* ---- predict-before-run for the race --------------------------------- */
+  if ($('w-race-predict')) {
+    var pPicked = null, pResolved = false;
+    var pFb = $('w-race-predfb');
+    var pBtns = document.querySelectorAll('#w-race-predict [data-pred]');
+    pBtns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (pPicked) return;
+        pPicked = b.getAttribute('data-pred');
+        pBtns.forEach(function (x) { x.disabled = true; });
+        b.classList.add('active');
+        pFb.style.display = 'block';
+        pFb.textContent = 'Prediction locked in. Run at least 20 episodes to find out.';
+      });
+    });
+    window.__racePredCheck = function (n, wins) {
+      if (pResolved || !pPicked || n < 20) return;
+      pResolved = true;
+      var rate = 100 * wins / n;
+      pFb.style.display = 'block';
+      pFb.innerHTML = (pPicked === 'most' ?
+        '<strong>Your prediction was right:</strong> ' :
+        '<strong>Not what you predicted:</strong> ') +
+        'EI is winning ' + rate.toFixed(0) + '% of episodes — most, but not all. With only 12 ' +
+        'evaluations on a rough random function, a lucky uniform draw sometimes beats a ' +
+        'model-guided search; the GP can also be misled early. Sample efficiency is a ' +
+        'statistical edge, not a guarantee.';
+    };
+  }
+
+  /* ---- concept map ------------------------------------------------------ */
+  if ($('w-map')) {
+    var NODES = [
+      { id: 'expensive', x: 95, y: 100, label: 'expensive evals', sec: '#background', desc: 'Each f(x) costs minutes to days (train a model, run a reaction). The budget is dozens of evaluations, not millions — this constraint creates the whole field.' },
+      { id: 'tradeoff', x: 95, y: 220, label: 'explore vs exploit', sec: '#background', desc: 'Sample where the model is good (exploit μ) or where it is ignorant (explore σ)? Every acquisition function is one answer to this question.' },
+      { id: 'loop', x: 95, y: 340, label: 'the BO loop', sec: '#intuition', desc: 'Fit surrogate → optimize acquisition (cheap, on the model) → evaluate f (expensive) → repeat. Sample efficiency comes from spending compute to choose evaluations well.' },
+      { id: 'prior', x: 300, y: 80, label: 'GP prior', sec: '#math-gp', desc: 'A distribution over functions: any finite set of values is jointly Gaussian, with covariance given by the kernel.' },
+      { id: 'kernel', x: 300, y: 190, label: 'kernel & ℓ', sec: '#math-gp', desc: 'k(x,x′) encodes smoothness; the lengthscale ℓ is a hypothesis about how fast f varies. Wrong ℓ = confidently wrong posterior.' },
+      { id: 'posterior', x: 300, y: 300, label: 'posterior μ, σ', sec: '#math-gp', desc: 'Closed form by Gaussian conditioning: μₙ(x) = k*ᵀ(K+σₙ²I)⁻¹y, σₙ²(x) = k(x,x) − k*ᵀ(K+σₙ²I)⁻¹k*. The map of belief and ignorance.' },
+      { id: 'lml', x: 300, y: 410, label: 'marginal likelihood', sec: '#math-gp', desc: 'log p(y|X,θ) trades data fit against complexity (the log-det term) — Occam\\u2019s razor for choosing ℓ and σₙ automatically.' },
+      { id: 'ei', x: 520, y: 100, label: 'EI', sec: '#math-acq', desc: 'Expected improvement: (μ−f*)Φ(z) + σφ(z). Closed form, magnitude-aware, the default since EGO (1998). At z=0 it equals σφ(0) ≈ 0.4σ.' },
+      { id: 'piucb', x: 520, y: 200, label: 'PI & UCB', sec: '#math-acq', desc: 'PI = Φ(z) ignores improvement size; UCB = μ + βσ makes the trade-off explicit and carries GP-UCB\\u2019s no-regret theory.' },
+      { id: 'info', x: 520, y: 300, label: 'info-theoretic', sec: '#math-acq', desc: 'Entropy Search / PES / MES: pick the point that most reduces uncertainty about the optimum — principled, less myopic, costlier to compute.' },
+      { id: 'logei', x: 520, y: 400, label: 'LogEI', sec: '#math-acq', desc: 'EI and its gradients vanish numerically when improvements are unlikely; computing in log-space (NeurIPS 2023) fixed a decades-old silent failure. Modern default.' },
+      { id: 'batch', x: 520, y: 500, label: 'batch qEI', sec: '#math-acq', desc: 'Choose q points jointly via Monte-Carlo over posterior samples — parallel experiments without picking q clustered copies of the same point.' },
+      { id: 'tpe', x: 745, y: 70, label: 'TPE / SMAC', sec: '#papers', desc: 'Non-GP surrogates: TPE models p(x|good)/p(x|bad) densities (Optuna); SMAC uses random forests. Robust for conditional, high-dimensional search spaces.' },
+      { id: 'turbo', x: 745, y: 160, label: 'TuRBO', sec: '#papers', desc: 'Trust-region local BO — give up global modeling in high dimensions, run local searches that shrink and grow. NeurIPS 2019.' },
+      { id: 'saas', x: 745, y: 250, label: 'SAASBO', sec: '#papers', desc: 'Sparse axis-aligned priors on inverse lengthscales: assume few dimensions matter and let the data reveal which. UAI 2021.' },
+      { id: 'debate', x: 745, y: 340, label: 'high-dim debate', sec: '#papers', desc: '2024: "vanilla BO performs great in high dims." ICLR 2025: "standard GP is all you need." Nov 2025: "we still don\\u2019t understand high-dim BO." Live controversy.' },
+      { id: 'pfn', x: 745, y: 430, label: 'pretrained surrogates', sec: '#papers', desc: 'OptFormer, PFNs4BO, GIT-BO: replace GP fitting with one forward pass of a transformer pre-trained on synthetic functions. BO meets foundation models.' },
+      { id: 'llm', x: 745, y: 520, label: 'LLM-era BO', sec: '#papers', desc: 'LLAMBO, LLM priors for multi-objective BO — plus budget-matched studies asking when an LLM is actually worth it. The newest, least settled thread.' },
+      { id: 'software', x: 300, y: 520, label: 'BoTorch · Optuna', sec: '#papers', desc: 'BoTorch/Ax (MC acquisitions, LogEI default), Optuna (TPE), SMAC3, HEBO. Where all of the above ships to practice.' },
+      { id: 'apps', x: 95, y: 460, label: 'applications', sec: '#papers', desc: 'Hyperparameters (Snoek 2012), chemistry beating expert chemists (Shields, Nature 2021), photonics, clinical trials, self-driving labs.' }
+    ];
+    var EDGES = [
+      ['expensive', 'tradeoff'], ['tradeoff', 'loop'], ['expensive', 'loop'],
+      ['loop', 'posterior'], ['loop', 'ei'], ['prior', 'kernel'], ['prior', 'posterior'],
+      ['kernel', 'posterior'], ['kernel', 'lml'], ['posterior', 'lml'],
+      ['posterior', 'ei'], ['ei', 'piucb'], ['ei', 'logei'], ['ei', 'batch'],
+      ['posterior', 'info'], ['loop', 'tpe'], ['turbo', 'debate'], ['saas', 'debate'],
+      ['posterior', 'pfn'], ['pfn', 'llm'], ['loop', 'software'], ['software', 'apps'],
+      ['ei', 'turbo'], ['loop', 'apps']
+    ];
+    var HUBS = { loop: 1, posterior: 1, ei: 1 };
+    var svg = $('w-map-svg'), info = $('w-map-info');
+    var NSs = 'http://www.w3.org/2000/svg';
+    var byId = {};
+    NODES.forEach(function (n) { byId[n.id] = n; });
+    var edgeEls = [], nodeEls = {};
+    EDGES.forEach(function (e) {
+      var a = byId[e[0]], b = byId[e[1]];
+      var ln = document.createElementNS(NSs, 'line');
+      ln.setAttribute('x1', a.x); ln.setAttribute('y1', a.y);
+      ln.setAttribute('x2', b.x); ln.setAttribute('y2', b.y);
+      ln.setAttribute('class', 'cmap-edge');
+      ln.__ends = [e[0], e[1]];
+      svg.appendChild(ln); edgeEls.push(ln);
+    });
+    NODES.forEach(function (n) {
+      var g = document.createElementNS(NSs, 'g');
+      g.setAttribute('class', 'cmap-node' + (HUBS[n.id] ? ' hub' : ''));
+      var wpx = n.label.length * 7.2 + 22;
+      var rect = document.createElementNS(NSs, 'rect');
+      rect.setAttribute('x', n.x - wpx / 2); rect.setAttribute('y', n.y - 15);
+      rect.setAttribute('width', wpx); rect.setAttribute('height', 30);
+      rect.setAttribute('rx', 8);
+      var tx = document.createElementNS(NSs, 'text');
+      tx.setAttribute('x', n.x); tx.setAttribute('y', n.y + 4.5);
+      tx.setAttribute('text-anchor', 'middle');
+      tx.textContent = n.label;
+      g.appendChild(rect); g.appendChild(tx);
+      g.addEventListener('mouseenter', function () { highlight(n.id); });
+      g.addEventListener('mouseleave', clearHl);
+      g.addEventListener('click', function () {
+        var target = (window.__PAGES__ && window.__PAGES__[n.sec.replace('#', '')]) || n.sec;
+        info.innerHTML = '<strong>' + n.label + '.</strong> ' + n.desc +
+          ' <a href="' + target + '">jump to section →</a>';
+      });
+      svg.appendChild(g); nodeEls[n.id] = g;
+    });
+    function highlight(id) {
+      var near = {}; near[id] = 1;
+      edgeEls.forEach(function (ln) {
+        var hit = ln.__ends.indexOf(id) >= 0;
+        ln.setAttribute('class', 'cmap-edge' + (hit ? ' hl' : ' dim'));
+        if (hit) { near[ln.__ends[0]] = 1; near[ln.__ends[1]] = 1; }
+      });
+      NODES.forEach(function (n) {
+        var cls = 'cmap-node' + (HUBS[n.id] ? ' hub' : '');
+        if (n.id === id) cls += ' hl';
+        else if (!near[n.id]) cls += ' dim';
+        nodeEls[n.id].setAttribute('class', cls);
+      });
+    }
+    function clearHl() {
+      edgeEls.forEach(function (ln) { ln.setAttribute('class', 'cmap-edge'); });
+      NODES.forEach(function (n) {
+        nodeEls[n.id].setAttribute('class', 'cmap-node' + (HUBS[n.id] ? ' hub' : ''));
+      });
+    }
+  }
+})();

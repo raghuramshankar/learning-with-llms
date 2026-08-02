@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>The acquisition zoo — Fifty Evaluations to Find the Best: Bayesian Optimization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>:root {
+  --bg: #ffffff; --fg: #000000; --muted: #555e66; --line: #e1e5ea;
+  --accent: #063c92; --link: #053075; --accent-soft: #eef2fb;
+  --ok: #168551; --ok-soft: #e9f5ee; --fail: #b03434; --fail-soft: #faeceb;
+  --warn-soft: #fdf6e3; --warn-line: #c9a227;
+  --code-bg: #f6f8fa; --box-bg: #f8f9fb; --mast: #f5f5f5;
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --accent: #7d9fdd; --link: #8fb0e8; --accent-soft: #1b2540;
+  --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
+  --warn-soft: #33290f; --warn-line: #a8842e;
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --bg: #000000; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --accent: #7d9fdd; --link: #8fb0e8; --accent-soft: #1b2540;
+  --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
+  --warn-soft: #33290f; --warn-line: #a8842e;
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.75 Merriweather, Georgia, 'Palatino Linotype', serif;
+  -webkit-font-smoothing: antialiased;
+}
+/* masthead */
+.masthead { background: var(--mast); border-bottom: 1px solid var(--line); }
+.mast-inner { max-width: 1160px; margin: 0 auto; padding: .55rem 1.4rem;
+  display: flex; align-items: baseline; gap: 1.4rem; flex-wrap: wrap; }
+.mast-title { font-weight: 700; font-size: .98rem; }
+.mast-title a { color: var(--fg); text-decoration: none; }
+.mast-nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap;
+  align-items: baseline; }
+.mast-nav a { color: var(--muted); text-decoration: none; font-size: .85rem; }
+.mast-nav a:hover { color: var(--link); text-decoration: underline; }
+.theme-toggle { border: 1px solid var(--line); background: var(--bg);
+  color: var(--fg); border-radius: 8px; cursor: pointer;
+  padding: .05rem .5rem; font-size: .85rem; line-height: 1.5; }
+.theme-toggle:hover { border-color: var(--accent); }
+/* layout */
+.wrap { max-width: 950px; margin: 0 auto; padding: 2.2rem 1.4rem 5rem; }
+.layout { max-width: 1160px; margin: 0 auto; padding: 0 1.4rem 4rem;
+  display: grid; grid-template-columns: 235px minmax(0, 1fr); gap: 2.6rem; }
+main.content { min-width: 0; padding-top: 1.6rem; }
+/* top nav row */
+.topnav { display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: .8rem;
+  margin-bottom: 1.4rem; border-bottom: 1px solid var(--line);
+  padding-bottom: .6rem; }
+.topnav a { color: var(--muted); text-decoration: none; }
+.topnav a:hover { color: var(--link); text-decoration: underline; }
+.topnav .tn-next { margin-left: auto; }
+/* sidebar */
+aside.sidebar { position: sticky; top: 0; align-self: start;
+  max-height: 100vh; overflow-y: auto; padding: 1.8rem 0 2rem;
+  font-size: .84rem; line-height: 1.55; }
+.side-topic { font-weight: 700; margin-bottom: .7rem; font-size: .9rem; }
+.side-topic a { color: var(--accent); text-decoration: none; }
+.side-topic a:hover { text-decoration: underline; }
+aside.sidebar ol { list-style: none; margin: 0; padding: 0;
+  border-left: 2px solid var(--line); }
+aside.sidebar ol > li { padding: .22rem 0 .22rem .8rem; margin-left: -2px;
+  border-left: 2px solid transparent; }
+aside.sidebar ol > li.cur { border-left-color: var(--accent); }
+aside.sidebar ol > li > a { color: var(--muted); text-decoration: none; }
+aside.sidebar ol > li.cur > a { color: var(--accent); font-weight: 700; }
+aside.sidebar ol > li > a:hover { color: var(--link); }
+aside.sidebar ul { list-style: none; margin: .3rem 0 .1rem; padding: 0 0 0 .9rem; }
+aside.sidebar ul li { padding: .12rem 0; }
+aside.sidebar ul a { color: var(--muted); text-decoration: none; font-size: .8rem; }
+aside.sidebar ul li.cur a { color: var(--accent); font-weight: 700; }
+aside.sidebar ul a:hover { color: var(--link); }
+.side-foot { margin-top: 1rem; }
+.side-foot a { color: var(--muted); text-decoration: none; font-size: .8rem; }
+.side-foot a:hover { color: var(--link); }
+@media (max-width: 920px) {
+  .layout { grid-template-columns: 1fr; gap: 0; }
+  aside.sidebar { position: static; max-height: none; margin-top: 1.4rem;
+    padding: .9rem 1.1rem; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--box-bg); }
+}
+/* headings */
+header.pagehead { padding-bottom: 1rem; margin-bottom: 1.2rem; }
+.part-eyebrow { color: var(--ok); font-weight: 700; font-size: .82rem;
+  margin: 0 0 .35rem; letter-spacing: .02em; }
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 .5rem; font-weight: 700; }
+.subtitle { color: var(--muted); font-size: 1.02rem; margin: 0; }
+.repo { color: var(--muted); font-size: .8rem; margin-top: .55rem; }
+h2 { font-size: 1.12rem; color: var(--accent); font-weight: 700;
+  border-bottom: 1px solid var(--accent); padding-bottom: .3rem;
+  margin: 2.4rem 0 1rem; }
+h3 { font-size: 1rem; color: var(--ok); font-weight: 700; margin: 1.9rem 0 .5rem; }
+h4 { font-size: .95rem; margin: 1.5rem 0 .4rem; color: var(--fg); }
+p, ul, ol { margin: 0 0 1rem; }
+li { margin-bottom: .35rem; }
+a { color: var(--link); }
+nav.toc { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1rem 1.3rem; margin-bottom: 2.2rem; }
+nav.toc .toc-title { font-weight: 700; font-size: .78rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: .4rem; }
+nav.toc ol { margin: 0; padding-left: 1.2rem; }
+nav.toc a { color: var(--link); text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
+section { margin-bottom: 3rem; }
+code { background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 4px; padding: .08em .35em; font-size: .84em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+pre { background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: .9rem 1.1rem; overflow-x: auto;
+  white-space: pre-wrap; font-size: .82rem; line-height: 1.5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+pre code { background: none; border: none; padding: 0; font-size: inherit; }
+table { border-collapse: collapse; margin: 1rem 0; width: 100%;
+  font-size: .88rem; display: block; overflow-x: auto; }
+th, td { border: 1px solid var(--line); padding: .45rem .7rem;
+  text-align: left; vertical-align: top; }
+th { background: var(--box-bg); font-weight: 700; }
+.callout { background: var(--accent-soft); border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0; padding: .8rem 1.1rem; margin: 1.2rem 0; }
+.callout.warn { background: var(--warn-soft); border-left-color: var(--warn-line); }
+.callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+.diagram { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1.3rem 1.1rem; margin: 1.4rem 0;
+  overflow-x: auto; }
+.flow { display: flex; align-items: center; justify-content: center;
+  gap: .55rem; flex-wrap: wrap; margin: .4rem 0; }
+.flow.vertical { flex-direction: column; }
+.flow.left { justify-content: flex-start; }
+.box { background: var(--bg); border: 1.5px solid var(--fg); border-radius: 8px;
+  padding: .45rem .85rem; font-size: .85rem; text-align: center;
+  line-height: 1.4; }
+.box small { display: block; color: var(--muted); font-size: .76rem; }
+.box.ok { border-color: var(--ok); background: var(--ok-soft); }
+.box.fail { border-color: var(--fail); background: var(--fail-soft); }
+.box.dim { border-color: var(--line); color: var(--muted); }
+.box.accent { border-color: var(--accent); background: var(--accent-soft); }
+.arr { color: var(--muted); font-size: 1.05rem; flex-shrink: 0; }
+.caption { text-align: center; color: var(--muted); font-size: .82rem;
+  margin-top: .8rem; }
+.tag { display: inline-block; background: var(--accent-soft);
+  color: var(--accent); border-radius: 999px; padding: .05em .6em;
+  font-size: .76em; font-weight: 700; }
+.math { font-family: Georgia, 'Times New Roman', serif; text-align: center;
+  margin: 1.2rem 0; padding: .2rem 0; overflow-x: auto; font-size: 1.02rem;
+  line-height: 2.1; }
+.m { font-family: Georgia, 'Times New Roman', serif; white-space: nowrap; }
+.frac { display: inline-block; vertical-align: middle; text-align: center;
+  margin: 0 .15em; line-height: 1.25; }
+.frac .num, .frac .den { display: block; padding: 0 .3em; }
+.frac .den { border-top: 1px solid currentColor; }
+.widget { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1.1rem; margin: 1.4rem 0; }
+.widget canvas { display: block; margin: .6rem auto; max-width: 100%;
+  border-radius: 8px; }
+.wctl { display: flex; align-items: center; justify-content: center;
+  gap: .7rem; flex-wrap: wrap; margin: .5rem 0; }
+.wctl label { font-size: .84rem; color: var(--muted); }
+.wctl input[type=range] { width: min(240px, 55vw); accent-color: var(--accent); }
+.wbtn { font: inherit; font-size: .82rem; padding: .35rem .9rem;
+  border-radius: 8px; border: 1px solid var(--accent);
+  background: var(--accent-soft); color: var(--accent); cursor: pointer;
+  font-weight: 700; }
+.wbtn:hover { filter: brightness(1.05); }
+.wbtn.active { background: var(--accent); color: var(--bg); }
+.wstat { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .82rem; color: var(--muted); text-align: center; margin-top: .5rem; }
+.wchips { display: flex; flex-wrap: wrap; gap: .3rem; justify-content: center;
+  margin-top: .5rem; max-height: 130px; overflow-y: auto; }
+.wchip { font-size: .76rem; border: 1px solid var(--line); border-radius: 999px;
+  padding: .05em .55em; }
+.wchip.good { border-color: var(--ok); background: var(--ok-soft); }
+.wchip.bad { border-color: var(--fail); background: var(--fail-soft); }
+.deriv { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); padding: 1rem 1.2rem; margin: 1.4rem 0; }
+.deriv-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+  margin-bottom: .5rem; }
+.deriv-title { font-weight: 700; margin-right: auto; color: var(--accent); }
+.dstep { border-top: 1px solid var(--line); padding: .55rem 0; }
+.dstep-label { display: flex; align-items: baseline; gap: .6rem; }
+.dstep-goal { flex: 1; font-size: .92rem; }
+.dstep-toggle { flex-shrink: 0; font-size: .74rem; padding: .2rem .6rem; }
+.dstep-body { display: none; margin-top: .55rem; }
+.dstep.open .dstep-body { display: block; }
+.dstep.open .dstep-toggle { opacity: .55; }
+.cmap-edge { stroke: var(--muted); stroke-width: 1.2; opacity: .4; fill: none; }
+.cmap-edge.hl { stroke: var(--accent); opacity: 1; stroke-width: 2.4; }
+.cmap-node { cursor: pointer; }
+.cmap-node rect { fill: var(--bg); stroke: var(--line); stroke-width: 1.4; }
+.cmap-node text { fill: var(--fg); font-size: 13px;
+  font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; }
+.cmap-node.hub rect { stroke: var(--accent); stroke-width: 2; }
+.cmap-node.hl rect { stroke: var(--accent); stroke-width: 2.2; }
+.cmap-node.dim, .cmap-edge.dim { opacity: .15; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem; margin: 1.2rem 0; }
+.cheat-card { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); padding: .8rem 1rem; }
+.cheat-card h4 { margin: 0 0 .4rem; color: var(--accent); }
+.cheat-card .math { margin: .6rem 0; font-size: .95rem; }
+.cheat-card p { font-size: .86rem; margin-bottom: .4rem; }
+.quiz-heading { color: var(--accent); }
+.quiz-note { color: var(--muted); font-size: .84rem; }
+.quiz-q { border: 1px solid var(--line); border-radius: 10px;
+  padding: 1.1rem 1.3rem; margin-bottom: 1.4rem; background: var(--box-bg); }
+.quiz-q .qtext { font-weight: 700; margin-bottom: .8rem; }
+.quiz-opt { display: block; width: 100%; text-align: left; margin: .4rem 0;
+  padding: .6rem .9rem; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: var(--fg); font: inherit; font-size: .9rem;
+  cursor: pointer; transition: border-color .12s; }
+.quiz-opt:hover:not(:disabled) { border-color: var(--accent); }
+.quiz-opt:disabled { cursor: default; opacity: .75; }
+.quiz-opt.chosen-right { border-color: var(--ok); background: var(--ok-soft);
+  opacity: 1; }
+.quiz-opt.chosen-wrong { border-color: var(--fail); background: var(--fail-soft);
+  opacity: 1; }
+.quiz-opt.reveal-right { border-color: var(--ok); opacity: 1; }
+.quiz-expl { font-size: .82rem; line-height: 1.55; margin: -.15rem 0 .55rem;
+  padding: .35rem .9rem; border-left: 3px solid var(--line);
+  color: var(--muted); }
+.quiz-expl.right { border-left-color: var(--ok); color: var(--fg);
+  background: var(--ok-soft); border-radius: 0 8px 8px 0; }
+.quiz-expl.wrong { border-left-color: var(--fail); }
+.quiz-fb { margin-top: .7rem; padding: .6rem .9rem; border-radius: 8px;
+  font-size: .88rem; display: none; }
+.quiz-fb.right { display: block; background: var(--ok-soft); color: var(--fg); }
+.quiz-fb.wrong { display: block; background: var(--fail-soft); color: var(--fg); }
+.quiz-score { font-weight: 700; margin-top: 1rem; display: none; }
+.pn { display: flex; justify-content: space-between; gap: 1rem;
+  border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 1.2rem;
+  flex-wrap: wrap; }
+.pn a { text-decoration: none; font-size: .92rem; max-width: 46%; }
+.pn a:hover { text-decoration: underline; }
+.pn .pn-next { margin-left: auto; text-align: right; }
+.parts { list-style: none; padding: 0; margin: 1.4rem 0; counter-reset: part; }
+.parts li { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); margin: .6rem 0; counter-increment: part; }
+.parts li a { display: block; padding: .8rem 1.1rem; text-decoration: none;
+  color: var(--fg); }
+.parts li a:hover { color: var(--link); }
+.parts li a::before { content: counter(part) ". "; color: var(--ok);
+  font-weight: 700; }
+.startbtn { display: inline-block; background: var(--accent); color: var(--bg);
+  padding: .55rem 1.2rem; border-radius: 9px; font-weight: 700;
+  text-decoration: none; }
+.startbtn:hover { filter: brightness(1.1); }
+footer.pagefoot { color: var(--muted); font-size: .8rem;
+  border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 3rem; }
+</style>
+<script>(function(){try{var t=localStorage.getItem('theme');
+if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script src="plotly.min.js"></script>
+
+</head>
+<body>
+<div class="masthead"><div class="mast-inner">
+<span class="mast-title"><a href="index.html">← Bayesian Optimization</a></span>
+<nav class="mast-nav"><a href="2026-08-02-bayesian-optimization-review.html">Review deck</a><a href="2026-08-02-bo-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/bayesian-optimization">Tutorials</a><button id="theme-toggle" class="theme-toggle"
+ type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
+</div></div>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-02-bayesian-optimization.html">Fifty Evaluations to Find the Best: Bayesian Optimization</a></div><ol><li><a href="2026-08-02-bayesian-optimization-background.html">Background</a></li><li><a href="2026-08-02-bayesian-optimization-intuition.html">Intuition</a></li><li><a href="2026-08-02-bayesian-optimization-math-gp.html">The Maths I: Gaussian Process Surrogates</a></li><li class="cur"><a href="2026-08-02-bayesian-optimization-math-acq.html">The Maths II: Acquisition Functions</a><ul><li><a href="2026-08-02-bayesian-optimization-math-acq-improvement-and-its-expectation.html">Improvement, and its expectation</a></li><li class="cur"><a href="2026-08-02-bayesian-optimization-math-acq-the-acquisition-zoo.html">The acquisition zoo</a></li><li><a href="2026-08-02-bayesian-optimization-math-acq-numerics-and-batches-logei-and-qei.html">Numerics and batches: LogEI and qEI</a></li><li><a href="2026-08-02-bayesian-optimization-math-acq-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-02-bayesian-optimization-papers.html">The Papers</a></li><li><a href="2026-08-02-bayesian-optimization-concept-map.html">The Concept Map</a></li><li><a href="2026-08-02-bayesian-optimization-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-02-bayesian-optimization-sources.html">Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-02-bayesian-optimization-math-acq-improvement-and-its-expectation.html">&larr; Improvement, and its expectation</a><a href="2026-08-02-bayesian-optimization.html">&#8962; Fifty Evaluations to Find the Best: Bayesian Optimization</a><a class="tn-next" href="2026-08-02-bayesian-optimization-math-acq-numerics-and-batches-logei-and-qei.html">Numerics and batches: LogEI and qEI &rarr;</a></div><p class="part-eyebrow">Part 4 &middot; The Maths II: Acquisition Functions</p><h1>The acquisition zoo</h1>
+<p><strong>Probability of improvement</strong> (Kushner, 1964) keeps only the probability and
+discards the magnitude: PI<sub>n</sub>(x) = &Phi;(z). Its pathology is instructive: a point
+offering a near-certain microscopic gain outscores one offering a coin-flip at a large gain, so
+PI hugs the incumbent unless you hand-tune a margin &xi;. EI fixed exactly this by weighting
+improvements by their size.</p>
+<p><strong>Upper confidence bound</strong> (GP-UCB; Srinivas et al., 2010) is optimism made
+explicit:</p>
+<div class='math'>UCB<sub>n</sub>(x) = &mu;<sub>n</sub>(x) + &beta;<sub>n</sub><sup>&frac12;</sup>&sigma;<sub>n</sub>(x)</div>
+<p>&mdash; act as if every point is as good as its confidence interval allows. Its gift is
+theory: with &beta;<sub>n</sub> growing logarithmically in n, cumulative regret is sublinear
+&mdash; BO provably converges. Its price is that &beta; is a dial someone must set.</p>
+<p><strong>Information-theoretic</strong> acquisitions (Entropy Search, PES, and the practical
+favorite <strong>MES</strong> &mdash; Wang &amp; Jegelka, 2017) change the question from
+&ldquo;where might I improve?&rdquo; to &ldquo;which measurement most reduces my uncertainty
+about the optimum?&rdquo; &mdash; MES scores the expected drop in entropy of the maximum
+<em>value</em> f<sup>*</sup>. Less myopic in spirit, costlier to compute, and the natural choice
+when the goal is to <em>learn where the optimum is</em> rather than to rack up good evaluations.</p>
+<p>Here are all three reading the same posterior &mdash; note how they disagree about where to
+go next:</p>
+
+<div class='widget'>
+<div id='fig-acq-anatomy'><div style="height:520px; width:100%;">                            <div id="63dbbfc7-d435-49e0-9ff4-04e9a44c05f3" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("63dbbfc7-d435-49e0-9ff4-04e9a44c05f3")) {                    Plotly.newPlot(                        "63dbbfc7-d435-49e0-9ff4-04e9a44c05f3",                        [{"fill":"toself","fillcolor":"rgba(91,141,239,0.15)","hoverinfo":"skip","line":{"width":0},"showlegend":false,"x":{"dtype":"f8","bdata":"AAAAAAAAAACASAEiBYhkP4BIASIFiHQ\u002fwOwBswfMfj+ASAEiBYiEP6CagWoGqok\u002fwOwBswfMjj9wH8F9BPeRP4BIASIFiJQ\u002fkHFBxgUZlz+gmoFqBqqZP7DDwQ4HO5w\u002fwOwBswfMnj\u002foCqErhK6gP3AfwX0E96E\u002f+DPhz4Q\u002foz+ASAEiBYikPwhdIXSF0KU\u002fkHFBxgUZpz8YhmEYhmGoP6CagWoGqqk\u002fKK+hvIbyqj+ww8EOBzusPzjY4WCHg60\u002fwOwBswfMrj+kAJECRAqwP+gKoSuErrA\u002fLBWxVMRSsT9wH8F9BPexP7Qp0aZEm7I\u002f+DPhz4Q\u002fsz88PvH4xOOzP4BIASIFiLQ\u002fxFIRS0UstT8IXSF0hdC1P0xnMZ3FdLY\u002fkHFBxgUZtz\u002fUe1HvRb23PxiGYRiGYbg\u002fXJBxQcYFuT+gmoFqBqq5P+SkkZNGTro\u002fKK+hvIbyuj9subHlxpa7P7DDwQ4HO7w\u002f9M3RN0ffvD842OFgh4O9P3zi8YnHJ74\u002fwOwBswfMvj8E9xHcR3C\u002fP6QAkQJECsA\u002fxgUZF2RcwD\u002foCqErhK7APwoQKUCkAME\u002fLBWxVMRSwT9OGjlp5KTBP3AfwX0E98E\u002fkiRJkiRJwj+0KdGmRJvCP9YuWbtk7cI\u002f+DPhz4Q\u002fwz8aOWnkpJHDPzw+8fjE48M\u002fXkN5DeU1xD+ASAEiBYjEP6JNiTYl2sQ\u002fxFIRS0UsxT\u002fmV5lfZX7FPwhdIXSF0MU\u002fKmKpiKUixj9MZzGdxXTGP25subHlxsY\u002fkHFBxgUZxz+ydsnaJWvHP9R7Ue9Fvcc\u002f9oDZA2YPyD8YhmEYhmHIPzqL6Syms8g\u002fXJBxQcYFyT9+lflV5lfJP6CagWoGqsk\u002fwp8Jfyb8yT\u002fkpJGTRk7KPwaqGahmoMo\u002fKK+hvIbyyj9KtCnRpkTLP2y5seXGlss\u002fjr45+uboyz+ww8EOBzvMP9LISSMnjcw\u002f9M3RN0ffzD8W01lMZzHNPzjY4WCHg80\u002fWt1pdafVzT984vGJxyfOP57neZ7nec4\u002fwOwBswfMzj\u002fi8YnHJx7PPwT3EdxHcM8\u002fJvyZ8GfCzz+kAJECRArQPzUD1QxUM9A\u002fxgUZF2Rc0D9XCF0hdIXQP+gKoSuErtA\u002feQ3lNZTX0D8KEClApADRP5sSbUq0KdE\u002fLBWxVMRS0T+9F\u002fVe1HvRP04aOWnkpNE\u002f3xx9c\u002fTN0T9wH8F9BPfRPwEiBYgUINI\u002fkiRJkiRJ0j8jJ42cNHLSP7Qp0aZEm9I\u002fRSwVsVTE0j\u002fWLlm7ZO3SP2cxncV0FtM\u002f+DPhz4Q\u002f0z+JNiXalGjTPxo5aeSkkdM\u002fqzut7rS60z88PvH4xOPTP81ANQPVDNQ\u002fXkN5DeU11D\u002fvRb0X9V7UP4BIASIFiNQ\u002fEUtFLBWx1D+iTYk2JdrUPzNQzUA1A9U\u002fxFIRS0Us1T9VVVVVVVXVP+ZXmV9lftU\u002fd1rdaXWn1T8IXSF0hdDVP5lfZX6V+dU\u002fKmKpiKUi1j+7ZO2StUvWP0xnMZ3FdNY\u002f3Wl1p9Wd1j9ubLmx5cbWP\u002f9u\u002fbv179Y\u002fkHFBxgUZ1z8hdIXQFULXP7J2ydola9c\u002fQ3kN5TWU1z\u002fUe1HvRb3XP2V+lflV5tc\u002f9oDZA2YP2D+Hgx0OdjjYPxiGYRiGYdg\u002fqYilIpaK2D86i+ksprPYP8uNLTe23Ng\u002fXJBxQcYF2T\u002ftkrVL1i7ZP36V+VXmV9k\u002fD5g9YPaA2T+gmoFqBqrZPzGdxXQW09k\u002fwp8Jfyb82T9Tok2JNiXaP+SkkZNGTto\u002fdafVnVZ32j8GqhmoZqDaP5esXbJ2ydo\u002fKK+hvIby2j+5seXGlhvbP0q0KdGmRNs\u002f27Zt27Zt2z9subHlxpbbP\u002f279e\u002fWv9s\u002fjr45+ubo2z8fwX0E9xHcP7DDwQ4HO9w\u002fQcYFGRdk3D\u002fSyEkjJ43cP2PLjS03ttw\u002f9M3RN0ff3D+F0BVCVwjdPxbTWUxnMd0\u002fp9WdVnda3T842OFgh4PdP8naJWuXrN0\u002fWt1pdafV3T\u002fr361\u002ft\u002f7dP3zi8YnHJ94\u002fDeU1lNdQ3j+e53me53nePy\u002fqvaj3ot4\u002fwOwBswfM3j9R70W9F\u002fXeP+LxiccnHt8\u002fc\u002fTN0TdH3z8E9xHcR3DfP5X5VeZXmd8\u002fJvyZ8GfC3z+3\u002ft36d+vfP6QAkQJECuA\u002f7AGzB8we4D81A9UMVDPgP34E9xHcR+A\u002fxgUZF2Rc4D8OBzsc7HDgP1cIXSF0heA\u002foAl\u002fJvyZ4D\u002foCqErhK7gPzAMwzAMw+A\u002feQ3lNZTX4D\u002fCDgc7HOzgPwoQKUCkAOE\u002fUhFLRSwV4T+bEm1KtCnhP+QTj088PuE\u002fLBWxVMRS4T90FtNZTGfhP70X9V7Ue+E\u002fBhkXZFyQ4T9OGjlp5KThP5YbW25sueE\u002f3xx9c\u002fTN4T8oHp94fOLhP3AfwX0E9+E\u002fuCDjgowL4j8BIgWIFCDiP0ojJ42cNOI\u002fkiRJkiRJ4j\u002faJWuXrF3iPyMnjZw0cuI\u002fbCivobyG4j+0KdGmRJviP\u002fwq86vMr+I\u002fRSwVsVTE4j+OLTe23NjiP9YuWbtk7eI\u002fHjB7wOwB4z9nMZ3FdBbjP7Ayv8r8KuM\u002f+DPhz4Q\u002f4z9ANQPVDFTjP4k2JdqUaOM\u002f0jdH3xx94z8aOWnkpJHjP2I6i+kspuM\u002fqzut7rS64z\u002f0PM\u002fzPM\u002fjPzw+8fjE4+M\u002fhD8T\u002fkz44z\u002fNQDUD1QzkPxZCVwhdIeQ\u002fXkN5DeU15D+mRJsSbUrkP+9FvRf1XuQ\u002fOEffHH1z5D+ASAEiBYjkP8hJIyeNnOQ\u002fEUtFLBWx5D9aTGcxncXkP6JNiTYl2uQ\u002f6k6rO63u5D8zUM1ANQPlP3xR70W9F+U\u002fxFIRS0Us5T8MVDNQzUDlP1VVVVVVVeU\u002fnlZ3Wt1p5T\u002fmV5lfZX7lPy5Zu2TtkuU\u002fd1rdaXWn5T\u002fAW\u002f9u\u002fbvlPwhdIXSF0OU\u002fUF5DeQ3l5T+ZX2V+lfnlP+Jgh4MdDuY\u002fKmKpiKUi5j9yY8uNLTfmP7tk7ZK1S+Y\u002fBGYPmD1g5j9MZzGdxXTmP5RoU6JNieY\u002f3Wl1p9Wd5j8ma5esXbLmP25subHlxuY\u002ftm3btm3b5j\u002f\u002fbv279e\u002fmP0hwH8F9BOc\u002fkHFBxgUZ5z\u002fYcmPLjS3nPyF0hdAVQuc\u002fanWn1Z1W5z+ydsnaJWvnP\u002fp369+tf+c\u002fQ3kN5TWU5z+Mei\u002fqvajnP9R7Ue9Fvec\u002fHH1z9M3R5z9lfpX5VebnP65\u002ft\u002f7d+uc\u002f9oDZA2YP6D8+gvsI7iPoP4eDHQ52OOg\u002f0IQ\u002fE\u002f5M6D8YhmEYhmHoP2CHgx0Odug\u002fqYilIpaK6D\u002fyiccnHp\u002foPzqL6Syms+g\u002fgowLMi7I6D\u002fLjS03ttzoPxSPTzw+8eg\u002fXJBxQcYF6T+kkZNGThrpP+2StUvWLuk\u002fNpTXUF5D6T9+lflV5lfpP8aWG1tubOk\u002fD5g9YPaA6T9YmV9lfpXpP6CagWoGquk\u002f6Jujb46+6T8xncV0FtPpP3qe53me5+k\u002fwp8Jfyb86T8KoSuErhDqP1OiTYk2Jeo\u002fnKNvjr456j\u002fkpJGTRk7qPyyms5jOYuo\u002fdafVnVZ36j++qPei3ovqPwaqGahmoOo\u002fTqs7re606j+XrF2ydsnqP+Ctf7f+3eo\u002fKK+hvIby6j9wsMPBDgfrP7mx5caWG+s\u002fArMHzB4w6z9KtCnRpkTrP5K1S9YuWes\u002f27Zt27Zt6z8kuI\u002fgPoLrP2y5seXGlus\u002ftLrT6k6r6z\u002f9u\u002fXv1r\u002frP0a9F\u002fVe1Os\u002fjr45+ubo6z\u002fWv1v\u002fbv3rPx\u002fBfQT3Eew\u002faMKfCX8m7D+ww8EOBzvsP\u002fjE4xOPT+w\u002fQcYFGRdk7D+Kxycen3jsP9LISSMnjew\u002fGsprKK+h7D9jy40tN7bsP6zMrzK\u002fyuw\u002f9M3RN0ff7D88z\u002fM8z\u002fPsP4XQFUJXCO0\u002fztE3R98c7T8W01lMZzHtP17Ue1HvRe0\u002fp9WdVnda7T\u002fw1r9b\u002f27tPzjY4WCHg+0\u002fgNkDZg+Y7T\u002fJ2iVrl6ztPxLcR3Afwe0\u002fWt1pdafV7T+i3ot6L+rtP+vfrX+3\u002fu0\u002fNOHPhD8T7j984vGJxyfuP8TjE49PPO4\u002fDeU1lNdQ7j9W5leZX2XuP57neZ7nee4\u002f5uibo2+O7j8v6r2o96LuP3jr361\u002ft+4\u002fwOwBswfM7j8I7iO4j+DuP1HvRb0X9e4\u002fmvBnwp8J7z\u002fi8YnHJx7vPyrzq8yvMu8\u002fc\u002fTN0TdH7z+89e\u002fWv1vvPwT3EdxHcO8\u002fTPgz4c+E7z+V+VXmV5nvP976d+vfre8\u002fJvyZ8GfC7z9u\u002fbv179bvP7f+3fp36+8\u002fAAAAAAAA8D8AAAAAAADwP7f+3fp36+8\u002fbv279e\u002fW7z8m\u002fJnwZ8LvP976d+vfre8\u002flflV5leZ7z9M+DPhz4TvPwT3EdxHcO8\u002fvPXv1r9b7z9z9M3RN0fvPyrzq8yvMu8\u002f4vGJxyce7z+a8GfCnwnvP1HvRb0X9e4\u002fCO4juI\u002fg7j\u002fA7AGzB8zuP3jr361\u002ft+4\u002fL+q9qPei7j\u002fm6Jujb47uP57neZ7nee4\u002fVuZXmV9l7j8N5TWU11DuP8TjE49PPO4\u002ffOLxiccn7j804c+EPxPuP+vfrX+3\u002fu0\u002fot6Lei\u002fq7T9a3Wl1p9XtPxLcR3Afwe0\u002fydola5es7T+A2QNmD5jtPzjY4WCHg+0\u002f8Na\u002fW\u002f9u7T+n1Z1Wd1rtP17Ue1HvRe0\u002fFtNZTGcx7T\u002fO0TdH3xztP4XQFUJXCO0\u002fPM\u002fzPM\u002fz7D\u002f0zdE3R9\u002fsP6zMrzK\u002fyuw\u002fY8uNLTe27D8aymsor6HsP9LISSMnjew\u002fiscnHp947D9BxgUZF2TsP\u002fjE4xOPT+w\u002fsMPBDgc77D9owp8JfybsPx\u002fBfQT3Eew\u002f1r9b\u002f2796z+Ovjn65ujrP0a9F\u002fVe1Os\u002f\u002fbv179a\u002f6z+0utPqTqvrP2y5seXGlus\u002fJLiP4D6C6z\u002fbtm3btm3rP5K1S9YuWes\u002fSrQp0aZE6z8CswfMHjDrP7mx5caWG+s\u002fcLDDwQ4H6z8or6G8hvLqP+Ctf7f+3eo\u002fl6xdsnbJ6j9Oqzut7rTqPwaqGahmoOo\u002fvqj3ot6L6j91p9WdVnfqPyyms5jOYuo\u002f5KSRk0ZO6j+co2+OvjnqP1OiTYk2Jeo\u002fCqErhK4Q6j\u002fCnwl\u002fJvzpP3qe53me5+k\u002fMZ3FdBbT6T\u002fom6Nvjr7pP6CagWoGquk\u002fWJlfZX6V6T8PmD1g9oDpP8aWG1tubOk\u002ffpX5VeZX6T82lNdQXkPpP+2StUvWLuk\u002fpJGTRk4a6T9ckHFBxgXpPxSPTzw+8eg\u002fy40tN7bc6D+CjAsyLsjoPzqL6Syms+g\u002f8onHJx6f6D+piKUiloroP2CHgx0Odug\u002fGIZhGIZh6D\u002fQhD8T\u002fkzoP4eDHQ52OOg\u002fPoL7CO4j6D\u002f2gNkDZg\u002foP65\u002ft\u002f7d+uc\u002fZX6V+VXm5z8cfXP0zdHnP9R7Ue9Fvec\u002fjHov6r2o5z9DeQ3lNZTnP\u002fp369+tf+c\u002fsnbJ2iVr5z9qdafVnVbnPyF0hdAVQuc\u002f2HJjy40t5z+QcUHGBRnnP0hwH8F9BOc\u002f\u002f279u\u002fXv5j+2bdu2bdvmP25subHlxuY\u002fJmuXrF2y5j\u002fdaXWn1Z3mP5RoU6JNieY\u002fTGcxncV05j8EZg+YPWDmP7tk7ZK1S+Y\u002fcmPLjS035j8qYqmIpSLmP+Jgh4MdDuY\u002fmV9lfpX55T9QXkN5DeXlPwhdIXSF0OU\u002fwFv\u002fbv275T93Wt1pdaflPy5Zu2TtkuU\u002f5leZX2V+5T+eVnda3WnlP1VVVVVVVeU\u002fDFQzUM1A5T\u002fEUhFLRSzlP3xR70W9F+U\u002fM1DNQDUD5T\u002fqTqs7re7kP6JNiTYl2uQ\u002fWkxnMZ3F5D8RS0UsFbHkP8hJIyeNnOQ\u002fgEgBIgWI5D84R98cfXPkP+9FvRf1XuQ\u002fpkSbEm1K5D9eQ3kN5TXkPxZCVwhdIeQ\u002fzUA1A9UM5D+EPxP+TPjjPzw+8fjE4+M\u002f9DzP8zzP4z+rO63utLrjP2I6i+kspuM\u002fGjlp5KSR4z\u002fSN0ffHH3jP4k2JdqUaOM\u002fQDUD1QxU4z\u002f4M+HPhD\u002fjP7Ayv8r8KuM\u002fZzGdxXQW4z8eMHvA7AHjP9YuWbtk7eI\u002fji03ttzY4j9FLBWxVMTiP\u002fwq86vMr+I\u002ftCnRpkSb4j9sKK+hvIbiPyMnjZw0cuI\u002f2iVrl6xd4j+SJEmSJEniP0ojJ42cNOI\u002fASIFiBQg4j+4IOOCjAviP3AfwX0E9+E\u002fKB6feHzi4T\u002ffHH1z9M3hP5YbW25sueE\u002fTho5aeSk4T8GGRdkXJDhP70X9V7Ue+E\u002fdBbTWUxn4T8sFbFUxFLhP+QTj088PuE\u002fmxJtSrQp4T9SEUtFLBXhPwoQKUCkAOE\u002fwg4HOxzs4D95DeU1lNfgPzAMwzAMw+A\u002f6AqhK4Su4D+gCX8m\u002fJngP1cIXSF0heA\u002fDgc7HOxw4D\u002fGBRkXZFzgP34E9xHcR+A\u002fNQPVDFQz4D\u002fsAbMHzB7gP6QAkQJECuA\u002ft\u002f7d+nfr3z8m\u002fJnwZ8LfP5X5VeZXmd8\u002fBPcR3Edw3z9z9M3RN0ffP+LxiccnHt8\u002fUe9FvRf13j\u002fA7AGzB8zePy\u002fqvaj3ot4\u002fnud5nud53j8N5TWU11DeP3zi8YnHJ94\u002f69+tf7f+3T9a3Wl1p9XdP8naJWuXrN0\u002fONjhYIeD3T+n1Z1Wd1rdPxbTWUxnMd0\u002fhdAVQlcI3T\u002f0zdE3R9\u002fcP2PLjS03ttw\u002f0shJIyeN3D9BxgUZF2TcP7DDwQ4HO9w\u002fH8F9BPcR3D+Ovjn65ujbP\u002f279e\u002fWv9s\u002fbLmx5caW2z\u002fbtm3btm3bP0q0KdGmRNs\u002fubHlxpYb2z8or6G8hvLaP5esXbJ2ydo\u002fBqoZqGag2j91p9WdVnfaP+SkkZNGTto\u002fU6JNiTYl2j\u002fCnwl\u002fJvzZPzGdxXQW09k\u002foJqBagaq2T8PmD1g9oDZP36V+VXmV9k\u002f7ZK1S9Yu2T9ckHFBxgXZP8uNLTe23Ng\u002fOovpLKaz2D+piKUilorYPxiGYRiGYdg\u002fh4MdDnY42D\u002f2gNkDZg\u002fYP2V+lflV5tc\u002f1HtR70W91z9DeQ3lNZTXP7J2ydola9c\u002fIXSF0BVC1z+QcUHGBRnXP\u002f9u\u002fbv179Y\u002fbmy5seXG1j\u002fdaXWn1Z3WP0xnMZ3FdNY\u002fu2TtkrVL1j8qYqmIpSLWP5lfZX6V+dU\u002fCF0hdIXQ1T93Wt1pdafVP+ZXmV9lftU\u002fVVVVVVVV1T\u002fEUhFLRSzVPzNQzUA1A9U\u002fok2JNiXa1D8RS0UsFbHUP4BIASIFiNQ\u002f70W9F\u002fVe1D9eQ3kN5TXUP81ANQPVDNQ\u002fPD7x+MTj0z+rO63utLrTPxo5aeSkkdM\u002fiTYl2pRo0z\u002f4M+HPhD\u002fTP2cxncV0FtM\u002f1i5Zu2Tt0j9FLBWxVMTSP7Qp0aZEm9I\u002fIyeNnDRy0j+SJEmSJEnSPwEiBYgUINI\u002fcB\u002fBfQT30T\u002ffHH1z9M3RP04aOWnkpNE\u002fvRf1XtR70T8sFbFUxFLRP5sSbUq0KdE\u002fChApQKQA0T95DeU1lNfQP+gKoSuErtA\u002fVwhdIXSF0D\u002fGBRkXZFzQPzUD1QxUM9A\u002fpACRAkQK0D8m\u002fJnwZ8LPPwT3EdxHcM8\u002f4vGJxycezz\u002fA7AGzB8zOP57neZ7nec4\u002ffOLxiccnzj9a3Wl1p9XNPzjY4WCHg80\u002fFtNZTGcxzT\u002f0zdE3R9\u002fMP9LISSMnjcw\u002fsMPBDgc7zD+Ovjn65ujLP2y5seXGlss\u002fSrQp0aZEyz8or6G8hvLKPwaqGahmoMo\u002f5KSRk0ZOyj\u002fCnwl\u002fJvzJP6CagWoGqsk\u002ffpX5VeZXyT9ckHFBxgXJPzqL6Syms8g\u002fGIZhGIZhyD\u002f2gNkDZg\u002fIP9R7Ue9Fvcc\u002fsnbJ2iVrxz+QcUHGBRnHP25subHlxsY\u002fTGcxncV0xj8qYqmIpSLGPwhdIXSF0MU\u002f5leZX2V+xT\u002fEUhFLRSzFP6JNiTYl2sQ\u002fgEgBIgWIxD9eQ3kN5TXEPzw+8fjE48M\u002fGjlp5KSRwz\u002f4M+HPhD\u002fDP9YuWbtk7cI\u002ftCnRpkSbwj+SJEmSJEnCP3AfwX0E98E\u002fTho5aeSkwT8sFbFUxFLBPwoQKUCkAME\u002f6AqhK4SuwD\u002fGBRkXZFzAP6QAkQJECsA\u002fBPcR3Edwvz\u002fA7AGzB8y+P3zi8YnHJ74\u002fONjhYIeDvT\u002f0zdE3R9+8P7DDwQ4HO7w\u002fbLmx5caWuz8or6G8hvK6P+SkkZNGTro\u002foJqBagaquT9ckHFBxgW5PxiGYRiGYbg\u002f1HtR70W9tz+QcUHGBRm3P0xnMZ3FdLY\u002fCF0hdIXQtT\u002fEUhFLRSy1P4BIASIFiLQ\u002fPD7x+MTjsz\u002f4M+HPhD+zP7Qp0aZEm7I\u002fcB\u002fBfQT3sT8sFbFUxFKxP+gKoSuErrA\u002fpACRAkQKsD\u002fA7AGzB8yuPzjY4WCHg60\u002fsMPBDgc7rD8or6G8hvKqP6CagWoGqqk\u002fGIZhGIZhqD+QcUHGBRmnPwhdIXSF0KU\u002fgEgBIgWIpD\u002f4M+HPhD+jP3AfwX0E96E\u002f6AqhK4SuoD\u002fA7AGzB8yeP7DDwQ4HO5w\u002foJqBagaqmT+QcUHGBRmXP4BIASIFiJQ\u002fcB\u002fBfQT3kT\u002fA7AGzB8yOP6CagWoGqok\u002fgEgBIgWIhD\u002fA7AGzB8x+P4BIASIFiHQ\u002fgEgBIgWIZD8AAAAAAAAAAA=="},"xaxis":"x","y":{"dtype":"f8","bdata":"WkAyfO+G8z9csCjDCQrzP0+FzOC5i\u002fI\u002fQk8shB4M8j8gK42wV4vxP0x4MLqGCfE\u002fjTEhRc6G8D\u002f\u002f\u002fqJHUgPwP+GM2SVw\u002fu4\u002fNICLzUz17T+cF4gwi+vsP4hicrZ\u002f4es\u002fIMKsmoPX6j\u002fj9cQK983pP6P\u002fjoFFxeg\u002fU3KBfO+95z8ThXvLorjmPwlpebeCtuU\u002fmfkCbz665D9slhodrM7jP4zN2oXAUuM\u002fHsx+M3sS5D8KLxVioyTlP7JTV+8lPeY\u002f2oqHa+pS5z\u002f6PBRWjGPoPw6TggMBbuk\u002f680GVahx6j8mMiGtDG7rP7UXSO3MYuw\u002fYpJnkJNP7T9aIdmmEjTuP3lpv+IBEO8\u002fGDR3mh3j7z9ZGEUjk1bwP9LrqyDwtvA\u002fbCam1YkS8T+Z0gkyRmnxP1NsBwgNu\u002fE\u002fODp3EsgH8j\u002f2wCv9Yk\u002fyP0ivTm7LkfI\u002fZA0lEPHO8j9kDs2axQbzP8Snqd08OfM\u002fGPVFyExm8z9o+Yhy7Y3zP54\u002fHCQZsPM\u002fRNTuWszM8z9FHMPQBeTzP8TNuX\u002fG9fM\u002fPjbPpREC9D\u002fgR0LH7Aj0P2bW3q9fCvQ\u002frBAmc3QG9D8axFFrN\u002f3zP15VMDe37vM\u002fcbHYtgTb8z8azzYHM8LzP6q5cnxXpPM\u002ftJk1m4mB8z\u002fq09EQ41nzPwg8Vap\u002fLfM\u002fkpiOSn388j9cfhLf+8byPz8YT1QdjfI\u002fziDDiAVP8j\u002fit3I\u002f2gzyP1mtvRHDxvE\u002fsrnHYOl88T8RHbZGeC\u002fxP4DkIoic3vA\u002fNNtShoSK8D\u002fQqwIzYDPwP4GbKg7Csu8\u002foLFq\u002fHP57j\u002fftrI1PzvuPwObN\u002fGPeO0\u002fvLc+79Wx7D+jebIqhefrPy+NcjcXGus\u002fzNNb\u002fg1K6j+y6tN3+XfpPza0gKuEpOg\u002fon+h6ZbQ5z\u002fHROkEuf3mP9zfdPipL+Y\u002fhbei20V25T\u002fsByiKUD\u002flP5eeOyPE8+U\u002f9MK5M0Xj5j8yzXWM293nP6vDcB7J2+g\u002f13KMNqXa6T\u002filQBtP9nqP4CcSeDM1us\u002faHDD1KvS7D8Os68aTsztP5ia4Bgww+4\u002fRH8zsdS27z8rhwmfYVPwPyi6QUdDyfA\u002fAWfqMdY88T9j\u002f5+a4q3xPyTmeA0yHPI\u002fy8UKaI+H8j9kNUvhxu\u002fyP3fEjxWmVPM\u002f5KcBFfy18z\u002fekHZzmRP0PzYw\u002flhQbfQ\u002f5LytkvTC9D9iaFejWxT1Pwxn89NcYfU\u002fRviPQ9Gp9T9Gmaj2k+31P2oJzOWBLPY\u002f9SJ+C3pm9j\u002fzdUZxXZv2P6KJ3zsPy\u002fY\u002f6vB8tnT19j\u002fPNCBddRr3P9oW9uX6Ofc\u002f8\u002fW2SfFT9z8GPgbLRmj3PwrNzfzrdvc\u002fkCiTx9N\u002f9z9gRMVt84L3P4l9Ao9CgPc\u002fJVFXKrt39z9GRnefWWn3P4qD8q4cVfc\u002fAKdreQU79z+9v9J9Fxv3P0TSq5ZY9fY\u002fOTBp9tDJ9j\u002fgU+Qii5j2P4ISA\u002fCTYfY\u002f1Debefok9j81fawc0OL1PzQuEXAom\u002fU\u002fsvvRPBlO9T8AsFt2uvv0PwhE8TImpPQ\u002fmmfgpHhH9D8rqUQV0OXzP0F9meFMf\u002fM\u002fK8MhfhEU8z+emIqAQqTyP5uUtrgGMPI\u002fUNB\u002fYoe38T8ezy+F8DrxP0qHAKtxuvA\u002fSBCQTT828D+R5h+tK13vP00RwB2BR+4\u002fxpf9wFcs7T80LtlpPw3sPximr7h67uo\u002fUfF5hMjl6T\u002fXqLLP+ZfpP1tN3DIXOeo\u002fAS9aWvIA6z9ZCe1PKs7rPx5pvIwjm+w\u002fiqECTvhl7T\u002f4mjVTqS3uP2vEttqF8e4\u002ffTMbaP6w7z8qyzkTyjXwP9ePfvBokPA\u002f7+FhXiTo8D9oxBtMxzzxP7bMhZoejvE\u002fZAL75Pjb8T++cF5mJibyP1UHCu54bPI\u002flkEB3sOu8j8jk6Iu3OzyP7pDnnWYJvM\u002fSTnX7tBb8z8EI1OGX4zzP23hrOIfuPM\u002f+Nyrb+\u002fe8z8wVMForQD0P+hgQOM6HfQ\u002fdIoy2Ho09D\u002fGnbMtUkb0P3Kkxb+nUvQ\u002fVyaSaGRZ9D9M9xAIc1r0P6MQD4vAVfQ\u002fjpyR8TtL9D\u002f7lJJU1jr0P6pDFeuCJPQ\u002fYqWRDjcI9D9qOrY+6uXzP8s2gCSWvfM\u002fJlSqlDaP8z9OwnKRyVrzP3vguEtPIPM\u002fgYlzI8rf8j+u04CnPpnyPz010JSzTPI\u002fKQfo1DH68T89Zsd7xKHxP2J0JcV4Q\u002fE\u002fu\u002f0OEV7f8D\u002f2hOPfhXXwPxi8ss0DBvA\u002f2uX2Gdsh7z\u002f2FJrBtSzuP3sTmSzLLO0\u002f0gQ9+1Ii7D\u002fGIm7EiA3rP0ncIgWs7uk\u002ffGahDgDG6D\u002fsrJfzy5PnPyRWDnRaWOY\u002fuKE86PkT5T+aSkQq\u002fMbjP5h\u002f3n62ceI\u002flIoFfYEU4T9mZFTpcV\u002ffP0I0Eal3h9w\u002f9udtHtih2T\u002fWEyP\u002fXK\u002fWP8yvaZnVsNM\u002fBhKTmxan0D\u002f89Qm48yXLPwzaXkW86sQ\u002fYBZX1ps8vT\u002f8S1Kr8YSwPyCT0ntgkY0\u002fyAIXQeNvor\u002fIRmOkkjW2v5CZ\u002fxJoocG\u002fINxMt9ctyL+mvnQWD77Ov3KCScv6p9K\u002fvOzOCa7w1b8ZFe5I9zfZv9bMH8SKfNy\u002fzLBTota837\u002fKcNsXUHvhv0BgGUXcEuO\u002fuIqIkvWe5L+Wz188+fzlv+ewbtFbfOa\u002flTe8BTRT5r8W4e+j+xDmv+TnKebfyuW\u002fk1Hb7zSF5b\u002f6aowrjUHlvx0MS0C8AOW\u002f5AvmCFDD5L9e9YfPtonkv\u002fC5yOdNVOS\u002faPLNBWgj5L8+RjBAUPfjv+yn75JL0OO\u002fVb3pp5mu47+xi5Y+dZLjv5NFKV8UfOO\u002f3J4ecKhr47\u002f+HOM6XmHjv3y12eZdXeO\u002fGuMd78pf47+4TrQVxGjjv+pf5FVjeOO\u002fDjre1r2O479xdXLf46vjv1lOZMvgz+O\u002fqvG2Arv647+aRzvzcyzkvwR3kAwIZeS\u002f1H67vm6k5L+b2m97murkvwULG7p4N+W\u002fnkO+\u002fvGK5b+b7pvj6eTlv8jEuSU\u002fRea\u002fNKMztMur5r\u002fZ2VbCZBjnv\u002f8redzaiue\u002fVPF5\u002f\u002fkC6L9QddayiYDov5h\u002fNCVNA+m\u002fjmw+SwOL6b\u002f1tKIAZxfqv9I7\u002fCovqOq\u002fA6dX3g4967+s+fGCtdXrv67NqfvOcey\u002faYhozAMR7b82M3k\u002f+bLtvwsMRYhRV+6\u002f\u002fkUi4av97r+GH42gpKXvv0ul659qJ\u002fC\u002fMFKdJGp88L\u002fzHMONmtHwv5aYO7HDJvG\u002fodmoAat78b9+MqF7EtDxv1T5\u002fHG2I\u002fK\u002f\u002fIOWv0h28r\u002ftX8A1Zcfyvw1ZOWxxFvO\u002fIDXZgS1i87+akJO7lqbzv3N0XLiozPO\u002f9GeEcOaI878iPtItxgbzvy8Wka6Rd\u002fK\u002fhrIHvWXj8b+rvRpzQ0zxv2TXn7kCs\u002fC\u002fO+HxASYY8L8e9PcSIPjuv3hoYTorvu2\u002froBrJAmD7L+abLaxTUfrv74ssuaHC+q\u002f3qvkX0PQ6L+UW04LCZbnvwusLn9fXea\u002fJO8OGssm5b\u002fE2zwDzvLjvx7SjhjoweK\u002ffFfm0JaU4b931PAXVWvgv64H8Es2jd6\u002fgm0rq7xN3L+UlQjxIRnavwZKyVhE8Ne\u002foPkoYPvT1b80sQ10F8XTv8zn6Z9hxNG\u002fzCeqgDalz7+kIYty++DLv1BQhGB0Pci\u002fmH6klfK7xL88Nc\u002fitV3Bv7BRy1vYR7y\u002fCGQtFWIftr8YsDG6GkSwv0DFEBzcb6W\u002fYL6q84Tylb8AY6HlS3piv0CVArsfBJA\u002fcDu5vj2BoD8Q\u002fHJkl1OoPwCR5Lofd68\u002fQJy\u002fIhX1sj8QtqqQrdW1P5QyjXDTXLg\u002fBBNNIimKuj+wxhnneF28Pzi645y01r0\u002f+G\u002fsbPX1vj80jLxwe7u\u002fP2Z5GanWE8A\u002fKjnD9osdwD\u002fYxHn\u002fbfa\u002fP8COi++HWr8\u002fxFU7z2Novj\u002fY8663JSG9P\u002fzMTMwYhrs\u002f6JgtYLGYuT+yHiMqkVq3P6itj1qPzbQ\u002fDhPWccjzsT8seKCBfZ+tP3Y5DapEyaY\u002fOK+NLgvcnj\u002fQI822o3aOP4DCL5FmQVC\u002fkLee6ca+kL9PDlRbcISWvzToBp+ueYQ\u002fNq8HxBJLrD9QGqOeGzG6P9yXi4o+LcM\u002fyDygIOlFyT9k\u002fXXY313PP5yu9iIpudI\u002f7lxe+pTA1T9s7KkTVMTYPwOnU0efw9s\u002fqFxn0L693j90RzH+AtngP\u002fc0LHjoT+I\u002fpXSfu0HD4z+XA\u002f4txDLlP1DhMYgonuY\u002fbNDtvyoF6D8n0o\u002f9iWfpP\u002fJFN5kIxeo\u002fE7bWG2wd7D\u002fLJOIN4fbhv4AWq+TBAOG\u002fISPliSYM4L+I6b+LwTLevzgk3XOHUdy\u002fzxKuk0d12r9yKJYTrZ7Yv3CGZGhlzta\u002fi5hmWSAF1b9+vp0zkEPTvzHCg0tqitG\u002fGGeaGNC0z7+wL2QkkmjMvzNF7LeuMcm\u002fnPI2BuARxr+YY2qLLQvDv+ie\u002fx1OIMC\u002fPCCpMZarur9XdkTixWy1v5hVAAom27C\u002fyp+PH93Nr79AoSCIOMu4vxeSi59oMcK\u002fc0DR\u002fWooyL+VU++1wyXOv1sqZIjBD9K\u002fst80sJII1b8Y0zMF5\u002fvXv47G34Si6Nq\u002fjIknEM\u002fN3b+jD4JARVXgv9bDGU\u002f\u002fvuG\u002fiu9Rnq4j479ckBcq74Lkv9GG94df3OW\u002fg6WosqAv57\u002fEfHj7VXzov\u002fae1xElwum\u002fGrcqGLYA67+bsq3AszfsvyFhO2\u002fLZu2\u002frK\u002f0Xa2N7r82vXLDDKzvv8NazfzPYPC\u002fgAs3UhDn8L9o2i7spWjxv7pa4R9x5fG\u002fBjWaH1Rd8r8Axj8MM9Dyv5ueBgb0PfO\u002fxrZHPH+m878s7mb8vgn0v92wub+fZ\u002fS\u002fiHBfOBDA9L\u002fCQf9cARP1v3dkX3NmYPW\u002fHOXMGTWo9b+d40pPZer1vy13gnrxJva\u002fJqNtb9Zd9r+2cblzE4\u002f2vx4f3UGquva\u002fM2DmCp\u002fg9r9CXP12+AD3v34XpqS\u002fG\u002fe\u002fwA3JJgAx97+kAZIByED3v0AiO6YnS\u002fe\u002fzpLk7TFQ97+KjKYT\u002fE\u002f3v9klIa6dSve\u002fMDjsqDBA9780lHo+0TD3v+hSUfOdHPe\u002ffnrzk7cD9783Bro3Qeb2v80oS0xgxPa\u002fWw4XsDye9r+3i2jnAHT2v0Z794HaRfa\u002fX5QY3foT9r+lQbChmN71v9pJhN3ypfW\u002fDRlkAVhq9b8EvjypNyz1vwd4X2NY7PS\u002fNrzvbKus9L\u002fqNS4zP3X0v+EFMphQd\u002fS\u002fXJ6Xikre9L8qDOknpl71v927N7NW4fW\u002fh8whklJi9r\u002fAdY19VOD2vywvtRy+Wve\u002fqr4VwSjR97+jweEwRUP4v+BTPA\u002fQsPi\u002fC7EJB40Z+b\u002fEpqGPRH35v41RwdHC2\u002fm\u002fD6r9FNc0+r99WIRyU4j6vyJv\u002fqwM1vq\u002f2cInHdod+780m0CqlV\u002f7v7G4Wskbm\u002fu\u002fgGmSgEvQ+78MqmpsBv\u002f7v4ecLcYwJ\u002fy\u002fyouYarFI\u002fL8ph1ngcWP8v66DDF5ed\u002fy\u002fyul\u002fz2WE\u002fL\u002fu0hnaeYr8v\u002fQlQ+COify\u002fUCXGA5yB\u002fL\u002fGFhQnm3L8vwY3au2IXPy\u002fxKrRuWQ\u002f\u002fL\u002fB7PisMBv8v5aM56Hx7\u002fu\u002f7BmPKa+9+7+q9D2Fc4T7v9qF+p9LRPu\u002flTzPBkf9+r9HqhHgd6\u002f6v8hiseHyWvq\u002f5gyeRs\u002f\u002f+b+tlFfDJp75v08YwHkVNvm\u002ftIZN7LnH+L9j5sHwNFP4v7pJnqKp2Pe\u002fe+eXVT1Y97+4gHSIF9L2v3rA4dhhRva\u002frA8m+Ue19b96JQWp9x71vyYLBrSgg\u002fS\u002flku++HTj87\u002fghnZ\u002fqD7zvwyKq6txlfK\u002ffb14ngno8b+uUcv2rDbxvyKvlFGdgfC\u002f0Lg66kiS779lEZ88Nxvuv1jpgD79nuy\u002fLjb\u002ft1Af67\u002fFf96NqKDpvx2wZiNUOOi\u002fQLsa2e51578U8itrsI\u002fnv2gCLOkt1ee\u002fyAiVj+Qj6L80IEuf2XXov+0JfL0Uyei\u002ffP3iPZcc6b8SRd6Btm\u002fpvxfIfZ7qwem\u002fZC4EP7wS6r8mPCMBvWHqvwTxZOuDruq\u002fhnjTsKv46r8GeeHR0T\u002frv6AbDy+Wg+u\u002fGmlP2ZrD679ClGcFhP\u002frvxsjvBP4Nuy\u002f\u002fy1FpJ9p7L9nSMKxJZfsv8aqKrE3v+y\u002fN6Rvs4Xh7L+haVCIwv3svxf5ZuGjE+2\u002fr1DYdOIi7b+Ioz0fOivtv8JAeQRqLO2\u002fgsQ9rzQm7b\u002f8IBwvYBjtvyIU9zS2Au2\u002fbALCLQTl7L9GwHZbG7\u002fsv6UlMuzQkOy\u002fkK5qD\u002f5Z7L\u002fgMzcJgBrsv2kRnkM40uu\u002fRAPnXQyB678IsOs55ibrv9BPZAe0w+q\u002fCS8vTWhX6r\u002fU+JLw+eHpv\u002frIfDpkY+m\u002fnP+72qbb6L8yuz7pxUrov1q1UuXJsOe\u002fYAvvsr8N579uOwyWuGHmv0JVECzKrOW\u002fig1WYw7v5L\u002fRC9Zwoyjkv75w+sOrWeO\u002fIDal+E2C4r8FsHLHtKLhv9geQvQOu+C\u002fo+Uddh6X379KP0x22KjdvyVbh8HAq9u\u002fwkFLmlOg2b9pwER6FIfXv3sNpNyNYNW\u002fejq3BVEt079eTvLH9e3Qv6DSH400Rs2\u002fHNn3a8WayL8A\u002foQ08trDv3CwJw80EL6\u002fwFi7Kk1HtL\u002fgl5JJLrykvwAClMwV41W\u002fIOmrEo6Soz9wa1T9RQG0P5AjX75DTb4\u002fqi3KVgJVxD\u002fON1ePH4rJP9Lx0\u002fRNxM4\u002f+nDCp+0A0j8ZG5JIh6DUP4vN548TQNc\u002fmLpQnq3e2T++BsVjanvcP65eVGtVFd8\u002fLsaZLLXV4D\u002fs0JFyQx7iP0z6HNOkY+M\u002fWaRp0tuk5D+ZhL0rBuDlP+vhcZCND+c\u002fkRSB\u002fBcS6D9zrn7Hfx\u002foP+DzD+zXa+c\u002fqGHOgv2b5j9Ct+YovcXlP7ObKPBo7eQ\u002f8\u002fiEwqEU5D\u002fWjLwpUzzjP7m5mAQoZeI\u002fprBfAq+P4T\u002fyfMR3aLzgP7QYWqyY198\u002f6dNp85k83j\u002fhMAwZsajcP+skxnKzHNs\u002fMeQhBHCZ2T9Ir1HGrx\u002fYP3yD7bU1sNY\u002fZKKTvr5L1T9qgBeSAfPTP4B7bnOuptI\u002fkNJw+m5n0T9CgLXT5TXQP0Qob\u002f1cJc4\u002fHFyLF7r8yz+YgZq1+\u002fLJP0RGlbcqCcg\u002fyI3soj9Axj\u002fQ4UstIpnEPyBjgs2oFMM\u002fRHMuU5izwT+Iva6Fo3bAP\u002fDXjpXVvL4\u002f+Da1qvfWvD\u002fo7Au5ojy7P+Ax2Lal7rk\u002fYLbMs6jtuD8gtKR8LDq4P3ChS1GK1Lc\u002fAJjVrfO8tz+QaHsmcvO3P+Dmu1bnd7g\u002fEMCx4wxKuT\u002fwr5mRdGm6PxCrb2yI1bs\u002fiIpxA4uNvT94TTq3l5C\u002fPxQFBI3R7sA\u002f2ETLsL05wj9kweJ0ZKjDP0SRf2MHOsU\u002fgBt9s9Xtxj8wBvye7MLIP7JI975XuMo\u002fLM0HahHNzD\u002fqe88TAwDPPx0or9QCqNA\u002fvOiJ8vDd0T8s\u002f8ZIKCHTP3VdJVf9cNQ\u002fUy8PsLzM1T\u002fgAS7EqjPXP+P2eWADpdg\u002fzbfKofgf2j\u002fHv3DmsKPbP+xoDcRCL90\u002f0KSrzKzB3j+PCMPQ4SzgP9Ns5l4D++A\u002fZsvs2hPK4T9YySVXspfiP40pth4nXOM\u002f9iAj837n4z+5h\u002fnqYYnjPypsJUvMquI\u002fp06utIK54T\u002f2VQmoYMXgP6fRw2NGpN8\u002fTBpayJ\u002fC3T8wh8ADk+fbP9ZaG35qFNo\u002fPm35AThK2D\u002f75TXK7onWP4bdbQZv1NQ\u002f5uxSY4sq0z9vPWrYC43RP0T7UDpe+c8\u002fcK+C0lb0zD+MfxGjXQzKP3L6gNi+Qsc\u002fgkcXqbaYxD9oMn81cQ\u002fCP7xNQKcUUL8\u002fWHvVmxrHuj9oy1Y76YW2P3DucElTjrI\u002fIOeppRHErT8wX5tbLQWnP5CSswzM4qA\u002fQEhu3+++lj\u002fAIgGvyfWJP4BDhVGc9XE\u002fAGW6VWexZb8AW76XHTqBv0AfjUgVaoq\u002foHEA+YB8kL\u002fA4zV2ZnKSv4BpnlxDFpO\u002fgLl4pTJokr8glZnd4GiQv0D2+nAVM4q\u002fgDdDufb3gL8ABQtWU5RkvwCQJPiYf3I\u002fAPiy+dkvij8Am2Upm9GWPyCbXQRA5KA\u002f0GIS\u002fNX7pj8g4Irk2aytP+Az7xEterI\u002fkJMHeZVntj\u002fY\u002fccc9Jy6P2StU757GL8\u002fKFR2bSLswT9c\u002fVJJJ23EP6hmmr0\u002fDsc\u002fokGGJ1POyT8qn+AvPazMPyRhVdHNps8\u002fx0hzhGRe0T+g1hX5cvbSP5ZzVW3mmtQ\u002fpz6HsglL1j9q8exoGgbYP0BUKwJBy9k\u002f4b+u\u002f36Z2z8pWT32gm\u002fdP692Q34oS98\u002fpMVz1MyT4D9iLkhoTXnhP9LN04r+CeI\u002fykNOQaRc4T+bCVH2Oz3gP1Js7cpyFd4\u002f3hpqj+Wf2z9SrWTdMB\u002fZPzp1prOfldY\u002fygljQJQE1D+\u002fZ4coGG3RP3jMD0AaoM0\u002f7qN3mIBcyD9I+zvh5RDDP0g9e4R6fbs\u002fxAmajN3OsD\u002fAgYhrzGKYPyC3ccFYiZK\u002fsMsEqTy\u002frr+wDkKikxy6v6Crp2pZa8K\u002fxJqptcPFx7\u002fkcycPVhzNvw=="},"yaxis":"y","type":"scatter"},{"hovertemplate":"\u03bc=%{y:.2f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#5b8def","width":2.5},"name":"posterior mean \u03bc(x)","x":{"dtype":"f8","bdata":"AAAAAAAAAACASAEiBYhkP4BIASIFiHQ\u002fwOwBswfMfj+ASAEiBYiEP6CagWoGqok\u002fwOwBswfMjj9wH8F9BPeRP4BIASIFiJQ\u002fkHFBxgUZlz+gmoFqBqqZP7DDwQ4HO5w\u002fwOwBswfMnj\u002foCqErhK6gP3AfwX0E96E\u002f+DPhz4Q\u002foz+ASAEiBYikPwhdIXSF0KU\u002fkHFBxgUZpz8YhmEYhmGoP6CagWoGqqk\u002fKK+hvIbyqj+ww8EOBzusPzjY4WCHg60\u002fwOwBswfMrj+kAJECRAqwP+gKoSuErrA\u002fLBWxVMRSsT9wH8F9BPexP7Qp0aZEm7I\u002f+DPhz4Q\u002fsz88PvH4xOOzP4BIASIFiLQ\u002fxFIRS0UstT8IXSF0hdC1P0xnMZ3FdLY\u002fkHFBxgUZtz\u002fUe1HvRb23PxiGYRiGYbg\u002fXJBxQcYFuT+gmoFqBqq5P+SkkZNGTro\u002fKK+hvIbyuj9subHlxpa7P7DDwQ4HO7w\u002f9M3RN0ffvD842OFgh4O9P3zi8YnHJ74\u002fwOwBswfMvj8E9xHcR3C\u002fP6QAkQJECsA\u002fxgUZF2RcwD\u002foCqErhK7APwoQKUCkAME\u002fLBWxVMRSwT9OGjlp5KTBP3AfwX0E98E\u002fkiRJkiRJwj+0KdGmRJvCP9YuWbtk7cI\u002f+DPhz4Q\u002fwz8aOWnkpJHDPzw+8fjE48M\u002fXkN5DeU1xD+ASAEiBYjEP6JNiTYl2sQ\u002fxFIRS0UsxT\u002fmV5lfZX7FPwhdIXSF0MU\u002fKmKpiKUixj9MZzGdxXTGP25subHlxsY\u002fkHFBxgUZxz+ydsnaJWvHP9R7Ue9Fvcc\u002f9oDZA2YPyD8YhmEYhmHIPzqL6Syms8g\u002fXJBxQcYFyT9+lflV5lfJP6CagWoGqsk\u002fwp8Jfyb8yT\u002fkpJGTRk7KPwaqGahmoMo\u002fKK+hvIbyyj9KtCnRpkTLP2y5seXGlss\u002fjr45+uboyz+ww8EOBzvMP9LISSMnjcw\u002f9M3RN0ffzD8W01lMZzHNPzjY4WCHg80\u002fWt1pdafVzT984vGJxyfOP57neZ7nec4\u002fwOwBswfMzj\u002fi8YnHJx7PPwT3EdxHcM8\u002fJvyZ8GfCzz+kAJECRArQPzUD1QxUM9A\u002fxgUZF2Rc0D9XCF0hdIXQP+gKoSuErtA\u002feQ3lNZTX0D8KEClApADRP5sSbUq0KdE\u002fLBWxVMRS0T+9F\u002fVe1HvRP04aOWnkpNE\u002f3xx9c\u002fTN0T9wH8F9BPfRPwEiBYgUINI\u002fkiRJkiRJ0j8jJ42cNHLSP7Qp0aZEm9I\u002fRSwVsVTE0j\u002fWLlm7ZO3SP2cxncV0FtM\u002f+DPhz4Q\u002f0z+JNiXalGjTPxo5aeSkkdM\u002fqzut7rS60z88PvH4xOPTP81ANQPVDNQ\u002fXkN5DeU11D\u002fvRb0X9V7UP4BIASIFiNQ\u002fEUtFLBWx1D+iTYk2JdrUPzNQzUA1A9U\u002fxFIRS0Us1T9VVVVVVVXVP+ZXmV9lftU\u002fd1rdaXWn1T8IXSF0hdDVP5lfZX6V+dU\u002fKmKpiKUi1j+7ZO2StUvWP0xnMZ3FdNY\u002f3Wl1p9Wd1j9ubLmx5cbWP\u002f9u\u002fbv179Y\u002fkHFBxgUZ1z8hdIXQFULXP7J2ydola9c\u002fQ3kN5TWU1z\u002fUe1HvRb3XP2V+lflV5tc\u002f9oDZA2YP2D+Hgx0OdjjYPxiGYRiGYdg\u002fqYilIpaK2D86i+ksprPYP8uNLTe23Ng\u002fXJBxQcYF2T\u002ftkrVL1i7ZP36V+VXmV9k\u002fD5g9YPaA2T+gmoFqBqrZPzGdxXQW09k\u002fwp8Jfyb82T9Tok2JNiXaP+SkkZNGTto\u002fdafVnVZ32j8GqhmoZqDaP5esXbJ2ydo\u002fKK+hvIby2j+5seXGlhvbP0q0KdGmRNs\u002f27Zt27Zt2z9subHlxpbbP\u002f279e\u002fWv9s\u002fjr45+ubo2z8fwX0E9xHcP7DDwQ4HO9w\u002fQcYFGRdk3D\u002fSyEkjJ43cP2PLjS03ttw\u002f9M3RN0ff3D+F0BVCVwjdPxbTWUxnMd0\u002fp9WdVnda3T842OFgh4PdP8naJWuXrN0\u002fWt1pdafV3T\u002fr361\u002ft\u002f7dP3zi8YnHJ94\u002fDeU1lNdQ3j+e53me53nePy\u002fqvaj3ot4\u002fwOwBswfM3j9R70W9F\u002fXeP+LxiccnHt8\u002fc\u002fTN0TdH3z8E9xHcR3DfP5X5VeZXmd8\u002fJvyZ8GfC3z+3\u002ft36d+vfP6QAkQJECuA\u002f7AGzB8we4D81A9UMVDPgP34E9xHcR+A\u002fxgUZF2Rc4D8OBzsc7HDgP1cIXSF0heA\u002foAl\u002fJvyZ4D\u002foCqErhK7gPzAMwzAMw+A\u002feQ3lNZTX4D\u002fCDgc7HOzgPwoQKUCkAOE\u002fUhFLRSwV4T+bEm1KtCnhP+QTj088PuE\u002fLBWxVMRS4T90FtNZTGfhP70X9V7Ue+E\u002fBhkXZFyQ4T9OGjlp5KThP5YbW25sueE\u002f3xx9c\u002fTN4T8oHp94fOLhP3AfwX0E9+E\u002fuCDjgowL4j8BIgWIFCDiP0ojJ42cNOI\u002fkiRJkiRJ4j\u002faJWuXrF3iPyMnjZw0cuI\u002fbCivobyG4j+0KdGmRJviP\u002fwq86vMr+I\u002fRSwVsVTE4j+OLTe23NjiP9YuWbtk7eI\u002fHjB7wOwB4z9nMZ3FdBbjP7Ayv8r8KuM\u002f+DPhz4Q\u002f4z9ANQPVDFTjP4k2JdqUaOM\u002f0jdH3xx94z8aOWnkpJHjP2I6i+kspuM\u002fqzut7rS64z\u002f0PM\u002fzPM\u002fjPzw+8fjE4+M\u002fhD8T\u002fkz44z\u002fNQDUD1QzkPxZCVwhdIeQ\u002fXkN5DeU15D+mRJsSbUrkP+9FvRf1XuQ\u002fOEffHH1z5D+ASAEiBYjkP8hJIyeNnOQ\u002fEUtFLBWx5D9aTGcxncXkP6JNiTYl2uQ\u002f6k6rO63u5D8zUM1ANQPlP3xR70W9F+U\u002fxFIRS0Us5T8MVDNQzUDlP1VVVVVVVeU\u002fnlZ3Wt1p5T\u002fmV5lfZX7lPy5Zu2TtkuU\u002fd1rdaXWn5T\u002fAW\u002f9u\u002fbvlPwhdIXSF0OU\u002fUF5DeQ3l5T+ZX2V+lfnlP+Jgh4MdDuY\u002fKmKpiKUi5j9yY8uNLTfmP7tk7ZK1S+Y\u002fBGYPmD1g5j9MZzGdxXTmP5RoU6JNieY\u002f3Wl1p9Wd5j8ma5esXbLmP25subHlxuY\u002ftm3btm3b5j\u002f\u002fbv279e\u002fmP0hwH8F9BOc\u002fkHFBxgUZ5z\u002fYcmPLjS3nPyF0hdAVQuc\u002fanWn1Z1W5z+ydsnaJWvnP\u002fp369+tf+c\u002fQ3kN5TWU5z+Mei\u002fqvajnP9R7Ue9Fvec\u002fHH1z9M3R5z9lfpX5VebnP65\u002ft\u002f7d+uc\u002f9oDZA2YP6D8+gvsI7iPoP4eDHQ52OOg\u002f0IQ\u002fE\u002f5M6D8YhmEYhmHoP2CHgx0Odug\u002fqYilIpaK6D\u002fyiccnHp\u002foPzqL6Syms+g\u002fgowLMi7I6D\u002fLjS03ttzoPxSPTzw+8eg\u002fXJBxQcYF6T+kkZNGThrpP+2StUvWLuk\u002fNpTXUF5D6T9+lflV5lfpP8aWG1tubOk\u002fD5g9YPaA6T9YmV9lfpXpP6CagWoGquk\u002f6Jujb46+6T8xncV0FtPpP3qe53me5+k\u002fwp8Jfyb86T8KoSuErhDqP1OiTYk2Jeo\u002fnKNvjr456j\u002fkpJGTRk7qPyyms5jOYuo\u002fdafVnVZ36j++qPei3ovqPwaqGahmoOo\u002fTqs7re606j+XrF2ydsnqP+Ctf7f+3eo\u002fKK+hvIby6j9wsMPBDgfrP7mx5caWG+s\u002fArMHzB4w6z9KtCnRpkTrP5K1S9YuWes\u002f27Zt27Zt6z8kuI\u002fgPoLrP2y5seXGlus\u002ftLrT6k6r6z\u002f9u\u002fXv1r\u002frP0a9F\u002fVe1Os\u002fjr45+ubo6z\u002fWv1v\u002fbv3rPx\u002fBfQT3Eew\u002faMKfCX8m7D+ww8EOBzvsP\u002fjE4xOPT+w\u002fQcYFGRdk7D+Kxycen3jsP9LISSMnjew\u002fGsprKK+h7D9jy40tN7bsP6zMrzK\u002fyuw\u002f9M3RN0ff7D88z\u002fM8z\u002fPsP4XQFUJXCO0\u002fztE3R98c7T8W01lMZzHtP17Ue1HvRe0\u002fp9WdVnda7T\u002fw1r9b\u002f27tPzjY4WCHg+0\u002fgNkDZg+Y7T\u002fJ2iVrl6ztPxLcR3Afwe0\u002fWt1pdafV7T+i3ot6L+rtP+vfrX+3\u002fu0\u002fNOHPhD8T7j984vGJxyfuP8TjE49PPO4\u002fDeU1lNdQ7j9W5leZX2XuP57neZ7nee4\u002f5uibo2+O7j8v6r2o96LuP3jr361\u002ft+4\u002fwOwBswfM7j8I7iO4j+DuP1HvRb0X9e4\u002fmvBnwp8J7z\u002fi8YnHJx7vPyrzq8yvMu8\u002fc\u002fTN0TdH7z+89e\u002fWv1vvPwT3EdxHcO8\u002fTPgz4c+E7z+V+VXmV5nvP976d+vfre8\u002fJvyZ8GfC7z9u\u002fbv179bvP7f+3fp36+8\u002fAAAAAAAA8D8="},"xaxis":"x","y":{"dtype":"f8","bdata":"uqOadMnG3z8EfXNMURHgP9uPd7NOPuA\u002fVy4ISlVq4D\u002fDBEXLXZXgP2+xKldhv+A\u002flFPPdlno4D+bn2wgQBDhP0V6NLsPN+E\u002fgz\u002ftIsNc4T9MAFOrVYHhP9MqOyPDpOE\u002fADt41wfH4T9kPXuVIOjhPyAdsa0KCOI\u002ffuSZ9cMm4j9BSZjJSkTiP5kPeA6eYOI\u002fmgGqMr174j8bbTQvqJXiP69NV4hfruI\u002fQH3jTeTF4j9XekQbONziP4WHPBdd8eI\u002ftxtT81UF4z91zvXqJRjjP5ceTMLQKeM\u002fUKO+xFo64z+9aDLDyEnjP8Bo+REgWOM\u002f2T55hmZl4z\u002ffYol0onHjP+FgiqvafOM\u002f8a03cxaH4z+N4DWIXZDjP6c4Xxi4mOM\u002fGIbQvi6g4z8enbh\u002fyqbjPymn7MOUrOM\u002fFbpDVJex4z8vOrxU3LXjP4aibT9uueM\u002fZWRJ31e84z96oa1KpL7jP52UzN1ewOM\u002fhIvrNJPB4z9YX3wmTcLjPy5kFL2YwuM\u002fws5DMYLC4z\u002fWlVDjFcLjP9fX11RgweM\u002f6s9YIm7A4z\u002f6ZKz8S7\u002fjP8BcbKIGvuM\u002fHTlN2aq84z9Twm1nRbvjPyA7nwzjueM\u002fuzSpe5C44z\u002fn8YtTWrfjP+4+xBhNtuM\u002f+puTLnW14z8LjU\u002fQ3rTjP53YugqWtOM\u002fjHNrtaa04z+VzT9sHLXjPyYn5ogCtuM\u002fhY14HGS34z+XDzDpS7njPzWyMVzEu+M\u002f\u002f593h9e+4z8BBtkbj8LjP84DM2P0xuM\u002fJQu1OhDM4z++AVMN69HjPyltX86M2OM\u002fLOhP9Pzf4z+pFq5zQujjP+NEN7pj8eM\u002fXdUsqmb74z8hmNeVUAbkP00dQDsmEuQ\u002fsgsewOse5D\u002fsewCupCzkP4VOse5TO+Q\u002fzGrVyPtK5D+3ycvcnVvkPwMmzSE7beQ\u002fnx9O49N\u002f5D9xlKW+Z5PkPxLk+KD1p+Q\u002fJsZvxXu95D9MTLGz99PkPz+Yqz5m6+Q\u002fs72ng8MD5T8lNKvpCh3lP3soKCE3N+U\u002fJuj9I0JS5T96h8o1JW7lPwXLjuTYiuU\u002fGkClCVWo5T8AUw3LkMblP4URC52C5eU\u002fzCYcRCAF5j+SeULXXiXmPyuwpMIyRuY\u002fSLWEyo9n5j8KL4wOaYnmP42tbg2xq+Y\u002fqijhqFnO5j9ONOYpVPHmP18ibkWRFOc\u002fERVKIQE45z\u002f90HBZk1vnP6\u002fnkwU3f+c\u002fHZ0Dv9qi5z\u002fvsd+mbMbnPxsEk2za6ec\u002f9L2XVBEN6D\u002f0kYE\u002f\u002fi\u002foPxBIS7GNUug\u002fc6fk2Kt06D9Pjv2XRJboP\u002fHQCotDt+g\u002fNUGBEZTX6D9sCUNWIffoPyhQO1jWFek\u002fXucj850z6T\u002fPl3DoYlDpPwhrW+gPbOk\u002f1igNm4+G6T+vFN2pzJ\u002fpP+7Posixt+k\u002fOiMVvynO6T92UTByH+PpPwx7nu199uk\u002fbIAcbTAI6j9kv9VlIhjqP4r3sI8\u002fJuo\u002f5JeI7nMy6j\u002fZsUjbqzzqPxTN7AzUROo\u002fzdtXodlK6j+ZmAAmqk7qP+ekbKAzUOo\u002fbNN0lmRP6j83Ik0WLEzqP3wGS755Ruo\u002fY89kxD0+6j+YDWX9aDPqP8gazePsJeo\u002fyQ5inrsV6j9xp18GyALqPyfkTK0F7ek\u002fs1Zu4mjU6T\u002fCb9K35rjpP4BW9AZ1muk\u002fhCfydAp56T\u002fux1N2nlTpP\u002fzMX1IpLek\u002f4k\u002f8JaQC6T+03hnmCNXoP6MXp2FSpOg\u002fzdkLQ3xw6D\u002fZVisRgznoP7Wx7C9k\u002f+c\u002fOzlK4B3C5z+TsOc\u002fr4HnP+F5MEgYPuc\u002fbtv+zFn35j\u002fQ+c16da3mPzqDeNRtYOY\u002ftWiGMEYQ5j+mYAy2Ar3lP\u002fBKIFmoZuU\u002fXunl1jwN5T9ztjexxrDkP4757ylNUeQ\u002fTYjWPdju4z9s8jefcInjP7keK7AfIeM\u002fiqSKfO+14j94baez6kfiP2ZmuqEc1+E\u002fOD0bKZFj4T8NWUK7VO3gP5RmnFF0dOA\u002fuu1rzPrx3z9OnovY+\u002fXePydCOZEI9d0\u002feewBlD7v3D+2TfxCvOTbP7NzWrWg1do\u002fdhn9pwvC2T8lNxZuHarYP3to6OH2jdc\u002fvpqwVblt1j+zPseEhknVP9j8BYWAIdQ\u002ffJx+uMn10j8Rd4+\u002fhMbRP7RrYWvUk9A\u002fKK+1Ybe7zj\u002f4NyU4e0nMPz5qm4g60ck\u002fPqYigTtTxz++maU5xM\u002fEP5Q\u002fnJ8aR8I\u002fiAosxghzvz+Ia1\u002fKjU66P4ChBFBOIbU\u002fkK5ZAKfXrz+QjZgdS12lPyAhsI8uqZU\u002fAMhDF8hLPz+gvMivVMeUv+BKejgnEaW\u002fUM6qZtrIr78AVqno4ES1v\u002fj3ogNvqbq\u002fiP6+jcwIwL\u002fS8\u002fIJcb7Cv1KCNQtndcW\u002f6DFwRHEtyL\u002f4PFwAU+bKv+y9vBnQn82\u002fpnUZedYs0L9MGt4z14nRv+DSdeTM5tK\u002fZL\u002f4Y5pD1L+AsEK2IqDVv5hsZAJJ\u002fNa\u002fdrGcivBX2L+aH+Wj\u002fLLZv1TRH61QDdu\u002fMunyBdBm3L9f4V8FXr\u002fdv2jXJPDdFt+\u002flzl7d5k24L8Hr1ACIOHgv6hEEQL0iuG\u002fuN1iwwY04r8EBC1xSdzivyz4xQ+tg+O\u002fTXw6eCIq5L\u002fJPLhTms\u002fkv1SxIhcFdOW\u002fZj7a\u002flIX5r9rRb0KdLnmv4KwavpXWue\u002frVvNSe7557+ii\u002fctJpjov55oVZLuNOm\u002ffDE9FjbQ6b\u002flkeMK62nqvzE1unH7Aeu\u002foFc++1SY678suDwG5SzsvwTnj5+Yv+y\u002fFIBdglxQ7b+1btYYHd\u002ftvxzffX3Ga+6\u002fJAT6fET27r+EVXGYgn7vv6IxOwQ2AvC\u002fE+hB4PVD8L\u002f9uoQ5doTwvzySBUusw\u002fC\u002f+GsoNI0B8b8I15P7DT7xvyIkWZIjefG\u002f2lhj18Ky8b\u002fPoyub4Orxv\u002frEsaNxIfK\u002fjpG2sGpW8r8xcDaAwInyv65gIdNnu\u002fK\u002fCtpNclXr8r+dg6MzfhnzvwyJev\u002fWRfO\u002fSAcs1lRw878J0c\u002fV7Jjzv7WMI0CUv\u002fO\u002fMPSWgEDk878eyXgy5wb0v\u002frdPyd+J\u002fS\u002fzGXrbPtF9L85knVUVWL0v71hU3iCfPS\u002fuF78wnmU9L8i83R1Mqr0vzjd1S2kvfS\u002fxz7L7cbO9L8rswUhk930v8TPl6MB6vS\u002ftG86yAv09L86LnJeq\u002fv0v5R6kLjaAPW\u002fvr2KsZQD9b\u002fpHKKy1AP1v2x71riWAfW\u002fenwfWtf89L\u002f\u002fZmbKk\u002fX0vzv2O+DJ6\u002fS\u002fok1FGXjf9L+UeFuendD0v0AUWUc6v\u002fS\u002f3vyRnk6r9L86FvHj25T0v3WKuA\u002fke\u002fS\u002fpSDh1Glg9L97lxWjcEL0vyo9R6j8IfS\u002f707Z0RL\u002f878s\u002fWDNuNnzvxtH+Aj1sfO\u002fRTgis86H879caz+6TVvzv58Qkst6LPO\u002fcBHRUV\u002f78r83R0pzBcjyv8EXlA94kvK\u002fBybPvMJa8r9UInnE8SDyv5Yf0h8S5fG\u002fEy7WczGn8b8kVM0MXmfxv3dUdNmmJfG\u002f4wXBZRvi8L8JU0XVy5zwv3RHNN3IVfC\u002fJNwMviMN8L8K\u002fdx53IXvvyskNzl17u6\u002fBd1cLDdU7r8lMwujSLftvwBq2LrQF+2\u002fqpoHT\u002fd17L+AzOnn5NHrvxGZ16nCK+u\u002fsLbOQ7qD6r9bB7\u002fd9dnpvzcBkwagLum\u002fcHP\u002foeOB6L\u002fDyybW69Pnv5IZHPnjJOe\u002fAhhSfvd05r+KiwLkUcTlvwc3mqAeE+W\u002fJpk1EIlh5L94hzpivK\u002fjv0aUGofj\u002feK\u002fJPxJHilM4r8lnXZkt5rhvzI2CiK46eC\u002fpOACmlQ54L8+wFjyahPfvzMPiYsFtt2\u002f1Ropn8da3L\u002fWdhFB\u002fgHbv9rpntv0q9m\u002fnCQQE\u002fVY2L+UJROqRgnXv5xAkWcvvdW\u002feq7H\u002ffJ01L\u002fobLny0jDTv\u002fkUBooO8dG\u002fpCUwsOK10L8eIrjOE\u002f\u002fOv25UIGt4nMy\u002fDLn4KF5Eyr\u002ffwZ7FKvfHvyTbO64+tcW\u002fVU6+6PR+w7+t0AAAo1TBv1kGReYxbb6\u002frp0dUEJKur82bmTCAEG2v5zxrWzrUbK\u002fJE+IQur6rL9505ymCoilvyTxPmzgl5y\u002f7noCAfIcjb8we4HBpJ5Ov5vHX2SDZ4g\u002fvGTXVO7qmD+SFX6k\u002f5eiPwswAhxHgag\u002fWhSxoC8xrj+\u002fcbkO2NOxP6PJn\u002fdpcrQ\u002fUzyTOV30tj+87PdFy1m5P\u002fzG5w\u002fXors\u002fsIFRx6zPvT+96JuQgeC\u002fP2iehpzJ6sA\u002fUbcb9JPXwT8LXlXnxrbCP+ReGGmNiMM\u002fkSLpGxZNxD8="},"yaxis":"y","type":"scatter"},{"hovertemplate":"obs (%{x:.2f}, %{y:.2f})\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#4aa96c","size":9},"mode":"markers","name":"observations","x":{"dtype":"f8","bdata":"mpmZmZmZqT8pXI\u002fC9SjMP5qZmZmZmdk\u002f16NwPQrX4z\u002f2KFyPwvXoP2ZmZmZmZu4\u002f"},"xaxis":"x","y":{"dtype":"f8","bdata":"HGSYYpKt4j+zwkW1L4\u002fkP9ymgvBI6Og\u002f0gj4jQb35r8jTE08Chv0v1D8APJsJKW\u002f"},"yaxis":"y","type":"scatter"},{"hovertemplate":"EI (scaled)=%{y:.2f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#4aa96c","width":2.5},"name":"EI","visible":true,"x":{"dtype":"f8","bdata":"AAAAAAAAAACASAEiBYhkP4BIASIFiHQ\u002fwOwBswfMfj+ASAEiBYiEP6CagWoGqok\u002fwOwBswfMjj9wH8F9BPeRP4BIASIFiJQ\u002fkHFBxgUZlz+gmoFqBqqZP7DDwQ4HO5w\u002fwOwBswfMnj\u002foCqErhK6gP3AfwX0E96E\u002f+DPhz4Q\u002foz+ASAEiBYikPwhdIXSF0KU\u002fkHFBxgUZpz8YhmEYhmGoP6CagWoGqqk\u002fKK+hvIbyqj+ww8EOBzusPzjY4WCHg60\u002fwOwBswfMrj+kAJECRAqwP+gKoSuErrA\u002fLBWxVMRSsT9wH8F9BPexP7Qp0aZEm7I\u002f+DPhz4Q\u002fsz88PvH4xOOzP4BIASIFiLQ\u002fxFIRS0UstT8IXSF0hdC1P0xnMZ3FdLY\u002fkHFBxgUZtz\u002fUe1HvRb23PxiGYRiGYbg\u002fXJBxQcYFuT+gmoFqBqq5P+SkkZNGTro\u002fKK+hvIbyuj9subHlxpa7P7DDwQ4HO7w\u002f9M3RN0ffvD842OFgh4O9P3zi8YnHJ74\u002fwOwBswfMvj8E9xHcR3C\u002fP6QAkQJECsA\u002fxgUZF2RcwD\u002foCqErhK7APwoQKUCkAME\u002fLBWxVMRSwT9OGjlp5KTBP3AfwX0E98E\u002fkiRJkiRJwj+0KdGmRJvCP9YuWbtk7cI\u002f+DPhz4Q\u002fwz8aOWnkpJHDPzw+8fjE48M\u002fXkN5DeU1xD+ASAEiBYjEP6JNiTYl2sQ\u002fxFIRS0UsxT\u002fmV5lfZX7FPwhdIXSF0MU\u002fKmKpiKUixj9MZzGdxXTGP25subHlxsY\u002fkHFBxgUZxz+ydsnaJWvHP9R7Ue9Fvcc\u002f9oDZA2YPyD8YhmEYhmHIPzqL6Syms8g\u002fXJBxQcYFyT9+lflV5lfJP6CagWoGqsk\u002fwp8Jfyb8yT\u002fkpJGTRk7KPwaqGahmoMo\u002fKK+hvIbyyj9KtCnRpkTLP2y5seXGlss\u002fjr45+uboyz+ww8EOBzvMP9LISSMnjcw\u002f9M3RN0ffzD8W01lMZzHNPzjY4WCHg80\u002fWt1pdafVzT984vGJxyfOP57neZ7nec4\u002fwOwBswfMzj\u002fi8YnHJx7PPwT3EdxHcM8\u002fJvyZ8GfCzz+kAJECRArQPzUD1QxUM9A\u002fxgUZF2Rc0D9XCF0hdIXQP+gKoSuErtA\u002feQ3lNZTX0D8KEClApADRP5sSbUq0KdE\u002fLBWxVMRS0T+9F\u002fVe1HvRP04aOWnkpNE\u002f3xx9c\u002fTN0T9wH8F9BPfRPwEiBYgUINI\u002fkiRJkiRJ0j8jJ42cNHLSP7Qp0aZEm9I\u002fRSwVsVTE0j\u002fWLlm7ZO3SP2cxncV0FtM\u002f+DPhz4Q\u002f0z+JNiXalGjTPxo5aeSkkdM\u002fqzut7rS60z88PvH4xOPTP81ANQPVDNQ\u002fXkN5DeU11D\u002fvRb0X9V7UP4BIASIFiNQ\u002fEUtFLBWx1D+iTYk2JdrUPzNQzUA1A9U\u002fxFIRS0Us1T9VVVVVVVXVP+ZXmV9lftU\u002fd1rdaXWn1T8IXSF0hdDVP5lfZX6V+dU\u002fKmKpiKUi1j+7ZO2StUvWP0xnMZ3FdNY\u002f3Wl1p9Wd1j9ubLmx5cbWP\u002f9u\u002fbv179Y\u002fkHFBxgUZ1z8hdIXQFULXP7J2ydola9c\u002fQ3kN5TWU1z\u002fUe1HvRb3XP2V+lflV5tc\u002f9oDZA2YP2D+Hgx0OdjjYPxiGYRiGYdg\u002fqYilIpaK2D86i+ksprPYP8uNLTe23Ng\u002fXJBxQcYF2T\u002ftkrVL1i7ZP36V+VXmV9k\u002fD5g9YPaA2T+gmoFqBqrZPzGdxXQW09k\u002fwp8Jfyb82T9Tok2JNiXaP+SkkZNGTto\u002fdafVnVZ32j8GqhmoZqDaP5esXbJ2ydo\u002fKK+hvIby2j+5seXGlhvbP0q0KdGmRNs\u002f27Zt27Zt2z9subHlxpbbP\u002f279e\u002fWv9s\u002fjr45+ubo2z8fwX0E9xHcP7DDwQ4HO9w\u002fQcYFGRdk3D\u002fSyEkjJ43cP2PLjS03ttw\u002f9M3RN0ff3D+F0BVCVwjdPxbTWUxnMd0\u002fp9WdVnda3T842OFgh4PdP8naJWuXrN0\u002fWt1pdafV3T\u002fr361\u002ft\u002f7dP3zi8YnHJ94\u002fDeU1lNdQ3j+e53me53nePy\u002fqvaj3ot4\u002fwOwBswfM3j9R70W9F\u002fXeP+LxiccnHt8\u002fc\u002fTN0TdH3z8E9xHcR3DfP5X5VeZXmd8\u002fJvyZ8GfC3z+3\u002ft36d+vfP6QAkQJECuA\u002f7AGzB8we4D81A9UMVDPgP34E9xHcR+A\u002fxgUZF2Rc4D8OBzsc7HDgP1cIXSF0heA\u002foAl\u002fJvyZ4D\u002foCqErhK7gPzAMwzAMw+A\u002feQ3lNZTX4D\u002fCDgc7HOzgPwoQKUCkAOE\u002fUhFLRSwV4T+bEm1KtCnhP+QTj088PuE\u002fLBWxVMRS4T90FtNZTGfhP70X9V7Ue+E\u002fBhkXZFyQ4T9OGjlp5KThP5YbW25sueE\u002f3xx9c\u002fTN4T8oHp94fOLhP3AfwX0E9+E\u002fuCDjgowL4j8BIgWIFCDiP0ojJ42cNOI\u002fkiRJkiRJ4j\u002faJWuXrF3iPyMnjZw0cuI\u002fbCivobyG4j+0KdGmRJviP\u002fwq86vMr+I\u002fRSwVsVTE4j+OLTe23NjiP9YuWbtk7eI\u002fHjB7wOwB4z9nMZ3FdBbjP7Ayv8r8KuM\u002f+DPhz4Q\u002f4z9ANQPVDFTjP4k2JdqUaOM\u002f0jdH3xx94z8aOWnkpJHjP2I6i+kspuM\u002fqzut7rS64z\u002f0PM\u002fzPM\u002fjPzw+8fjE4+M\u002fhD8T\u002fkz44z\u002fNQDUD1QzkPxZCVwhdIeQ\u002fXkN5DeU15D+mRJsSbUrkP+9FvRf1XuQ\u002fOEffHH1z5D+ASAEiBYjkP8hJIyeNnOQ\u002fEUtFLBWx5D9aTGcxncXkP6JNiTYl2uQ\u002f6k6rO63u5D8zUM1ANQPlP3xR70W9F+U\u002fxFIRS0Us5T8MVDNQzUDlP1VVVVVVVeU\u002fnlZ3Wt1p5T\u002fmV5lfZX7lPy5Zu2TtkuU\u002fd1rdaXWn5T\u002fAW\u002f9u\u002fbvlPwhdIXSF0OU\u002fUF5DeQ3l5T+ZX2V+lfnlP+Jgh4MdDuY\u002fKmKpiKUi5j9yY8uNLTfmP7tk7ZK1S+Y\u002fBGYPmD1g5j9MZzGdxXTmP5RoU6JNieY\u002f3Wl1p9Wd5j8ma5esXbLmP25subHlxuY\u002ftm3btm3b5j\u002f\u002fbv279e\u002fmP0hwH8F9BOc\u002fkHFBxgUZ5z\u002fYcmPLjS3nPyF0hdAVQuc\u002fanWn1Z1W5z+ydsnaJWvnP\u002fp369+tf+c\u002fQ3kN5TWU5z+Mei\u002fqvajnP9R7Ue9Fvec\u002fHH1z9M3R5z9lfpX5VebnP65\u002ft\u002f7d+uc\u002f9oDZA2YP6D8+gvsI7iPoP4eDHQ52OOg\u002f0IQ\u002fE\u002f5M6D8YhmEYhmHoP2CHgx0Odug\u002fqYilIpaK6D\u002fyiccnHp\u002foPzqL6Syms+g\u002fgowLMi7I6D\u002fLjS03ttzoPxSPTzw+8eg\u002fXJBxQcYF6T+kkZNGThrpP+2StUvWLuk\u002fNpTXUF5D6T9+lflV5lfpP8aWG1tubOk\u002fD5g9YPaA6T9YmV9lfpXpP6CagWoGquk\u002f6Jujb46+6T8xncV0FtPpP3qe53me5+k\u002fwp8Jfyb86T8KoSuErhDqP1OiTYk2Jeo\u002fnKNvjr456j\u002fkpJGTRk7qPyyms5jOYuo\u002fdafVnVZ36j++qPei3ovqPwaqGahmoOo\u002fTqs7re606j+XrF2ydsnqP+Ctf7f+3eo\u002fKK+hvIby6j9wsMPBDgfrP7mx5caWG+s\u002fArMHzB4w6z9KtCnRpkTrP5K1S9YuWes\u002f27Zt27Zt6z8kuI\u002fgPoLrP2y5seXGlus\u002ftLrT6k6r6z\u002f9u\u002fXv1r\u002frP0a9F\u002fVe1Os\u002fjr45+ubo6z\u002fWv1v\u002fbv3rPx\u002fBfQT3Eew\u002faMKfCX8m7D+ww8EOBzvsP\u002fjE4xOPT+w\u002fQcYFGRdk7D+Kxycen3jsP9LISSMnjew\u002fGsprKK+h7D9jy40tN7bsP6zMrzK\u002fyuw\u002f9M3RN0ff7D88z\u002fM8z\u002fPsP4XQFUJXCO0\u002fztE3R98c7T8W01lMZzHtP17Ue1HvRe0\u002fp9WdVnda7T\u002fw1r9b\u002f27tPzjY4WCHg+0\u002fgNkDZg+Y7T\u002fJ2iVrl6ztPxLcR3Afwe0\u002fWt1pdafV7T+i3ot6L+rtP+vfrX+3\u002fu0\u002fNOHPhD8T7j984vGJxyfuP8TjE49PPO4\u002fDeU1lNdQ7j9W5leZX2XuP57neZ7nee4\u002f5uibo2+O7j8v6r2o96LuP3jr361\u002ft+4\u002fwOwBswfM7j8I7iO4j+DuP1HvRb0X9e4\u002fmvBnwp8J7z\u002fi8YnHJx7vPyrzq8yvMu8\u002fc\u002fTN0TdH7z+89e\u002fWv1vvPwT3EdxHcO8\u002fTPgz4c+E7z+V+VXmV5nvP976d+vfre8\u002fJvyZ8GfC7z9u\u002fbv179bvP7f+3fp36+8\u002fAAAAAAAA8D8="},"xaxis":"x2","y":{"dtype":"f8","bdata":"ru3rp0cg1D9XuFcUrlDSP5JH2pxNgtA\u002fsuksprRuzT8lEDmax+TJP4lJT6\u002fPbMY\u002fMfryUNINwz8VMSaMKKC\u002fP6LmdHKqerk\u002f5cKkNhPCsz8yqkKt+yGtP0fe72vwCqQ\u002fbeh7rtX9mD9QE0UcXeOKPz5Wlw312XY\u002fqqdBts3AWT9QM48zt+YpPwGlZEWdic8+S36DPcCs7D2LP9o0Y8vBPDJ4qTRjy8E88zG182jLwTxXBMEGmicmPjpKTdfHMOs+HY8DqpHkPD9q6wNUPFRnPziowmqEUYI\u002flOJWI\u002f\u002fZkz9Lk4AHCVyhPySFUvOYhqo\u002fqJ1EA4eCsj9PZP6WQju4P9BQA2ulQ74\u002fvuRRamI8wj8G5ghY9l7FP2IDHdTQfcg\u002fzk82sVaPyz+Y+XrypovOP\u002fGYGvwittA\u002fqwIxEe0V0j+Qp4Nx+2LTPw7+vKd5m9Q\u002fgnR+1+S91T8fH0UB\u002f8jWP7jSBPnEu9c\u002fkOTEc2aV2D+S8+e0P1XZP0il2H\u002fU+tk\u002f2NtHCMyF2j8FiX+r7fXaP732wkkeS9s\u002f8JlAIF6F2z\u002fW4HYLx6TbP2JGrB+Lqds\u002fXsGnifOT2z\u002fV14StX2TbP0CijnxEG9s\u002f9vuy\u002fSu52j8mS4YGtT7aP3NlHyWTrNk\u002f6HJvvY4D2T+rJEpfhUTYP3VJQ11qcNc\u002fBbUMsEeI1j8crV02P43VPyOK+maMgNQ\u002fR\u002fyikYZj0z+cMhjVozfSP3LB2\u002fx8\u002ftA\u002fI++EE6Vzzz\u002fDIIF8JtfMP24kvkfJK8o\u002fde+wR1x2xz93RgXzTrzEP6CgaezWA8I\u002fp0G31kCovj9aGf5cF2u5PzXDHajwY7Q\u002fa2yymmtUrz8o70eeMLOmP1BMxkwISZ4\u002fBpZE6mXekT+GjzE4hFqBP3HS4iIzDWg\u002fraN8tis3QT+AwjhMk\u002fP0PkBgExjAkDo+RBva05\u002fLwTwyeKk0Y8vBPFZliMThgmM9Bn0mO96Yxz66YMq1mR04P1KIanlD4Ws\u002fjCIFfGmLiD9rHxqNObCbPzR0xl86lag\u002fWY\u002f9\u002fsnosj9kpkUmL4K6PwYEr+MabsE\u002fA5eeFZzjxT+ZjHVifY7KP+QjPctZX88\u002fcdfRO9Mk0j8pbJ6GgaHUP+7KQnhaIdc\u002f8L7hS6Kg2T+oUotAGhzcP4J2FoXlkN4\u002fmaPKhTp+4D8Whgk1PK7hP6uRyzhp1+I\u002fJoThQcj44z+bctj5cRHlP70Nu3eOIOY\u002fPYRASVMl5z+y6wPtAR\u002foP5gUZaPmDOk\u002f7WxDglfu6T95PpK8s8LqP7JYUhJjies\u002fX3YhYNVB7D+u64pHguvsP8x2xOrohe0\u002fwPClt48Q7j8wfYo+BIvuPy7NdhLb9O4\u002f2Z9msK9N7z8DIg1sJJXvPyURp2Diyu8\u002fbbm\u002fZJnu7z8PC\u002f\u002f\u002f\u002f\u002f\u002fvP7MGQmLT\u002fu8\u002fKgliW9fq7z9F3ixT1sPvP9CMKEGhie8\u002fWLrTow887z8zrCd3\u002f9ruP+NrNCpVZu4\u002fAPLDk\u002fvd7T8rMgjm40HtP80JdKEFkuw\u002ffhwEh17O6z+biHCK8vbqPw6qDMXLC+o\u002fPR+PavoM6T9LP7bBlPrnP2I37yO31OY\u002fGVgvCYSb5T+c0cgoJE\u002fkP+wRpr7G7+I\u002fGnMkEaJ94T9X\u002fLrb6PHfP+51tRgMxNw\u002fIGVelVly2T9TJ2geqP3VP51p0wQeZ9I\u002fCuYwsCJhzT9YmWrzebvFP3K6IWA95rs\u002fS81sfNT5qT85Jd1Nrh6aPxU0NF2MTqY\u002fP+rlXyJVsT9AjRTm7Z+3P\u002fNgYNMczb0\u002fRxiDtu\u002fkwT9fngm\u002fgsbEPyBbyL5aiMc\u002fjv1XWEgoyj\u002fn\u002fOiWgqTMP4RtGmGC+84\u002frQ800viV0D+yMEGUUZrRP+f64URHitI\u002fr8RyK2dl0z\u002faq2SsTyvUP1eAHkKw29Q\u002fSMEYqEl21T9pKXUk7vrVPxlyWuSBadY\u002f6obSY\u002fvB1j80C3TcYwTXPwKPl7fXMNc\u002fXz6vAYdH1z+SacvctUjXP2q5ifC8NNc\u002ftMKz1QkM1z\u002f5Ebd7H8\u002fWP3GA6oWWftY\u002f5K5Fnh0b1j+Hvci6eaXVP4eAU1KGHtU\u002f93oTfTWH1D+5WP37j+DTP6rU9yG1K9M\u002f6Y9xmNpp0j9ifRD4S5zRP6d1AC1qxNA\u002fdZpCOlXHzz9YL\u002fAJLPfNP7xft\u002f2NG8w\u002fs1jQTNA3yj\u002fAG9qRY0\u002fIP2uBzCTOZcY\u002fEjeaS6V+xD+u+tMehZ3CP2k0NwEHxsA\u002fmMHJGm33vT8bRznKCYS6P5zMJrV0OLc\u002fgRrBAM0atD+6NHyRnTCxPyBJuwxw\u002faw\u002fSqHg5RwSqD8KvomrGqWjP9bdx2\u002ffc58\u002fc0DvjySjmD9tJk5Sd9SSP0xxVxdP\u002fYs\u002fc9TGPPUlhD\u002fHvjl2UvZ7P4pDKKD3mHI\u002fxfIi\u002f0aMZz+N7XUr6iRcP1nEiw4TbU8\u002ffnjTmDQvQD+rj2sp1kQuP5yYc0xCMBk\u002fXtFDQdcuAj+0vLSeOAnmPh6Z1piUecU+tgziTS3Mnz5uMNia9ZBwPhK0mKll4DU+t\u002fctFf+e7z3Yb3TTOUmUPWVkEtJQbiE90krn6ZqKszyCheiXlM\u002fBPALFCTZjy8E8M3ipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8NHipNGPLwTyvpqk0Y8vBPI3CTzVjy8E89posxmPLwTySDZaTj8vBPEJvNsFr0cE8m9c90hQ7wjxK9YrNy63GPEH+7bc9jpo8S+ufHRhvqTx1lYMCgwjFPOFYSV60jd48bBK6qpPt7zw\u002fQNaM5WD+PHymApYJ8As9KTK1w2MJFj1+Gh5MTn0fPRuEopNV+yI9nYgvpqOmJD0RXE42FPMjPSrW5yk5WiE9POcCihZEGj2Yh4EWxvkRPRLnGWFExQY9EXNll8NJ9zxAn4MVRLvnPME32+lZCtI8cYSI3U8gyTwD6AXujGjGPAAAAAAAAAAAUc1sD8DAyDyWeqG05rfCPCq1Dsf24cE8AAHAitjMwTzQvklRcsvBPFk7ko1jy8E8yMauNWPLwTxivKo0Y8vBPLp4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8pXipNGPLwTzqiLw0Y8vBPK5VsbNjy8E8Hbp4sDTMwTwJ1wUDpUHCPPxCxoWKqcU8wt7SZ2bI0Dz2APYLU0oEPa\u002fa6hc60z89jqCZLQOncj2IXK39Jz6gPRCziLczDMY9+OhI25A46D3hhj8+xjcGPhQeERo\u002fdCE+37qt0Uj6Nz4jmTM0w0tNPtWFGwilJGA+NaZlVW88cD7rWdABYRh+Pucl3VwN6Yk+rNNucF3clD4e2zmUtpWfPiJ\u002fUFRTlaY+2OBI1QScrj5kN8ITHbezPk1q1zdFL7g+XZhUZipJvD7lwhb81o6\u002fPqaE8lgJysA+uG2cLAQFwT7gv7O3E2jAPvyDx1Yj\u002fr0+3gcEjtTjuT7NnHHDof20PpzpkHZ+va8+WQU+kP0qpj4oqTPbJEGcPueh0+WyKpA+08EKFqFCgD6d7Ac3WPBrPiXH7XdMuVM+EA9U+g6xNT43Y1c6WDoRPqjO9X5OteE9W4zF1qj8oz1lVQai4DZTPea5p7ZzN+c88xGtXpe8yDwis9Ffe8vBPL+wqTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPDJ4qTRjy8E8MnipNGPLwTwyeKk0Y8vBPGiDqTRjy8E8BTAmIwIVwjz9xzHG0TswPa5+FrBTAOY9RpNuh3MBXT67UHCT1EquPhTOU5p8Vec+9E0eci\u002fQEj+vnecR1pAzP2+XstmB6k0\u002fe\u002fHjF+ZOYj\u002flh3ghwv9yPwRy4DRUZYE\u002fHLFD\u002f2PqjD+3u066ykSWP9iL+077IqA\u002fIbgX6bVCpj8="},"yaxis":"y2","type":"scatter"},{"hovertemplate":"next evaluation\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#d9705f","size":11,"symbol":"triangle-down"},"mode":"markers","name":"argmax","showlegend":false,"visible":true,"x":[0.3258145363408521],"xaxis":"x2","y":[1.0],"yaxis":"y2","type":"scatter"},{"hovertemplate":"PI (scaled)=%{y:.2f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#4aa96c","width":2.5},"name":"PI","visible":false,"x":{"dtype":"f8","bdata":"AAAAAAAAAACASAEiBYhkP4BIASIFiHQ\u002fwOwBswfMfj+ASAEiBYiEP6CagWoGqok\u002fwOwBswfMjj9wH8F9BPeRP4BIASIFiJQ\u002fkHFBxgUZlz+gmoFqBqqZP7DDwQ4HO5w\u002fwOwBswfMnj\u002foCqErhK6gP3AfwX0E96E\u002f+DPhz4Q\u002foz+ASAEiBYikPwhdIXSF0KU\u002fkHFBxgUZpz8YhmEYhmGoP6CagWoGqqk\u002fKK+hvIbyqj+ww8EOBzusPzjY4WCHg60\u002fwOwBswfMrj+kAJECRAqwP+gKoSuErrA\u002fLBWxVMRSsT9wH8F9BPexP7Qp0aZEm7I\u002f+DPhz4Q\u002fsz88PvH4xOOzP4BIASIFiLQ\u002fxFIRS0UstT8IXSF0hdC1P0xnMZ3FdLY\u002fkHFBxgUZtz\u002fUe1HvRb23PxiGYRiGYbg\u002fXJBxQcYFuT+gmoFqBqq5P+SkkZNGTro\u002fKK+hvIbyuj9subHlxpa7P7DDwQ4HO7w\u002f9M3RN0ffvD842OFgh4O9P3zi8YnHJ74\u002fwOwBswfMvj8E9xHcR3C\u002fP6QAkQJECsA\u002fxgUZF2RcwD\u002foCqErhK7APwoQKUCkAME\u002fLBWxVMRSwT9OGjlp5KTBP3AfwX0E98E\u002fkiRJkiRJwj+0KdGmRJvCP9YuWbtk7cI\u002f+DPhz4Q\u002fwz8aOWnkpJHDPzw+8fjE48M\u002fXkN5DeU1xD+ASAEiBYjEP6JNiTYl2sQ\u002fxFIRS0UsxT\u002fmV5lfZX7FPwhdIXSF0MU\u002fKmKpiKUixj9MZzGdxXTGP25subHlxsY\u002fkHFBxgUZxz+ydsnaJWvHP9R7Ue9Fvcc\u002f9oDZA2YPyD8YhmEYhmHIPzqL6Syms8g\u002fXJBxQcYFyT9+lflV5lfJP6CagWoGqsk\u002fwp8Jfyb8yT\u002fkpJGTRk7KPwaqGahmoMo\u002fKK+hvIbyyj9KtCnRpkTLP2y5seXGlss\u002fjr45+uboyz+ww8EOBzvMP9LISSMnjcw\u002f9M3RN0ffzD8W01lMZzHNPzjY4WCHg80\u002fWt1pdafVzT984vGJxyfOP57neZ7nec4\u002fwOwBswfMzj\u002fi8YnHJx7PPwT3EdxHcM8\u002fJvyZ8GfCzz+kAJECRArQPzUD1QxUM9A\u002fxgUZF2Rc0D9XCF0hdIXQP+gKoSuErtA\u002feQ3lNZTX0D8KEClApADRP5sSbUq0KdE\u002fLBWxVMRS0T+9F\u002fVe1HvRP04aOWnkpNE\u002f3xx9c\u002fTN0T9wH8F9BPfRPwEiBYgUINI\u002fkiRJkiRJ0j8jJ42cNHLSP7Qp0aZEm9I\u002fRSwVsVTE0j\u002fWLlm7ZO3SP2cxncV0FtM\u002f+DPhz4Q\u002f0z+JNiXalGjTPxo5aeSkkdM\u002fqzut7rS60z88PvH4xOPTP81ANQPVDNQ\u002fXkN5DeU11D\u002fvRb0X9V7UP4BIASIFiNQ\u002fEUtFLBWx1D+iTYk2JdrUPzNQzUA1A9U\u002fxFIRS0Us1T9VVVVVVVXVP+ZXmV9lftU\u002fd1rdaXWn1T8IXSF0hdDVP5lfZX6V+dU\u002fKmKpiKUi1j+7ZO2StUvWP0xnMZ3FdNY\u002f3Wl1p9Wd1j9ubLmx5cbWP\u002f9u\u002fbv179Y\u002fkHFBxgUZ1z8hdIXQFULXP7J2ydola9c\u002fQ3kN5TWU1z\u002fUe1HvRb3XP2V+lflV5tc\u002f9oDZA2YP2D+Hgx0OdjjYPxiGYRiGYdg\u002fqYilIpaK2D86i+ksprPYP8uNLTe23Ng\u002fXJBxQcYF2T\u002ftkrVL1i7ZP36V+VXmV9k\u002fD5g9YPaA2T+gmoFqBqrZPzGdxXQW09k\u002fwp8Jfyb82T9Tok2JNiXaP+SkkZNGTto\u002fdafVnVZ32j8GqhmoZqDaP5esXbJ2ydo\u002fKK+hvIby2j+5seXGlhvbP0q0KdGmRNs\u002f27Zt27Zt2z9subHlxpbbP\u002f279e\u002fWv9s\u002fjr45+ubo2z8fwX0E9xHcP7DDwQ4HO9w\u002fQcYFGRdk3D\u002fSyEkjJ43cP2PLjS03ttw\u002f9M3RN0ff3D+F0BVCVwjdPxbTWUxnMd0\u002fp9WdVnda3T842OFgh4PdP8naJWuXrN0\u002fWt1pdafV3T\u002fr361\u002ft\u002f7dP3zi8YnHJ94\u002fDeU1lNdQ3j+e53me53nePy\u002fqvaj3ot4\u002fwOwBswfM3j9R70W9F\u002fXeP+LxiccnHt8\u002fc\u002fTN0TdH3z8E9xHcR3DfP5X5VeZXmd8\u002fJvyZ8GfC3z+3\u002ft36d+vfP6QAkQJECuA\u002f7AGzB8we4D81A9UMVDPgP34E9xHcR+A\u002fxgUZF2Rc4D8OBzsc7HDgP1cIXSF0heA\u002foAl\u002fJvyZ4D\u002foCqErhK7gPzAMwzAMw+A\u002feQ3lNZTX4D\u002fCDgc7HOzgPwoQKUCkAOE\u002fUhFLRSwV4T+bEm1KtCnhP+QTj088PuE\u002fLBWxVMRS4T90FtNZTGfhP70X9V7Ue+E\u002fBhkXZFyQ4T9OGjlp5KThP5YbW25sueE\u002f3xx9c\u002fTN4T8oHp94fOLhP3AfwX0E9+E\u002fuCDjgowL4j8BIgWIFCDiP0ojJ42cNOI\u002fkiRJkiRJ4j\u002faJWuXrF3iPyMnjZw0cuI\u002fbCivobyG4j+0KdGmRJviP\u002fwq86vMr+I\u002fRSwVsVTE4j+OLTe23NjiP9YuWbtk7eI\u002fHjB7wOwB4z9nMZ3FdBbjP7Ayv8r8KuM\u002f+DPhz4Q\u002f4z9ANQPVDFTjP4k2JdqUaOM\u002f0jdH3xx94z8aOWnkpJHjP2I6i+kspuM\u002fqzut7rS64z\u002f0PM\u002fzPM\u002fjPzw+8fjE4+M\u002fhD8T\u002fkz44z\u002fNQDUD1QzkPxZCVwhdIeQ\u002fXkN5DeU15D+mRJsSbUrkP+9FvRf1XuQ\u002fOEffHH1z5D+ASAEiBYjkP8hJIyeNnOQ\u002fEUtFLBWx5D9aTGcxncXkP6JNiTYl2uQ\u002f6k6rO63u5D8zUM1ANQPlP3xR70W9F+U\u002fxFIRS0Us5T8MVDNQzUDlP1VVVVVVVeU\u002fnlZ3Wt1p5T\u002fmV5lfZX7lPy5Zu2TtkuU\u002fd1rdaXWn5T\u002fAW\u002f9u\u002fbvlPwhdIXSF0OU\u002fUF5DeQ3l5T+ZX2V+lfnlP+Jgh4MdDuY\u002fKmKpiKUi5j9yY8uNLTfmP7tk7ZK1S+Y\u002fBGYPmD1g5j9MZzGdxXTmP5RoU6JNieY\u002f3Wl1p9Wd5j8ma5esXbLmP25subHlxuY\u002ftm3btm3b5j\u002f\u002fbv279e\u002fmP0hwH8F9BOc\u002fkHFBxgUZ5z\u002fYcmPLjS3nPyF0hdAVQuc\u002fanWn1Z1W5z+ydsnaJWvnP\u002fp369+tf+c\u002fQ3kN5TWU5z+Mei\u002fqvajnP9R7Ue9Fvec\u002fHH1z9M3R5z9lfpX5VebnP65\u002ft\u002f7d+uc\u002f9oDZA2YP6D8+gvsI7iPoP4eDHQ52OOg\u002f0IQ\u002fE\u002f5M6D8YhmEYhmHoP2CHgx0Odug\u002fqYilIpaK6D\u002fyiccnHp\u002foPzqL6Syms+g\u002fgowLMi7I6D\u002fLjS03ttzoPxSPTzw+8eg\u002fXJBxQcYF6T+kkZNGThrpP+2StUvWLuk\u002fNpTXUF5D6T9+lflV5lfpP8aWG1tubOk\u002fD5g9YPaA6T9YmV9lfpXpP6CagWoGquk\u002f6Jujb46+6T8xncV0FtPpP3qe53me5+k\u002fwp8Jfyb86T8KoSuErhDqP1OiTYk2Jeo\u002fnKNvjr456j\u002fkpJGTRk7qPyyms5jOYuo\u002fdafVnVZ36j++qPei3ovqPwaqGahmoOo\u002fTqs7re606j+XrF2ydsnqP+Ctf7f+3eo\u002fKK+hvIby6j9wsMPBDgfrP7mx5caWG+s\u002fArMHzB4w6z9KtCnRpkTrP5K1S9YuWes\u002f27Zt27Zt6z8kuI\u002fgPoLrP2y5seXGlus\u002ftLrT6k6r6z\u002f9u\u002fXv1r\u002frP0a9F\u002fVe1Os\u002fjr45+ubo6z\u002fWv1v\u002fbv3rPx\u002fBfQT3Eew\u002faMKfCX8m7D+ww8EOBzvsP\u002fjE4xOPT+w\u002fQcYFGRdk7D+Kxycen3jsP9LISSMnjew\u002fGsprKK+h7D9jy40tN7bsP6zMrzK\u002fyuw\u002f9M3RN0ff7D88z\u002fM8z\u002fPsP4XQFUJXCO0\u002fztE3R98c7T8W01lMZzHtP17Ue1HvRe0\u002fp9WdVnda7T\u002fw1r9b\u002f27tPzjY4WCHg+0\u002fgNkDZg+Y7T\u002fJ2iVrl6ztPxLcR3Afwe0\u002fWt1pdafV7T+i3ot6L+rtP+vfrX+3\u002fu0\u002fNOHPhD8T7j984vGJxyfuP8TjE49PPO4\u002fDeU1lNdQ7j9W5leZX2XuP57neZ7nee4\u002f5uibo2+O7j8v6r2o96LuP3jr361\u002ft+4\u002fwOwBswfM7j8I7iO4j+DuP1HvRb0X9e4\u002fmvBnwp8J7z\u002fi8YnHJx7vPyrzq8yvMu8\u002fc\u002fTN0TdH7z+89e\u002fWv1vvPwT3EdxHcO8\u002fTPgz4c+E7z+V+VXmV5nvP976d+vfre8\u002fJvyZ8GfC7z9u\u002fbv179bvP7f+3fp36+8\u002fAAAAAAAA8D8="},"xaxis":"x2","y":{"dtype":"f8","bdata":"6W3ukLlv1j+fSN6r9bLVP9OP2VHP4NQ\u002fweEbnsP20z\u002fHtjnsCfLSPxCAIYabz9E\u002f4uxNjUqM0D8Be0\u002fu6UnOP8xG1EjULcs\u002f8FNG7FPBxz\u002fiehSHfAbEP2l34tglCcA\u002fCnH8yyfNtz9pJdmZyWGvP8hfkpnc\u002faA\u002ffbYYmG7DiT9YkYjhCuJiP\u002faTMiT7AxM\u002f9Amk6MnXQT4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAn7CJOp0l5PvqIywfnIC8\u002f5YTCaY95dD82UEzTviCXP22O\u002fpzOeKs\u002fPgqn2KbBtz9Ww8+G0TrBPymjP+RAesY\u002fOuqAUx9kyz+WjUav+d\u002fPP\u002feIGGcu9NE\u002fiqP5Q6vA0z9skq\u002fZlVnVP3mLuafGw9Y\u002fhTQ0yBgE2D9QuGVIFh\u002fZP9KHpczWGNo\u002fEhMDy\u002ff02j9jk8chobbbPzgbowyPYNw\u002f6FTP2h313D8zcbqYVXbdP32qatf05d0\u002f57XRPXpF3j\u002fJcY\u002fSLJbeP04bhQwj2d4\u002foUofxkgP3z9RgCgzZDnfP\u002fbYDfgZWN8\u002fGeVVfvBr3z\u002fnvfmdUnXfP6SQCa+RdN8\u002fyJPYEudp3z\u002fb1\u002fU\u002fdVXfP3m\u002feFhIN98\u002fAbCTTlYP3z+Bq+CXft3eP2uBWWyJod4\u002fkQ1PiiZb3j+NauF06wnePwwcZR5Rrd0\u002ffUPD67BE3T\u002f1FFT5QM\u002fcP\u002fn0PYUPTNw\u002f6XS2X\u002f252z+xCwNAtxfbP9qEhOCtY9o\u002fT0Gy0Qyc2T9FnaEVsL7YP72rSN4Yydc\u002fGR6EW2K41j9UnjymOInVP7KpHATWN9Q\u002fGgX28A7A0j\u002fU\u002fzxnfR3RP5KjtobWl84\u002fO1myV3GQyj+s\u002fCrVYCTGP+OI2OwnYME\u002fb1vdeEbUuD9R0iWZilyuP5pQaZ0\u002f\u002fJs\u002fXe8BkNjofD\u002fJ9N7K\u002fe88P7kEgeRs\u002f5I+AAAAAAAAAAAAAAAAAAAAAGfHbyN7xsc98\u002fzEp\u002fDvFT\u002fAvqjQhOB3P4wyLrEfpqE\u002f+a\u002fQTmAntj\u002fgE8b16B3DP0gnZAMUQss\u002fORbRfHZw0T83sAUCaOHUP\u002fRnsBrn8Nc\u002feLQZXi6m2j+EY6DcvgvdP54IMGxeLN8\u002fxl1VVPWI4D90a1nDfmLhPyjFOGN1JuI\u002fjyn6ru\u002fX4j+2RNtFhXnjP22NoCtjDeQ\u002f+6851l2V5D\u002f+JNeJABPlPwlSPxyah+U\u002frCVub0f05T9NkgIA\u002fFnmPzSOu96IueY\u002foKjKYKIT5z+9kyXG5GjnPypNWAnYuec\u002fCYRZAvMG6D+8LaD9nVDoP+55CuI0l+g\u002fQkLO+gjb6D8FrWt2YhzpPw27PKiBW+k\u002f73WRF6CY6T9vtCpl8dPpP3vRNg6kDeo\u002faX2cEuJF6j\u002f2VU2D0XzqP+STffyUsuo\u002fWmbsDkzn6j+vjNiaExvrP5tExx4GTus\u002ffxTj+zuA6z\u002f2v2exy7HrP2sGTRDK4us\u002fQWAnaEoT7D8\u002fvgGuXkPsP0JEwp0Xc+w\u002fjJJ61oSi7D8z7c3xtNHsPz0KVpa1AO0\u002fpKqYhJMv7T++XqSdWl7tP4izruEVje0\u002fqXHhY8+77T9Eoo8ukOrtP4sIpw9gGe4\u002fQw0XP0VI7j\u002flUm7FQ3fuP+83ZnJcpu4\u002fsuloBIvV7j9wOXe7wgTvP04lO5\u002fnM+8\u002f0U3rTsBi7z9cLpMw1ZDvP3ZF+M4ave8\u002fs67mgurk7z9yx\u002f\u002f\u002f\u002f\u002f\u002fvP9oFkQzB6e8\u002f4fqjY1Vw7j8WSz1gP7HlPxFOj6GI9OI\u002f00dRmGdk4j9knzmrUxTiP5+0kXOY0uE\u002f2W5eWT6V4T+yXce+RVnhP70TbkmGHeE\u002fr43vX3fh4D8FVw110KTgPzqbSvVlZ+A\u002fJinvqRop4D950MUEstPfP+eyYIAfU98\u002feWWTbWDQ3j+ga92pWkveP7Z0+zH2w90\u002fRClPghw63T8YgAs+uK3cPy23nQK1Htw\u002fzb2LWP+M2z8pD2u5hPjaPxf4N6YzYdo\u002fwJF8y\u002fvG2T\u002fX8gkyzinZP4AE4Hudidg\u002flv1yLV7m1z815eQDB0DXP65xFVmRltY\u002fyP6jlvnp1T\u002fwiSq5PzrVP2ksF+Vnh9Q\u002f47aaDnvR0z8CViS2hxjTPxsdz7qiXNI\u002fyLL4Q+id0T8bkOfCfNzQP+JA6AyOGNA\u002fX30bG6mkzj+wtW8fKRTNPyezLDU\u002fgMs\u002fRNfsu6vpyT\u002fmIUpNT1HIP2Q55aAtuMY\u002fLTSOTnAfxT+4vjVHaYjDP4uf3dCU9ME\u002fafwAw5plwD85YwBgnbq9P8QaCCtdu7o\u002f\u002fVhKNb\u002fRtz+yaOChUAK1P08ozcDPUbI\u002fzOZjDSaKrz\u002ffAR8Sz8GqPxmrTGfMU6Y\u002fZ0KLDn9Ioj8wYuPO+k2dPwTGjnAZ6ZY\u002fG64nYS1okT\u002fw9hXKoZaJPyOzppQ3GII\u002fIhHi7QJ1eD+xNoNhEVZvP8YFayE812I\u002fxM6J3iYAVT\u002fZGebcEF1FP\u002f6rOx4KczM\u002fI2r5rLDoHj9F\u002f9UdC8EEP8fOVAp7k+Y+Jpklyn3Owj5ATShPAz+WPqL6SXY712A+vCvz2JY4HD6Rzxm4\u002fkDFPcqrBzB9L1U9HCfDGAtKwzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANHerssOuKk80d6uyw64yTzj8PPejRzoPOQN\u002fb+6rwI9JpNcwR3pFz2CWH21epEpPX6iMGHxQTc9ID6BiEhPQj12dLSBdjdJPQq5N6burU49wT9uh2qQUD2gdepVWN9PPXW4HLz9WUs9nXYKCzHvRD3AJ5BiVHs8PWb3p9oVITE9GsycbkYiIj17ZBOYWa0QPcdVDELPhfo8LzkILIqu4TwcJ8MYC0rDPNHerssOuKk8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANHerssOuJk8oTGCG9G87TzG04Y+sM4xPZPh+G5msms9QG1BhQI9nj37KIiDq6HIPc7PfrdHae89grcUhn5KED4TgQ8dYVosPiKFw+XJOUU+erwc60roWz7xY0hhkGJwPgexnia\u002fbIE+A\u002f9olkT6kD5wofLRmZqePmAvy2pguKk+bFo15xxKtD4SKbvq9jW+PhYQjp9BUsU+Ukttn2ChzD6QrIXWVFbSPp8v7oTTc9Y+CiNjY8xP2j49pF3JbofdPh+lw+Suu98+Pm5uYxdQ4D5UnHimsATgPlXB3mcU990+yR7EpLCY2j5PaRrSNUnWPmg4QapggtE+VJdbhcSQyT5uwTZLuCPBPuVFfr88x7Q+36uAr1lPpj6rOs42JKOUPsRzx4pHrX8+C1FpQdEkYz5uHuAuvutAPr18\u002fHHYoxM+GP8+VPt22T2bjgitV6mMPQVfMbECliI9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADFjIwz221wPYgxLHV6TSA+6KrP4jVSkD6YWCAwEszaPs6wy0LMrhA\u002fO4UsYKk+Nj+Whedl+39TP8M0jRcii2k\u002fg6MGQJQpez+l1eQrzsmIP7HzKkZDLJQ\u002fBm1n6ngVnj8o0W3TrPWkP\u002f4wkBtEr6s\u002f9P+sugKFsT8="},"yaxis":"y2","type":"scatter"},{"hovertemplate":"next evaluation\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#d9705f","size":11,"symbol":"triangle-down"},"mode":"markers","name":"argmax","showlegend":false,"visible":false,"x":[0.39348370927318294],"xaxis":"x2","y":[1.0],"yaxis":"y2","type":"scatter"},{"hovertemplate":"UCB (\u03b2=2) (scaled)=%{y:.2f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#4aa96c","width":2.5},"name":"UCB (\u03b2=2)","visible":false,"x":{"dtype":"f8","bdata":"AAAAAAAAAACASAEiBYhkP4BIASIFiHQ\u002fwOwBswfMfj+ASAEiBYiEP6CagWoGqok\u002fwOwBswfMjj9wH8F9BPeRP4BIASIFiJQ\u002fkHFBxgUZlz+gmoFqBqqZP7DDwQ4HO5w\u002fwOwBswfMnj\u002foCqErhK6gP3AfwX0E96E\u002f+DPhz4Q\u002foz+ASAEiBYikPwhdIXSF0KU\u002fkHFBxgUZpz8YhmEYhmGoP6CagWoGqqk\u002fKK+hvIbyqj+ww8EOBzusPzjY4WCHg60\u002fwOwBswfMrj+kAJECRAqwP+gKoSuErrA\u002fLBWxVMRSsT9wH8F9BPexP7Qp0aZEm7I\u002f+DPhz4Q\u002fsz88PvH4xOOzP4BIASIFiLQ\u002fxFIRS0UstT8IXSF0hdC1P0xnMZ3FdLY\u002fkHFBxgUZtz\u002fUe1HvRb23PxiGYRiGYbg\u002fXJBxQcYFuT+gmoFqBqq5P+SkkZNGTro\u002fKK+hvIbyuj9subHlxpa7P7DDwQ4HO7w\u002f9M3RN0ffvD842OFgh4O9P3zi8YnHJ74\u002fwOwBswfMvj8E9xHcR3C\u002fP6QAkQJECsA\u002fxgUZF2RcwD\u002foCqErhK7APwoQKUCkAME\u002fLBWxVMRSwT9OGjlp5KTBP3AfwX0E98E\u002fkiRJkiRJwj+0KdGmRJvCP9YuWbtk7cI\u002f+DPhz4Q\u002fwz8aOWnkpJHDPzw+8fjE48M\u002fXkN5DeU1xD+ASAEiBYjEP6JNiTYl2sQ\u002fxFIRS0UsxT\u002fmV5lfZX7FPwhdIXSF0MU\u002fKmKpiKUixj9MZzGdxXTGP25subHlxsY\u002fkHFBxgUZxz+ydsnaJWvHP9R7Ue9Fvcc\u002f9oDZA2YPyD8YhmEYhmHIPzqL6Syms8g\u002fXJBxQcYFyT9+lflV5lfJP6CagWoGqsk\u002fwp8Jfyb8yT\u002fkpJGTRk7KPwaqGahmoMo\u002fKK+hvIbyyj9KtCnRpkTLP2y5seXGlss\u002fjr45+uboyz+ww8EOBzvMP9LISSMnjcw\u002f9M3RN0ffzD8W01lMZzHNPzjY4WCHg80\u002fWt1pdafVzT984vGJxyfOP57neZ7nec4\u002fwOwBswfMzj\u002fi8YnHJx7PPwT3EdxHcM8\u002fJvyZ8GfCzz+kAJECRArQPzUD1QxUM9A\u002fxgUZF2Rc0D9XCF0hdIXQP+gKoSuErtA\u002feQ3lNZTX0D8KEClApADRP5sSbUq0KdE\u002fLBWxVMRS0T+9F\u002fVe1HvRP04aOWnkpNE\u002f3xx9c\u002fTN0T9wH8F9BPfRPwEiBYgUINI\u002fkiRJkiRJ0j8jJ42cNHLSP7Qp0aZEm9I\u002fRSwVsVTE0j\u002fWLlm7ZO3SP2cxncV0FtM\u002f+DPhz4Q\u002f0z+JNiXalGjTPxo5aeSkkdM\u002fqzut7rS60z88PvH4xOPTP81ANQPVDNQ\u002fXkN5DeU11D\u002fvRb0X9V7UP4BIASIFiNQ\u002fEUtFLBWx1D+iTYk2JdrUPzNQzUA1A9U\u002fxFIRS0Us1T9VVVVVVVXVP+ZXmV9lftU\u002fd1rdaXWn1T8IXSF0hdDVP5lfZX6V+dU\u002fKmKpiKUi1j+7ZO2StUvWP0xnMZ3FdNY\u002f3Wl1p9Wd1j9ubLmx5cbWP\u002f9u\u002fbv179Y\u002fkHFBxgUZ1z8hdIXQFULXP7J2ydola9c\u002fQ3kN5TWU1z\u002fUe1HvRb3XP2V+lflV5tc\u002f9oDZA2YP2D+Hgx0OdjjYPxiGYRiGYdg\u002fqYilIpaK2D86i+ksprPYP8uNLTe23Ng\u002fXJBxQcYF2T\u002ftkrVL1i7ZP36V+VXmV9k\u002fD5g9YPaA2T+gmoFqBqrZPzGdxXQW09k\u002fwp8Jfyb82T9Tok2JNiXaP+SkkZNGTto\u002fdafVnVZ32j8GqhmoZqDaP5esXbJ2ydo\u002fKK+hvIby2j+5seXGlhvbP0q0KdGmRNs\u002f27Zt27Zt2z9subHlxpbbP\u002f279e\u002fWv9s\u002fjr45+ubo2z8fwX0E9xHcP7DDwQ4HO9w\u002fQcYFGRdk3D\u002fSyEkjJ43cP2PLjS03ttw\u002f9M3RN0ff3D+F0BVCVwjdPxbTWUxnMd0\u002fp9WdVnda3T842OFgh4PdP8naJWuXrN0\u002fWt1pdafV3T\u002fr361\u002ft\u002f7dP3zi8YnHJ94\u002fDeU1lNdQ3j+e53me53nePy\u002fqvaj3ot4\u002fwOwBswfM3j9R70W9F\u002fXeP+LxiccnHt8\u002fc\u002fTN0TdH3z8E9xHcR3DfP5X5VeZXmd8\u002fJvyZ8GfC3z+3\u002ft36d+vfP6QAkQJECuA\u002f7AGzB8we4D81A9UMVDPgP34E9xHcR+A\u002fxgUZF2Rc4D8OBzsc7HDgP1cIXSF0heA\u002foAl\u002fJvyZ4D\u002foCqErhK7gPzAMwzAMw+A\u002feQ3lNZTX4D\u002fCDgc7HOzgPwoQKUCkAOE\u002fUhFLRSwV4T+bEm1KtCnhP+QTj088PuE\u002fLBWxVMRS4T90FtNZTGfhP70X9V7Ue+E\u002fBhkXZFyQ4T9OGjlp5KThP5YbW25sueE\u002f3xx9c\u002fTN4T8oHp94fOLhP3AfwX0E9+E\u002fuCDjgowL4j8BIgWIFCDiP0ojJ42cNOI\u002fkiRJkiRJ4j\u002faJWuXrF3iPyMnjZw0cuI\u002fbCivobyG4j+0KdGmRJviP\u002fwq86vMr+I\u002fRSwVsVTE4j+OLTe23NjiP9YuWbtk7eI\u002fHjB7wOwB4z9nMZ3FdBbjP7Ayv8r8KuM\u002f+DPhz4Q\u002f4z9ANQPVDFTjP4k2JdqUaOM\u002f0jdH3xx94z8aOWnkpJHjP2I6i+kspuM\u002fqzut7rS64z\u002f0PM\u002fzPM\u002fjPzw+8fjE4+M\u002fhD8T\u002fkz44z\u002fNQDUD1QzkPxZCVwhdIeQ\u002fXkN5DeU15D+mRJsSbUrkP+9FvRf1XuQ\u002fOEffHH1z5D+ASAEiBYjkP8hJIyeNnOQ\u002fEUtFLBWx5D9aTGcxncXkP6JNiTYl2uQ\u002f6k6rO63u5D8zUM1ANQPlP3xR70W9F+U\u002fxFIRS0Us5T8MVDNQzUDlP1VVVVVVVeU\u002fnlZ3Wt1p5T\u002fmV5lfZX7lPy5Zu2TtkuU\u002fd1rdaXWn5T\u002fAW\u002f9u\u002fbvlPwhdIXSF0OU\u002fUF5DeQ3l5T+ZX2V+lfnlP+Jgh4MdDuY\u002fKmKpiKUi5j9yY8uNLTfmP7tk7ZK1S+Y\u002fBGYPmD1g5j9MZzGdxXTmP5RoU6JNieY\u002f3Wl1p9Wd5j8ma5esXbLmP25subHlxuY\u002ftm3btm3b5j\u002f\u002fbv279e\u002fmP0hwH8F9BOc\u002fkHFBxgUZ5z\u002fYcmPLjS3nPyF0hdAVQuc\u002fanWn1Z1W5z+ydsnaJWvnP\u002fp369+tf+c\u002fQ3kN5TWU5z+Mei\u002fqvajnP9R7Ue9Fvec\u002fHH1z9M3R5z9lfpX5VebnP65\u002ft\u002f7d+uc\u002f9oDZA2YP6D8+gvsI7iPoP4eDHQ52OOg\u002f0IQ\u002fE\u002f5M6D8YhmEYhmHoP2CHgx0Odug\u002fqYilIpaK6D\u002fyiccnHp\u002foPzqL6Syms+g\u002fgowLMi7I6D\u002fLjS03ttzoPxSPTzw+8eg\u002fXJBxQcYF6T+kkZNGThrpP+2StUvWLuk\u002fNpTXUF5D6T9+lflV5lfpP8aWG1tubOk\u002fD5g9YPaA6T9YmV9lfpXpP6CagWoGquk\u002f6Jujb46+6T8xncV0FtPpP3qe53me5+k\u002fwp8Jfyb86T8KoSuErhDqP1OiTYk2Jeo\u002fnKNvjr456j\u002fkpJGTRk7qPyyms5jOYuo\u002fdafVnVZ36j++qPei3ovqPwaqGahmoOo\u002fTqs7re606j+XrF2ydsnqP+Ctf7f+3eo\u002fKK+hvIby6j9wsMPBDgfrP7mx5caWG+s\u002fArMHzB4w6z9KtCnRpkTrP5K1S9YuWes\u002f27Zt27Zt6z8kuI\u002fgPoLrP2y5seXGlus\u002ftLrT6k6r6z\u002f9u\u002fXv1r\u002frP0a9F\u002fVe1Os\u002fjr45+ubo6z\u002fWv1v\u002fbv3rPx\u002fBfQT3Eew\u002faMKfCX8m7D+ww8EOBzvsP\u002fjE4xOPT+w\u002fQcYFGRdk7D+Kxycen3jsP9LISSMnjew\u002fGsprKK+h7D9jy40tN7bsP6zMrzK\u002fyuw\u002f9M3RN0ff7D88z\u002fM8z\u002fPsP4XQFUJXCO0\u002fztE3R98c7T8W01lMZzHtP17Ue1HvRe0\u002fp9WdVnda7T\u002fw1r9b\u002f27tPzjY4WCHg+0\u002fgNkDZg+Y7T\u002fJ2iVrl6ztPxLcR3Afwe0\u002fWt1pdafV7T+i3ot6L+rtP+vfrX+3\u002fu0\u002fNOHPhD8T7j984vGJxyfuP8TjE49PPO4\u002fDeU1lNdQ7j9W5leZX2XuP57neZ7nee4\u002f5uibo2+O7j8v6r2o96LuP3jr361\u002ft+4\u002fwOwBswfM7j8I7iO4j+DuP1HvRb0X9e4\u002fmvBnwp8J7z\u002fi8YnHJx7vPyrzq8yvMu8\u002fc\u002fTN0TdH7z+89e\u002fWv1vvPwT3EdxHcO8\u002fTPgz4c+E7z+V+VXmV5nvP976d+vfre8\u002fJvyZ8GfC7z9u\u002fbv179bvP7f+3fp36+8\u002fAAAAAAAA8D8="},"xaxis":"x2","y":{"dtype":"f8","bdata":"SJcLeV4O7T9VYpPrFrLsP96zisnDVOw\u002fh1+Yvnv26z\u002fPZcBxVpfrP1d0AYNsN+s\u002ffVRyitfW6j8sRQ4asnXqP5f4J8QXFOo\u002fR17nKSWy6T\u002fw6OkX+E\u002fpP+g2gryv7eg\u002fJdaFDm2L6D+uIq+VUynoPxTYjgaLx+c\u002fi0Ox2EJm5z9aLtBBuwXnP7bpS91fpuY\u002foME0hy5J5j8vwMsVKPLlP2+ygrZgxOU\u002fAL8l5zQL5j\u002frTG9wfHDmP6cZjsoc2OY\u002fS8bqyLk+5z+fbQomcaPnP8HgdV7gBeg\u002ff+5MS8xl6D8d\u002fXd5CcPoP3phNgh0Hek\u002fC9DCX+x06T\u002feaIy1VcnpPyyrolOVGuo\u002fTfIJO5Jo6j9vObDzNLPqP4xTqHRn+uo\u002f2C7mGRU+6z\u002fDxLuhKn7rP8kp3S6Wuus\u002fGpAITUfz6z8HWSz3LijsP9AHUp4\u002fWew\u002f+n\u002fVMG2G7D9nj5chra\u002fsP9K382721Ow\u002feFZRqUH27D+rBzP5iBPtP5l7riTILO0\u002fTRg8lPxB7T+OfdFWJVPtP9PFPCVDYO0\u002fWoO4ZFhp7T+BLbIoaW7tPxUfvjN7b+0\u002f\u002fH2195Vs7T+Pf\u002fuUwmXtP42A6NgLW+0\u002fqmRaO35M7T9krmrbJzrtP\u002f7DS3sYJO0\u002fQu9Pe2EK7T+s2x3UFe3sP3+9FxBKzOw\u002fxfT7QxSo7D9qD8gGjIDsP92s6WjKVew\u002fBj7M6ukn7D+HVNdyBvfrP8XO90I9w+s\u002furDX7ayM6z9Hg\u002fZLdVPrP+hW6XC3F+s\u002fcJsqoZXZ6j+80BZJM5nqP4P2Cfa0Vuo\u002fQQYlU0AS6j+6ukUs\u002fMvpPzkhlHsQhOk\u002f\u002feGRiaY66T\u002fcY7Qu6e\u002foPxOSzlQFpOg\u002f1hus+SpX6D\u002feW9dMjwnoP8TB7Xxxu+c\u002fRYGu\u002fSZt5z+AChztQB\u002fnP\u002fVf1I8h0+Y\u002fVKNDyKSO5j9y0ohGV3rmP6R6luoAveY\u002f12a0RXsV5z\u002fJC+fHDXLnP1tKMjrcz+c\u002fmRslygIu6D8QdI8DEYzoPyOMnfO76eg\u002fuKrr2sdG6T96A6IyAKPpP273P100\u002fuk\u002fqb8nIjZY6j9BA47v2LDqPximcXrxB+s\u002fPMp4jlVd6z\u002f23aH327DrP++zhXpcAuw\u002fqpkY1a9R7D8VU3zEr57sP+Xc3Q036ew\u002fEOciiSEx7T+QMp8sTHbtP31sTxmVuO0\u002fVNpBp9v37T8AMvBxADTuP+2AX2TlbO4\u002fcKzmxG2i7j\u002fWBoRAftTuP5D7r\u002fX8Au8\u002fD8ueftEt7z+SM+b65FTvP9EUfhgieO8\u002f7csUHHWX7z+zYLHoy7LvPze4ngYWyu8\u002fjPObqUTd7z9w9E62SuzvP9zA9sYc9+8\u002fvy9cL7H97z8A8\u002f\u002f\u002f\u002f\u002f\u002fvP1O6hQgD\u002fu8\u002fvdJc2bX37z9DWKfEFe3vPw\u002fNYd4h3u8\u002fw7zN+9rK7z+aBSOyQ7PvP\u002fSDjFRgl+8\u002fzz528TZ37z9L+zRPz1LvP8JtEegyKu8\u002ft2LE5Wz97j8NkXUciszuP5X2VAWZl+4\u002fiqDvuKle7j\u002fuMm7pzSHuPycMAN0Y4e0\u002fmhPWaJ+c7T9QDUTtd1TtP\u002f4P9VO6CO0\u002fgEqyEYC57D91wT4u5GbsPxLqqFYDEew\u002foBEOAvy36z+9nCO47lvrPzyry5j+\u002fOo\u002fiuJaaVKb6j+JWYjMFjfqP8WU82GD0Ok\u002fzcdyQ+hn6T+Y5CUl2f3oP8Ifoe3ok+g\u002fMSNVHyAy6D92TQ66YRXoP9FpcKfmUOg\u002fbiGUarua6D9CNXRSi+boPzQjng5EMuk\u002fv6fCKzJ96T+EhDZe98bpP6+hzFlSD+o\u002fl5jHHA5W6j9BjG\u002fM+5rqP+InXhzw3eo\u002fn8HIGMIe6z8rC6uMSl3rP7qGrLJjmes\u002fsuJlDOnS6z+L8nJOtwnsP2xzRVisPew\u002fgy\u002fQMqdu7D\u002f3gkETiJzsP3WcKGAwx+w\u002fI7kEuILu7D8T4pz4YhLtP3\u002fjt0a2Mu0\u002fgo3vFWNP7T+1uHAwUWjtPxkaiL5pfe0\u002fvZzlTZeO7T+riIbYxZvtPypFO8vipO0\u002f6LXAC92p7T9remf+pKrtPzb\u002fRIssp+0\u002fOojrImef7T8yRafCSZPtPyIvP\u002fjKgu0\u002fPvM45eJt7T8FlJ9Bi1TtP822TF6\u002fNu0\u002fKs60JnwU7T\u002fYfTYiwO3sP4K17XSLwuw\u002fCBgL4N+S7D81VbDBwF7sP\u002fQnUhQzJuw\u002fcLGgbT3p6z9b7vb856frP9UEUok8Yus\u002fyirRbkYY6z9r5L6bEsrqP9VbJI2vd+o\u002fvJXnSi0h6j+0S3VjncbpPwo+9+YSaOk\u002f5NwXYqIF6T+7PVTYYZ\u002foP29v3b1oNeg\u002f0mcK8c\u002fH5z8L\u002fluzsVbnP86uFKIp4uY\u002fUkxmrlRq5j+1PzgVUe\u002flP421iVY+ceU\u002fY\u002f5zLD3w5D\u002fqsdKBb2zkP1rimGj45eM\u002f+xjdD\u002fxc4z+8PKm5n9HiP+RgoLAJROI\u002fMYuTPWG04T\u002fJ9SidziLhP4YZyfV6j+A\u002f40Q6nCD13z\u002f\u002fuCEJc8jeP1jHEJFEmd0\u002fXE\u002fDLO5n3D8V5hhwyjTbP\u002frZhJo1ANo\u002fK91ywY3K2D+8nF0oM5TXPxPQ9OyIXdY\u002fP\u002fi2VvYm1T\u002fymkR76fDTPxqqgercu9I\u002fUx3wF2WI0T+zZPXXVFfQP4cX+4tvVM4\u002f\u002fQYSUSALzD\u002fH9URJ6gXKP5SJXxquSck\u002fo2\u002fysX6GyT\u002fJAsf7WOjJP5bZjhnyT8o\u002fJYRkkOS2yj9bQ0u73RrLPy1AwNikess\u002fVGLmSmjVyz\u002fXKYYYhSrMP8LxXFlxecw\u002farOk17LBzD8W+Gme2gLNP1T6v72CPM0\u002f8C6IIk1uzT+l3Cf94pfNPzL5+nX0uM0\u002f\u002fc55jTjRzT9fFFoVbeDNP6+T6LdW5s0\u002ftokrB8HizT8We9CPftXNP2HhV+1ovs0\u002f+unP3WCdzT+gtvpTTnLNP+QVFocgPc0\u002fGOC1\u002f839zD9udEqhVLTMP0UdCbC5YMw\u002fPZ8A0wkDzD+5lzMSWZvLP7JLntDCKcs\u002f+0QXwmmuyj9xVQLddynKPxzn1Ecem8k\u002f+ERxQpUDyT9FFGULHGPIP0HgHcH4ucc\u002fgq0tP3gIxz\u002fRZcH37U7GP00WdMmzjcU\u002fEBS10SnFxD9sMQU8tvXDP\u002fOxYQ7FH8M\u002f7eVM88dDwj+L4AcCNmLBP+w7xIWLe8A\u002fzmzDiZMgvz\u002fedYKT7UG9Pzbu4F46XLs\u002fbwI865dwuT8Q53nCLIC3PyMBSOUnjLU\u002fKe4VAMGVsz+gQV0dOZ6xP8PlEW24Ta8\u002fEETAwwhiqz8RgrRVQHynP1Pc9yt\u002fn6M\u002fuuMeIsKenz9rn4WlDCGYPw\u002f6X4cg1JA\u002fIHKxXBGrgz9yQ1mAwCBsPwAAAAAAAAAAPhihLxYIeT\u002fxuuc7lkaSP8KcRSthgJ8\u002fH5Nfb8yXpj9l8EINbZKtPxT9MQgNU7I\u002fMUDhuGbmtT941mP4+4C5P6i9vYrXIL0\u002fMR\u002fEsRZiwD\u002fjOTI9pDTCP2iP\u002fhFBB8Q\u002fL8zo4h7ZxT+NDSdZc6nHP1vXLpR3d8k\u002fb8pb+mdCyz+Bmzo4hAnNPzWEelsPzM4\u002fU4lA\u002f6dE0D8M\u002fvw+SCDRP1hzHJqP+NE\u002fWhHdWyfN0j8ro3kNu53TPymjGZb4adQ\u002fkKdWWpAx1T8vCwNbNfTVP8ge8lKdsdY\u002fHGaQ04Bp1z8QhiRgmxvYP8n\u002fmIerx9g\u002fHH60\u002fHJt2T\u002fo7qqstgzaPzlD9dM+pdo\u002fBMJgEdc22z+wi0l3TsHbP1Ng9pp3RNw\u002faQoOoijA3D\u002fiDiFOOzTdP\u002fyGRAaNoN0\u002fZGC93v4E3j\u002fzwr2edWHeP6gjOcTZtd4\u002fPrvWhRcC3z+R4A3THkbfPyVwfFLjgd8\u002fRl+NXly13z8NeY0AheDfP9yFK\u002fWtAeA\u002fMz9mt\u002fEO4D+Q8be8EBjgP2BRw8IPHeA\u002f\u002fpm1SvUd4D\u002fel3+VyRrgP7+DWaGWE+A\u002fn1+6KWgI4D\u002f6AFZXl\u002fLfP1U9buOgzN8\u002fGyuZWg+f3z+mO9dQCWrfP+rNdkq6Ld8\u002fbxyHMlTq3j8nr0hbEqDeP8zJpCJAT94\u002fUwt3Xkn43T+mvmsf6pvdP31wpvDgO90\u002f+GLbN+je3D8Ld+YjyrzcPwMcf11lft0\u002ftmKDH1qQ3j9hharlIq3fPztlUjpWZuA\u002fmLfrAnn24D8gKOcui4bhP4mgWDVKFuI\u002fkIkquoSl4j+8mxd7ETTjP85V7K7LweM\u002fehr0Y5FO5D9Vowe0QtrkPwFhG1vBZOU\u002fDjzIfvDt5T9NjaSPtHXmP69N0zjz++Y\u002fkyKjV5OA5z9KvtH3fAPoPyNVeFKZhOg\u002fH8NwztID6T8="},"yaxis":"y2","type":"scatter"},{"hovertemplate":"next evaluation\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#d9705f","size":11,"symbol":"triangle-down"},"mode":"markers","name":"argmax","showlegend":false,"visible":false,"x":[0.3182957393483709],"xaxis":"x2","y":[1.0],"yaxis":"y2","type":"scatter"}],                        {"font":{"color":"#8b95a5","family":"-apple-system, Segoe UI, Roboto, sans-serif","size":13},"height":520,"legend":{"bgcolor":"rgba(0,0,0,0)","x":0.995,"xanchor":"right","y":0.99},"margin":{"b":45,"l":55,"r":20,"t":40},"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)","template":{"data":{"scatter":[{"type":"scatter"}]}},"updatemenus":[{"bgcolor":"rgba(0,0,0,0)","buttons":[{"args":[{"visible":[true,true,true,true,true,false,false,false,false]}],"label":"EI","method":"update"},{"args":[{"visible":[true,true,true,false,false,true,true,false,false]}],"label":"PI","method":"update"},{"args":[{"visible":[true,true,true,false,false,false,false,true,true]}],"label":"UCB (\u03b2=2)","method":"update"}],"direction":"right","font":{"color":"#8b95a5"},"type":"buttons","x":0.5,"xanchor":"center","y":1.14}],"xaxis":{"anchor":"y","domain":[0.0,1.0],"gridcolor":"rgba(128,140,160,0.28)","linecolor":"rgba(128,140,160,0.28)","matches":"x2","showticklabels":false,"zerolinecolor":"rgba(128,140,160,0.28)"},"yaxis":{"anchor":"x","domain":[0.41719999999999996,1.0],"gridcolor":"rgba(128,140,160,0.28)","linecolor":"rgba(128,140,160,0.28)","title":{"text":"f(x)"},"zerolinecolor":"rgba(128,140,160,0.28)"},"xaxis2":{"anchor":"y2","domain":[0.0,1.0],"gridcolor":"rgba(128,140,160,0.28)","linecolor":"rgba(128,140,160,0.28)","title":{"text":"x"},"zerolinecolor":"rgba(128,140,160,0.28)"},"yaxis2":{"anchor":"x2","domain":[0.0,0.35719999999999996],"gridcolor":"rgba(128,140,160,0.28)","linecolor":"rgba(128,140,160,0.28)","title":{"text":"acquisition (scaled)"},"zerolinecolor":"rgba(128,140,160,0.28)"}},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div></div>
+<div class='caption'>Same six observations, same GP posterior (top); switch the acquisition
+(bottom) and watch the recommended next evaluation (red marker) move. EI and PI both spike in
+the gap around x &asymp; 0.5 but weight it differently; UCB with &beta; = 2 is happy to chase
+wide bands even where the mean is mediocre.</div>
+</div>
+
+<p>And here is the arithmetic itself &mdash; the quiz will ask you to do this by hand, so try a
+few settings (in particular &Delta; = 0):</p>
+
+<div class='widget' id='w-acq'>
+  <div class='wctl'>
+    <label>&Delta; = &mu; &minus; f<sup>*</sup></label>
+    <input type='range' id='w-acq-d' min='-200' max='200' value='0'>
+    <label>&sigma;</label>
+    <input type='range' id='w-acq-s' min='5' max='200' value='100'>
+    <label>&beta;</label>
+    <input type='range' id='w-acq-b' min='0' max='400' value='200'>
+  </div>
+  <div class='wstat' id='w-acq-stat'></div>
+  <div style='max-width:420px;margin:.6rem auto 0'>
+    <div style='font-size:.78rem;color:var(--muted)'>EI</div>
+    <div style='background:var(--box-bg);border:1px solid var(--line);border-radius:6px'><div id='w-acq-ei' style='height:10px;background:var(--ok);border-radius:6px;width:0'></div></div>
+    <div style='font-size:.78rem;color:var(--muted);margin-top:.3rem'>PI</div>
+    <div style='background:var(--box-bg);border:1px solid var(--line);border-radius:6px'><div id='w-acq-pi' style='height:10px;background:var(--accent);border-radius:6px;width:0'></div></div>
+    <div style='font-size:.78rem;color:var(--muted);margin-top:.3rem'>UCB &minus; f<sup>*</sup></div>
+    <div style='background:var(--box-bg);border:1px solid var(--line);border-radius:6px'><div id='w-acq-ucb' style='height:10px;background:var(--fail);border-radius:6px;width:0'></div></div>
+  </div>
+  <div class='caption'>Slide &Delta; negative and watch EI shrink but never quite die (the
+  &sigma;&phi;(z) term), while PI collapses toward zero — and UCB march on linearly. The three
+  disagree most exactly where decisions are hardest: promising-but-uncertain territory.</div>
+</div>
+
+<div class="pn"><a class="pn-prev" href="2026-08-02-bayesian-optimization-math-acq-improvement-and-its-expectation.html">&larr; Improvement, and its expectation</a><a class="pn-next" href="2026-08-02-bayesian-optimization-math-acq-numerics-and-batches-logei-and-qei.html">Numerics and batches: LogEI and qEI &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-02 11:08:56 UTC</footer></main></div>
+<script>window.__PAGES__ = {"background": "2026-08-02-bayesian-optimization-background.html", "intuition": "2026-08-02-bayesian-optimization-intuition.html", "math-gp": "2026-08-02-bayesian-optimization-math-gp.html", "math-acq": "2026-08-02-bayesian-optimization-math-acq.html", "papers": "2026-08-02-bayesian-optimization-papers.html", "concept-map": "2026-08-02-bayesian-optimization-concept-map.html", "keep-learning": "2026-08-02-bayesian-optimization-keep-learning.html", "sources": "2026-08-02-bayesian-optimization-sources.html"};</script>
+<script>window.__QUIZZES__ = [];</script>
+<script>
+window.copyTextFallback = function (text) {
+  function legacy() {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(legacy);
+  } else legacy();
+};
+(function () {
+  const groups = window.__QUIZZES__ || [];
+  const LOGKEY = 'quizlog:' + location.pathname.split('/').pop();
+  const loadLog = () => { try { return JSON.parse(localStorage.getItem(LOGKEY)) || {}; } catch (e) { return {}; } };
+  const saveLog = (l) => { try { localStorage.setItem(LOGKEY, JSON.stringify(l)); } catch (e) {} };
+  const buildSummary = () => {
+    const log = loadLog();
+    const lines = ['Quiz results — ' + document.title + ' — ' + new Date().toISOString().slice(0, 10)];
+    let tot = 0, got = 0;
+    groups.forEach(g => {
+      const e = log[g.host];
+      if (!e) return;
+      tot += e.total; got += e.score;
+      lines.push(e.score + '/' + e.total +
+        (e.wrong.length ? '. Missed: ' + e.wrong.map(w => '"' + w + '"').join('; ') : ''));
+    });
+    lines.push('Total: ' + got + '/' + tot);
+    const miss = (loadLog().__miss) || {};
+    const rep = Object.entries(miss).filter(([, n]) => n > 1).map(([q, n]) => '"' + q + '" (x' + n + ')');
+    if (rep.length) lines.push('Repeat offenders: ' + rep.join('; '));
+    lines.push('Please quiz me again on my weak areas, harder.');
+    return lines.join('\n');
+  };
+  groups.forEach(function (group) {
+    const host = document.getElementById(group.host);
+    const data = group.questions || [];
+    if (!host || !data.length) return;
+    let answered = 0, right = 0;
+    const results = [];
+    const score = document.createElement('div');
+    score.className = 'quiz-score';
+    data.forEach((q, qi) => {
+      const card = document.createElement('div');
+      card.className = 'quiz-q';
+      const qt = document.createElement('div');
+      qt.className = 'qtext';
+      qt.innerHTML = (qi + 1) + '. ' + q.question;
+      card.appendChild(qt);
+      const fb = document.createElement('div');
+      fb.className = 'quiz-fb';
+      const opts = q.options.map((o, i) => ({ o, i }));
+      for (let i = opts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [opts[i], opts[j]] = [opts[j], opts[i]];
+      }
+      const buttons = [];
+      opts.forEach(({ o }) => {
+        const b = document.createElement('button');
+        b.className = 'quiz-opt';
+        b.innerHTML = o.text;
+        b.addEventListener('click', () => {
+          answered++;
+          buttons.forEach(x => {
+            x.disabled = true;
+            if (x.__correct) x.classList.add('reveal-right');
+            const ex = document.createElement('div');
+            ex.className = 'quiz-expl ' + (x.__correct ? 'right' : 'wrong');
+            ex.innerHTML = (x.__correct ? '<strong>✓ Correct answer.</strong> '
+                                        : '<strong>✗</strong> ') +
+                           (x.__opt.explanation || '');
+            x.insertAdjacentElement('afterend', ex);
+          });
+          if (o.correct) {
+            right++;
+            b.classList.add('chosen-right');
+            fb.className = 'quiz-fb right';
+            fb.innerHTML = '<strong>Correct.</strong> Explanations for every option are shown above.';
+          } else {
+            b.classList.add('chosen-wrong');
+            fb.className = 'quiz-fb wrong';
+            fb.innerHTML = '<strong>Not quite.</strong> The correct answer is outlined above, with explanations for every option.';
+          }
+          results.push({ q: q.question.replace(/<[^>]*>/g, ''), ok: !!o.correct });
+          if (answered === data.length) {
+            score.textContent = 'Score: ' + right + ' / ' + data.length;
+            score.style.display = 'block';
+            const log = loadLog();
+            log[group.host] = { ts: Date.now(), score: right, total: data.length,
+              wrong: results.filter(r => !r.ok).map(r => r.q) };
+            log.__miss = log.__miss || {};
+            results.filter(r => !r.ok).forEach(r => { log.__miss[r.q] = (log.__miss[r.q] || 0) + 1; });
+            saveLog(log);
+            const cp = document.createElement('button');
+            cp.className = 'wbtn'; cp.style.marginTop = '.6rem';
+            cp.textContent = 'copy results for Claude';
+            cp.addEventListener('click', () => {
+              window.copyTextFallback(buildSummary());
+              cp.textContent = 'copied \u2713';
+              setTimeout(() => { cp.textContent = 'copy results for Claude'; }, 1500);
+            });
+            score.insertAdjacentElement('afterend', cp);
+          }
+        });
+        b.__correct = !!o.correct;
+        b.__opt = o;
+        buttons.push(b);
+        card.appendChild(b);
+      });
+      card.appendChild(fb);
+      host.appendChild(card);
+    });
+    host.appendChild(score);
+  });
+})();
+</script>
+<script>
+(function () {
+  document.querySelectorAll('.dstep-toggle').forEach(b =>
+    b.addEventListener('click', () => b.closest('.dstep').classList.toggle('open')));
+  document.querySelectorAll('.deriv').forEach(d => {
+    const setAll = open => d.querySelectorAll('.dstep').forEach(s => s.classList.toggle('open', open));
+    const w = d.querySelector('.deriv-worked'), p = d.querySelector('.deriv-practice');
+    if (w) w.addEventListener('click', () => setAll(true));
+    if (p) p.addEventListener('click', () => setAll(false));
+  });
+  document.querySelectorAll('[data-copy]').forEach(b =>
+    b.addEventListener('click', () => {
+      const el = document.getElementById(b.getAttribute('data-copy'));
+      if (!el) return;
+      window.copyTextFallback(el.innerText);
+      const old = b.textContent;
+      b.textContent = 'copied \u2713';
+      setTimeout(() => { b.textContent = old; }, 1500);
+    }));
+  // light/dark toggle
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    const mode = () => {
+      const a = document.documentElement.getAttribute('data-theme');
+      if (a) return a;
+      return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    };
+    const paint = () => { btn.textContent = mode() === 'dark' ? '\u2600 light' : '\u263E dark'; };
+    btn.addEventListener('click', () => {
+      const next = mode() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+      paint();
+      window.dispatchEvent(new Event('themechange'));
+    });
+    paint();
+  }
+})();
+</script>
+<script>/* Shared helpers for explainer widgets. Load BEFORE the topic's widgets.js
+   (build_spec.py passes [widgets_lib.js, widgets.js] as the spec's scripts).
+   Exposes window.WLib = { $, cssVar, mulberry32, gauss, onTheme }. */
+window.WLib = (function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function mulberry32(a) {           // seeded PRNG for repeatable scrubbing
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function gauss(rng) {              // Box-Muller
+    var u = 0, v = 0;
+    while (u === 0) u = rng();
+    while (v === 0) v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  var redraws = [];
+  function onTheme(fn) { redraws.push(fn); }   // canvases re-render on theme flip
+  var repaint = function () { redraws.forEach(function (f) { f(); }); };
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mq.addEventListener) mq.addEventListener('change', repaint);
+  window.addEventListener('themechange', repaint);  // fired by the masthead toggle
+  return { $: $, cssVar: cssVar, mulberry32: mulberry32, gauss: gauss, onTheme: onTheme };
+})();
+</script><script>(function () {
+  'use strict';
+  var $ = WLib.$, cssVar = WLib.cssVar, mulberry32 = WLib.mulberry32,
+      gauss = WLib.gauss, onTheme = WLib.onTheme;
+
+  /* ---- tiny GP engine (shared by the widgets) ------------------------- */
+  function erf(x) {                       // Abramowitz & Stegun 7.1.26
+    var s = x < 0 ? -1 : 1; x = Math.abs(x);
+    var t = 1 / (1 + 0.3275911 * x);
+    var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t
+      - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return s * y;
+  }
+  var Phi = function (z) { return 0.5 * (1 + erf(z / Math.SQRT2)); };
+  var phi = function (z) { return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI); };
+  function rbf(a, b, ls) { var d = (a - b) / ls; return Math.exp(-0.5 * d * d); }
+
+  function inv(M) {                        // Gauss-Jordan, n <= ~40
+    var n = M.length, A = M.map(function (r, i) {
+      var e = new Array(n).fill(0); e[i] = 1; return r.slice().concat(e);
+    });
+    for (var c = 0; c < n; c++) {
+      var p = c;
+      for (var r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      var tmp = A[c]; A[c] = A[p]; A[p] = tmp;
+      var pv = A[c][c];
+      for (var j = 0; j < 2 * n; j++) A[c][j] /= pv;
+      for (r = 0; r < n; r++) if (r !== c) {
+        var f = A[r][c];
+        for (j = 0; j < 2 * n; j++) A[r][j] -= f * A[c][j];
+      }
+    }
+    return A.map(function (r) { return r.slice(n); });
+  }
+  function gpPost(grid, X, y, ls, noise) {
+    var n = X.length;
+    if (!n) return { mu: grid.map(function () { return 0; }),
+                     sd: grid.map(function () { return 1; }) };
+    var K = [];
+    for (var i = 0; i < n; i++) {
+      K.push([]);
+      for (var j = 0; j < n; j++) K[i].push(rbf(X[i], X[j], ls) + (i === j ? noise : 0));
+    }
+    var Ki = inv(K);
+    var alpha = new Array(n).fill(0);
+    for (i = 0; i < n; i++) for (j = 0; j < n; j++) alpha[i] += Ki[i][j] * y[j];
+    var mu = [], sd = [];
+    grid.forEach(function (x) {
+      var k = X.map(function (xi) { return rbf(x, xi, ls); });
+      var m = 0, q = 0;
+      for (var a = 0; a < n; a++) {
+        m += k[a] * alpha[a];
+        var t = 0;
+        for (var b = 0; b < n; b++) t += Ki[a][b] * k[b];
+        q += k[a] * t;
+      }
+      mu.push(m);
+      sd.push(Math.sqrt(Math.max(1e-10, 1 + noise - q)));
+    });
+    return { mu: mu, sd: sd };
+  }
+  function eiOf(mu, sd, best) {
+    return mu.map(function (m, i) {
+      var z = (m - best) / sd[i];
+      return (m - best) * Phi(z) + sd[i] * phi(z);
+    });
+  }
+  function lml(X, y, ls, noise) {          // log marginal likelihood
+    var n = X.length, K = [];
+    for (var i = 0; i < n; i++) {
+      K.push([]);
+      for (var j = 0; j < n; j++) K[i].push(rbf(X[i], X[j], ls) + (i === j ? noise : 0));
+    }
+    // Cholesky
+    var L = K.map(function (r) { return r.slice().fill(0); });
+    for (i = 0; i < n; i++) for (var k = 0; k <= i; k++) {
+      var s = 0;
+      for (var m = 0; m < k; m++) s += L[i][m] * L[k][m];
+      if (i === k) L[i][k] = Math.sqrt(Math.max(1e-12, K[i][i] - s));
+      else L[i][k] = (K[i][k] - s) / L[k][k];
+    }
+    var z = y.slice();                      // solve L z = y
+    for (i = 0; i < n; i++) {
+      for (k = 0; k < i; k++) z[i] -= L[i][k] * z[k];
+      z[i] /= L[i][i];
+    }
+    var quad = z.reduce(function (a, v) { return a + v * v; }, 0);
+    var logdet = 0;
+    for (i = 0; i < n; i++) logdet += 2 * Math.log(L[i][i]);
+    return -0.5 * quad - 0.5 * logdet - 0.5 * n * Math.log(2 * Math.PI);
+  }
+
+  /* ---- W-GP: drive the BO loop yourself ------------------------------- */
+  if ($('w-gp')) {
+    var CV = $('w-gp-cv'), CTX = CV.getContext('2d');
+    var W = CV.width = 660, H = CV.height = 400, SPLIT = 300; // top: f, bottom: EI
+    var LS = 0.12, NOISE = 1e-6, BUDGET = 12;
+    var F = function (x) {
+      return 1.15 * Math.sin(5.3 * x + 1.1) + 0.65 * Math.cos(11.4 * x + 0.4)
+             + 0.4 * Math.sin(2.1 * x);
+    };
+    var GRID = [];
+    for (var gi = 0; gi <= 240; gi++) GRID.push(gi / 240);
+    var TRUEBEST = Math.max.apply(null, GRID.map(F));
+    var gX = [], gY = [], revealed = false;
+    var toPx = function (x) { return x * W; };
+    var toPy = function (v) { return SPLIT / 2 - v * (SPLIT / 5.2); };
+    var draw = function () {
+      var bg = cssVar('--bg') || '#fff', line = cssVar('--line') || '#ccc';
+      var acc = cssVar('--accent') || '#063c92', ok = cssVar('--ok') || 'green';
+      var muted = cssVar('--muted') || '#777', fail = cssVar('--fail') || 'red';
+      CTX.fillStyle = bg; CTX.fillRect(0, 0, W, H);
+      CTX.strokeStyle = line;
+      CTX.strokeRect(0, 0, W, SPLIT); CTX.strokeRect(0, SPLIT + 8, W, H - SPLIT - 8);
+      var post = gpPost(GRID, gX, gY, LS, NOISE);
+      // ±2σ band
+      CTX.beginPath();
+      GRID.forEach(function (x, i) {
+        var yv = toPy(post.mu[i] + 2 * post.sd[i]);
+        i ? CTX.lineTo(toPx(x), yv) : CTX.moveTo(toPx(x), yv);
+      });
+      for (var i = GRID.length - 1; i >= 0; i--)
+        CTX.lineTo(toPx(GRID[i]), toPy(post.mu[i] - 2 * post.sd[i]));
+      CTX.closePath();
+      CTX.fillStyle = 'rgba(125,159,221,0.18)'; CTX.fill();
+      // mean
+      CTX.strokeStyle = acc; CTX.lineWidth = 2.2; CTX.beginPath();
+      GRID.forEach(function (x, i) {
+        i ? CTX.lineTo(toPx(x), toPy(post.mu[i])) : CTX.moveTo(toPx(x), toPy(post.mu[i]));
+      });
+      CTX.stroke();
+      // true function (if revealed)
+      if (revealed) {
+        CTX.strokeStyle = fail; CTX.lineWidth = 1.4; CTX.setLineDash([5, 4]);
+        CTX.beginPath();
+        GRID.forEach(function (x, i) {
+          i ? CTX.lineTo(toPx(x), toPy(F(x))) : CTX.moveTo(toPx(x), toPy(F(x)));
+        });
+        CTX.stroke(); CTX.setLineDash([]);
+      }
+      // observations
+      CTX.fillStyle = ok;
+      gX.forEach(function (x, i) {
+        CTX.beginPath(); CTX.arc(toPx(x), toPy(gY[i]), 5, 0, 7); CTX.fill();
+      });
+      // EI strip
+      if (gX.length) {
+        var best = Math.max.apply(null, gY);
+        var e = eiOf(post.mu, post.sd, best);
+        var emax = Math.max.apply(null, e) + 1e-12;
+        CTX.strokeStyle = ok; CTX.lineWidth = 2; CTX.beginPath();
+        GRID.forEach(function (x, i) {
+          var yv = H - 6 - (e[i] / emax) * (H - SPLIT - 22);
+          i ? CTX.lineTo(toPx(x), yv) : CTX.moveTo(toPx(x), yv);
+        });
+        CTX.stroke();
+        var ai = e.indexOf(Math.max.apply(null, e));
+        CTX.fillStyle = fail;
+        CTX.beginPath(); CTX.arc(toPx(GRID[ai]), H - 8 - (e[ai] / emax) * (H - SPLIT - 22), 4, 0, 7); CTX.fill();
+      }
+      CTX.fillStyle = muted;
+      CTX.font = '12px ui-monospace, Menlo, monospace';
+      CTX.fillText('posterior  μ ± 2σ' + (revealed ? '  ·  dashed = true f (hidden until revealed)' : ''), 10, 16);
+      CTX.fillText('expected improvement (red dot = argmax = next evaluation)', 10, SPLIT + 24);
+      var stat = 'evaluations: ' + gX.length + '/' + BUDGET;
+      if (gY.length) stat += '   best f = ' + Math.max.apply(null, gY).toFixed(3);
+      if (revealed && gY.length)
+        stat += '   gap to true max = ' + (TRUEBEST - Math.max.apply(null, gY)).toFixed(3);
+      $('w-gp-stat').textContent = stat;
+    };
+    var evalAt = function (x) {
+      if (gX.length >= BUDGET) return;
+      gX.push(x); gY.push(F(x)); draw();
+    };
+    CV.addEventListener('click', function (ev) {
+      var r = CV.getBoundingClientRect();
+      var x = (ev.clientX - r.left) / r.width;
+      var yy = (ev.clientY - r.top) / r.height * H;
+      if (yy <= SPLIT) evalAt(Math.min(1, Math.max(0, x)));
+    });
+    $('w-gp-bo').addEventListener('click', function () {
+      if (gX.length >= BUDGET) return;
+      if (!gX.length) { evalAt(0.31); return; }
+      var post = gpPost(GRID, gX, gY, LS, NOISE);
+      var e = eiOf(post.mu, post.sd, Math.max.apply(null, gY));
+      evalAt(GRID[e.indexOf(Math.max.apply(null, e))]);
+    });
+    $('w-gp-reveal').addEventListener('click', function () { revealed = !revealed; draw(); });
+    $('w-gp-reset').addEventListener('click', function () { gX = []; gY = []; revealed = false; draw(); });
+    draw(); onTheme(draw);
+  }
+
+  /* ---- W-KERNEL: lengthscale / noise / marginal likelihood ------------ */
+  if ($('w-kernel')) {
+    var kCv = $('w-kernel-cv'), kCtx = kCv.getContext('2d');
+    var kW = kCv.width = 660, kH = kCv.height = 280;
+    var kX = [0.08, 0.3, 0.47, 0.65, 0.9], kY = [0.6, 1.4, -0.4, -1.2, 0.9];
+    var kGrid = [];
+    for (var i = 0; i <= 200; i++) kGrid.push(i / 200);
+    var kDraw = function () {
+      var ls = Math.pow(10, $('w-kernel-ls').value / 100);   // 10^-1.7 .. 10^0
+      var noise = Math.pow(10, $('w-kernel-n').value / 100); // 10^-4 .. 10^-0.3
+      var bg = cssVar('--bg') || '#fff', acc = cssVar('--accent') || '#063c92';
+      var ok = cssVar('--ok') || 'green';
+      kCtx.fillStyle = bg; kCtx.fillRect(0, 0, kW, kH);
+      var post = gpPost(kGrid, kX, kY, ls, noise);
+      var py = function (v) { return kH / 2 - v * (kH / 6); };
+      kCtx.beginPath();
+      kGrid.forEach(function (x, i) {
+        var yv = py(post.mu[i] + 2 * post.sd[i]);
+        i ? kCtx.lineTo(x * kW, yv) : kCtx.moveTo(x * kW, yv);
+      });
+      for (i = kGrid.length - 1; i >= 0; i--)
+        kCtx.lineTo(kGrid[i] * kW, py(post.mu[i] - 2 * post.sd[i]));
+      kCtx.closePath(); kCtx.fillStyle = 'rgba(125,159,221,0.18)'; kCtx.fill();
+      kCtx.strokeStyle = acc; kCtx.lineWidth = 2.2; kCtx.beginPath();
+      kGrid.forEach(function (x, i) {
+        i ? kCtx.lineTo(x * kW, py(post.mu[i])) : kCtx.moveTo(x * kW, py(post.mu[i]));
+      });
+      kCtx.stroke();
+      kCtx.fillStyle = ok;
+      kX.forEach(function (x, i) {
+        kCtx.beginPath(); kCtx.arc(x * kW, py(kY[i]), 5, 0, 7); kCtx.fill();
+      });
+      $('w-kernel-stat').textContent =
+        'ℓ = ' + ls.toFixed(3) + '   σn² = ' + noise.toExponential(1) +
+        '   log marginal likelihood = ' + lml(kX, kY, ls, noise).toFixed(2);
+    };
+    $('w-kernel-ls').addEventListener('input', kDraw);
+    $('w-kernel-n').addEventListener('input', kDraw);
+    kDraw(); onTheme(kDraw);
+  }
+
+  /* ---- W-ACQ: acquisition calculator ----------------------------------- */
+  if ($('w-acq')) {
+    var aDraw = function () {
+      var d = $('w-acq-d').value / 100;      // Δ = μ − f*  in  [−2, 2]
+      var s = Math.max(0.05, $('w-acq-s').value / 100); // σ in [0.05, 2]
+      var b = $('w-acq-b').value / 100;      // β in [0, 4]
+      var z = d / s;
+      var eiV = d * Phi(z) + s * phi(z);
+      var piV = Phi(z);
+      var ucbV = d + b * s;
+      $('w-acq-stat').innerHTML =
+        'Δ = μ−f* = ' + d.toFixed(2) + '   σ = ' + s.toFixed(2) + '   z = Δ/σ = ' + z.toFixed(2) +
+        '<br>EI = Δ·Φ(z) + σ·φ(z) = <strong>' + eiV.toFixed(3) + '</strong>' +
+        '   ·   PI = Φ(z) = <strong>' + piV.toFixed(3) + '</strong>' +
+        '   ·   UCB−f* = Δ + βσ = <strong>' + ucbV.toFixed(3) + '</strong> (β=' + b.toFixed(1) + ')';
+      var bars = [['w-acq-ei', eiV / 2.2], ['w-acq-pi', piV], ['w-acq-ucb', (ucbV + 2) / 6]];
+      bars.forEach(function (p) {
+        $(p[0]).style.width = Math.min(100, Math.max(0, p[1] * 100)) + '%';
+      });
+    };
+    ['w-acq-d', 'w-acq-s', 'w-acq-b'].forEach(function (id) {
+      $(id).addEventListener('input', aDraw);
+    });
+    aDraw();
+  }
+
+  /* ---- W-RACE: EI vs random, Monte-Carlo episodes ---------------------- */
+  if ($('w-race-bo')) {
+    var rN = 0, rWins = 0, rGap = 0;
+    var rGrid = [];
+    for (var ri = 0; ri <= 160; ri++) rGrid.push(ri / 160);
+    var runEpisode = function () {
+      var seed = (Math.random() * 1e9) | 0;
+      var rng = mulberry32(seed);
+      var amp = [], ph = [];
+      for (var k = 1; k <= 5; k++) { amp.push((rng() * 2 - 1) / Math.sqrt(k)); ph.push(rng() * 6.283); }
+      var f = function (x) {
+        var v = 0;
+        for (var k2 = 1; k2 <= 5; k2++) v += amp[k2 - 1] * Math.sin(6.283 * k2 * x * 0.8 + ph[k2 - 1]);
+        return 1.6 * v;
+      };
+      var T = 12;
+      // random baseline
+      var bestR = -1e9;
+      for (var t = 0; t < T; t++) bestR = Math.max(bestR, f(rng()));
+      // EI-driven BO
+      var X = [0.25, 0.75], y = [f(0.25), f(0.75)];
+      for (t = 2; t < T; t++) {
+        var post = gpPost(rGrid, X, y, 0.13, 1e-6);
+        var e = eiOf(post.mu, post.sd, Math.max.apply(null, y));
+        var xn = rGrid[e.indexOf(Math.max.apply(null, e))];
+        X.push(xn); y.push(f(xn));
+      }
+      var bestB = Math.max.apply(null, y);
+      rN++; if (bestB > bestR) rWins++;
+      rGap += bestB - bestR;
+      var c = document.createElement('span');
+      c.className = 'wchip ' + (bestB > bestR ? 'good' : 'bad');
+      c.textContent = 'EI ' + bestB.toFixed(2) + ' vs rnd ' + bestR.toFixed(2);
+      var chips = $('w-race-chips');
+      chips.prepend(c);
+      while (chips.children.length > 60) chips.lastChild.remove();
+      $('w-race-stat').textContent = 'EI wins ' + rWins + '/' + rN + ' episodes (' +
+        (100 * rWins / rN).toFixed(0) + '%) · mean advantage ' + (rGap / rN).toFixed(2);
+      if (window.__racePredCheck) window.__racePredCheck(rN, rWins);
+    };
+    $('w-race-1').addEventListener('click', runEpisode);
+    $('w-race-20').addEventListener('click', function () {
+      for (var k = 0; k < 20; k++) runEpisode();
+    });
+    $('w-race-reset').addEventListener('click', function () {
+      rN = 0; rWins = 0; rGap = 0;
+      $('w-race-chips').innerHTML = '';
+      $('w-race-stat').textContent = 'no episodes yet';
+    });
+  }
+
+  /* ---- predict-before-run for the race --------------------------------- */
+  if ($('w-race-predict')) {
+    var pPicked = null, pResolved = false;
+    var pFb = $('w-race-predfb');
+    var pBtns = document.querySelectorAll('#w-race-predict [data-pred]');
+    pBtns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (pPicked) return;
+        pPicked = b.getAttribute('data-pred');
+        pBtns.forEach(function (x) { x.disabled = true; });
+        b.classList.add('active');
+        pFb.style.display = 'block';
+        pFb.textContent = 'Prediction locked in. Run at least 20 episodes to find out.';
+      });
+    });
+    window.__racePredCheck = function (n, wins) {
+      if (pResolved || !pPicked || n < 20) return;
+      pResolved = true;
+      var rate = 100 * wins / n;
+      pFb.style.display = 'block';
+      pFb.innerHTML = (pPicked === 'most' ?
+        '<strong>Your prediction was right:</strong> ' :
+        '<strong>Not what you predicted:</strong> ') +
+        'EI is winning ' + rate.toFixed(0) + '% of episodes — most, but not all. With only 12 ' +
+        'evaluations on a rough random function, a lucky uniform draw sometimes beats a ' +
+        'model-guided search; the GP can also be misled early. Sample efficiency is a ' +
+        'statistical edge, not a guarantee.';
+    };
+  }
+
+  /* ---- concept map ------------------------------------------------------ */
+  if ($('w-map')) {
+    var NODES = [
+      { id: 'expensive', x: 95, y: 100, label: 'expensive evals', sec: '#background', desc: 'Each f(x) costs minutes to days (train a model, run a reaction). The budget is dozens of evaluations, not millions — this constraint creates the whole field.' },
+      { id: 'tradeoff', x: 95, y: 220, label: 'explore vs exploit', sec: '#background', desc: 'Sample where the model is good (exploit μ) or where it is ignorant (explore σ)? Every acquisition function is one answer to this question.' },
+      { id: 'loop', x: 95, y: 340, label: 'the BO loop', sec: '#intuition', desc: 'Fit surrogate → optimize acquisition (cheap, on the model) → evaluate f (expensive) → repeat. Sample efficiency comes from spending compute to choose evaluations well.' },
+      { id: 'prior', x: 300, y: 80, label: 'GP prior', sec: '#math-gp', desc: 'A distribution over functions: any finite set of values is jointly Gaussian, with covariance given by the kernel.' },
+      { id: 'kernel', x: 300, y: 190, label: 'kernel & ℓ', sec: '#math-gp', desc: 'k(x,x′) encodes smoothness; the lengthscale ℓ is a hypothesis about how fast f varies. Wrong ℓ = confidently wrong posterior.' },
+      { id: 'posterior', x: 300, y: 300, label: 'posterior μ, σ', sec: '#math-gp', desc: 'Closed form by Gaussian conditioning: μₙ(x) = k*ᵀ(K+σₙ²I)⁻¹y, σₙ²(x) = k(x,x) − k*ᵀ(K+σₙ²I)⁻¹k*. The map of belief and ignorance.' },
+      { id: 'lml', x: 300, y: 410, label: 'marginal likelihood', sec: '#math-gp', desc: 'log p(y|X,θ) trades data fit against complexity (the log-det term) — Occam\\u2019s razor for choosing ℓ and σₙ automatically.' },
+      { id: 'ei', x: 520, y: 100, label: 'EI', sec: '#math-acq', desc: 'Expected improvement: (μ−f*)Φ(z) + σφ(z). Closed form, magnitude-aware, the default since EGO (1998). At z=0 it equals σφ(0) ≈ 0.4σ.' },
+      { id: 'piucb', x: 520, y: 200, label: 'PI & UCB', sec: '#math-acq', desc: 'PI = Φ(z) ignores improvement size; UCB = μ + βσ makes the trade-off explicit and carries GP-UCB\\u2019s no-regret theory.' },
+      { id: 'info', x: 520, y: 300, label: 'info-theoretic', sec: '#math-acq', desc: 'Entropy Search / PES / MES: pick the point that most reduces uncertainty about the optimum — principled, less myopic, costlier to compute.' },
+      { id: 'logei', x: 520, y: 400, label: 'LogEI', sec: '#math-acq', desc: 'EI and its gradients vanish numerically when improvements are unlikely; computing in log-space (NeurIPS 2023) fixed a decades-old silent failure. Modern default.' },
+      { id: 'batch', x: 520, y: 500, label: 'batch qEI', sec: '#math-acq', desc: 'Choose q points jointly via Monte-Carlo over posterior samples — parallel experiments without picking q clustered copies of the same point.' },
+      { id: 'tpe', x: 745, y: 70, label: 'TPE / SMAC', sec: '#papers', desc: 'Non-GP surrogates: TPE models p(x|good)/p(x|bad) densities (Optuna); SMAC uses random forests. Robust for conditional, high-dimensional search spaces.' },
+      { id: 'turbo', x: 745, y: 160, label: 'TuRBO', sec: '#papers', desc: 'Trust-region local BO — give up global modeling in high dimensions, run local searches that shrink and grow. NeurIPS 2019.' },
+      { id: 'saas', x: 745, y: 250, label: 'SAASBO', sec: '#papers', desc: 'Sparse axis-aligned priors on inverse lengthscales: assume few dimensions matter and let the data reveal which. UAI 2021.' },
+      { id: 'debate', x: 745, y: 340, label: 'high-dim debate', sec: '#papers', desc: '2024: "vanilla BO performs great in high dims." ICLR 2025: "standard GP is all you need." Nov 2025: "we still don\\u2019t understand high-dim BO." Live controversy.' },
+      { id: 'pfn', x: 745, y: 430, label: 'pretrained surrogates', sec: '#papers', desc: 'OptFormer, PFNs4BO, GIT-BO: replace GP fitting with one forward pass of a transformer pre-trained on synthetic functions. BO meets foundation models.' },
+      { id: 'llm', x: 745, y: 520, label: 'LLM-era BO', sec: '#papers', desc: 'LLAMBO, LLM priors for multi-objective BO — plus budget-matched studies asking when an LLM is actually worth it. The newest, least settled thread.' },
+      { id: 'software', x: 300, y: 520, label: 'BoTorch · Optuna', sec: '#papers', desc: 'BoTorch/Ax (MC acquisitions, LogEI default), Optuna (TPE), SMAC3, HEBO. Where all of the above ships to practice.' },
+      { id: 'apps', x: 95, y: 460, label: 'applications', sec: '#papers', desc: 'Hyperparameters (Snoek 2012), chemistry beating expert chemists (Shields, Nature 2021), photonics, clinical trials, self-driving labs.' }
+    ];
+    var EDGES = [
+      ['expensive', 'tradeoff'], ['tradeoff', 'loop'], ['expensive', 'loop'],
+      ['loop', 'posterior'], ['loop', 'ei'], ['prior', 'kernel'], ['prior', 'posterior'],
+      ['kernel', 'posterior'], ['kernel', 'lml'], ['posterior', 'lml'],
+      ['posterior', 'ei'], ['ei', 'piucb'], ['ei', 'logei'], ['ei', 'batch'],
+      ['posterior', 'info'], ['loop', 'tpe'], ['turbo', 'debate'], ['saas', 'debate'],
+      ['posterior', 'pfn'], ['pfn', 'llm'], ['loop', 'software'], ['software', 'apps'],
+      ['ei', 'turbo'], ['loop', 'apps']
+    ];
+    var HUBS = { loop: 1, posterior: 1, ei: 1 };
+    var svg = $('w-map-svg'), info = $('w-map-info');
+    var NSs = 'http://www.w3.org/2000/svg';
+    var byId = {};
+    NODES.forEach(function (n) { byId[n.id] = n; });
+    var edgeEls = [], nodeEls = {};
+    EDGES.forEach(function (e) {
+      var a = byId[e[0]], b = byId[e[1]];
+      var ln = document.createElementNS(NSs, 'line');
+      ln.setAttribute('x1', a.x); ln.setAttribute('y1', a.y);
+      ln.setAttribute('x2', b.x); ln.setAttribute('y2', b.y);
+      ln.setAttribute('class', 'cmap-edge');
+      ln.__ends = [e[0], e[1]];
+      svg.appendChild(ln); edgeEls.push(ln);
+    });
+    NODES.forEach(function (n) {
+      var g = document.createElementNS(NSs, 'g');
+      g.setAttribute('class', 'cmap-node' + (HUBS[n.id] ? ' hub' : ''));
+      var wpx = n.label.length * 7.2 + 22;
+      var rect = document.createElementNS(NSs, 'rect');
+      rect.setAttribute('x', n.x - wpx / 2); rect.setAttribute('y', n.y - 15);
+      rect.setAttribute('width', wpx); rect.setAttribute('height', 30);
+      rect.setAttribute('rx', 8);
+      var tx = document.createElementNS(NSs, 'text');
+      tx.setAttribute('x', n.x); tx.setAttribute('y', n.y + 4.5);
+      tx.setAttribute('text-anchor', 'middle');
+      tx.textContent = n.label;
+      g.appendChild(rect); g.appendChild(tx);
+      g.addEventListener('mouseenter', function () { highlight(n.id); });
+      g.addEventListener('mouseleave', clearHl);
+      g.addEventListener('click', function () {
+        var target = (window.__PAGES__ && window.__PAGES__[n.sec.replace('#', '')]) || n.sec;
+        info.innerHTML = '<strong>' + n.label + '.</strong> ' + n.desc +
+          ' <a href="' + target + '">jump to section →</a>';
+      });
+      svg.appendChild(g); nodeEls[n.id] = g;
+    });
+    function highlight(id) {
+      var near = {}; near[id] = 1;
+      edgeEls.forEach(function (ln) {
+        var hit = ln.__ends.indexOf(id) >= 0;
+        ln.setAttribute('class', 'cmap-edge' + (hit ? ' hl' : ' dim'));
+        if (hit) { near[ln.__ends[0]] = 1; near[ln.__ends[1]] = 1; }
+      });
+      NODES.forEach(function (n) {
+        var cls = 'cmap-node' + (HUBS[n.id] ? ' hub' : '');
+        if (n.id === id) cls += ' hl';
+        else if (!near[n.id]) cls += ' dim';
+        nodeEls[n.id].setAttribute('class', cls);
+      });
+    }
+    function clearHl() {
+      edgeEls.forEach(function (ln) { ln.setAttribute('class', 'cmap-edge'); });
+      NODES.forEach(function (n) {
+        nodeEls[n.id].setAttribute('class', 'cmap-node' + (HUBS[n.id] ? ' hub' : ''));
+      });
+    }
+  }
+})();
+</script>
+</body>
+</html>
