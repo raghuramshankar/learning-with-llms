@@ -489,7 +489,7 @@ PAGE_JS = """
 def _slugify(text: str) -> str:
     out = []
     for ch in text.lower():
-        if ch.isalnum():
+        if ch.isalnum() and ch.isascii():
             out.append(ch)
         elif out and out[-1] != "-":
             out.append("-")

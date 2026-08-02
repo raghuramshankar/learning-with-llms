@@ -751,123 +751,350 @@ QUIZ_MATH_ACQ = [
     },
 ]
 
+MATH_SOTA = """
+<p>The Papers &amp; Sources part tells the story of the modern methods; this section shows their
+actual mathematics. Each of the five ideas below changes one specific piece of the machinery you
+already know &mdash; a prior, a search region, an acquisition weight, or the surrogate itself.
+Nothing here requires more than Maths I and II.</p>
+
+<h3>The &radic;d fix: why vanilla GPs drown, and the prior that saves them</h3>
+<p>Start with the failure. For two independent uniform points x, x&prime; in [0,1]<sup>d</sup>,
+each coordinate contributes &#120124;[(x<sub>i</sub>&minus;x&prime;<sub>i</sub>)&sup2;] =
+2&middot;Var(u) = 1/6, so:</p>
+<div class='math'>&#120124;&Vert;x &minus; x&prime;&Vert;&sup2; = d/6</div>
+<p>Feed that into the RBF kernel with a fixed lengthscale &#8467;: the typical correlation
+between random points is exp(&minus;d/(12&#8467;&sup2;)), which crashes to zero as d grows.
+Every point is &ldquo;far from the data,&rdquo; the posterior reverts to the prior everywhere,
+and BO degenerates into uniform sampling. The 2024 &ldquo;vanilla BO&rdquo; result (Hvarfner et
+al.) is, at heart, one observation: <strong>keep &Vert;x&minus;x&prime;&Vert;&sup2;/&#8467;&sup2;
+stable by scaling the lengthscale like &radic;d</strong> &mdash; implemented as a dimension-scaled
+prior:</p>
+<div class='math'>&#8467; ~ LogNormal( &mu;<sub>0</sub> + &frac12; log d, &nbsp;&sigma;<sub>0</sub>&sup2; )</div>
+<p>With that one change, plain GP-EI matches the specialized high-dimensional machinery on many
+benchmarks &mdash; the claim the ICLR 2025 paper sharpened and the Nov 2025 rebuttal now
+contests. The controversy is real, but the &radic;d arithmetic above is not in dispute; what is
+disputed is whether it is the whole story.</p>
+
+<h3>SAASBO: sparsity as a prior</h3>
+<p>Give each dimension its own inverse squared lengthscale &rho;<sub>i</sub> (this is the ARD
+kernel), then be Bayesian about relevance:</p>
+<div class='math'>k(x, x&prime;) = exp( &minus;&frac12; &sum;<sub>i</sub> &rho;<sub>i</sub> (x<sub>i</sub> &minus; x&prime;<sub>i</sub>)&sup2; ),&nbsp;&nbsp;&nbsp;
+&tau; ~ HalfCauchy(&alpha;),&nbsp;&nbsp;&rho;<sub>i</sub> ~ HalfCauchy(&tau;)</div>
+<p>The half-Cauchy is the load-bearing choice: its mode at zero means every dimension is
+switched <em>off</em> by default (&rho;<sub>i</sub> &asymp; 0 &rArr; that coordinate leaves the
+kernel), while its heavy tail lets the handful of dimensions the data actually supports escape
+to large &rho;<sub>i</sub>. The global scale &tau; adapts how many escape. Inference is fully
+Bayesian (NUTS), with predictions averaged over posterior samples &mdash; expensive per
+iteration, but in BO&rsquo;s regime the evaluations still dominate. <em>Sparsity is assumed
+until the data earns density</em> &mdash; the exact opposite of fitting 100 lengthscales by
+maximum likelihood to 30 points.</p>
+
+<h3>TuRBO: the trust-region algebra</h3>
+<p>TuRBO abandons global modeling: it keeps a hyperrectangle centered on the incumbent and only
+models/acquires inside it. The region has base side L, shaped per-dimension by the fitted
+lengthscales (so the box is wide where the function is flat):</p>
+<div class='math'>&lambda;<sub>i</sub> = &#8467;<sub>i</sub> &middot; L / ( &prod;<sub>j</sub> &#8467;<sub>j</sub> )<sup>1/d</sup></div>
+<p>The side length then <em>breathes</em> by simple counters: &tau;<sub>succ</sub> consecutive
+improving evaluations double it (capped at L<sub>max</sub>); &tau;<sub>fail</sub> consecutive
+failures halve it; and when L &lt; L<sub>min</sub> the region has collapsed onto a local
+optimum &mdash; declare victory locally, restart elsewhere, and let an implicit multi-armed
+bandit (Thompson sampling across regions, in the full algorithm) allocate the budget. Here is
+that dynamic, computed live for this page:</p>
+
+<div class='widget'>
+__FIG_TURBO__
+<div class='caption'>Our simplified single-region TuRBO (numpy, one run on negated Branin):
+the side length halves through dry spells, and a dotted line marks a restart after collapse
+&mdash; the algorithm concluding a local search and spending its remaining budget elsewhere.
+Local + restart beats confidently-wrong global modeling in high dimensions; that is
+TuRBO&rsquo;s entire bet.</div>
+</div>
+
+<h3>&pi;BO: folding expert beliefs into the acquisition</h3>
+<p>When a practitioner already believes the optimum lives somewhere (&ldquo;learning rates
+around 10<sup>&minus;3</sup>&rdquo;), &pi;BO injects that belief &pi;(x) as a decaying
+multiplicative reweighting of any acquisition &alpha;:</p>
+<div class='math'>&alpha;<sub>&pi;,n</sub>(x) = &alpha;<sub>n</sub>(x) &middot; &pi;(x)<sup>&beta;/n</sup></div>
+<p>At n = &beta; the prior speaks with full voice; as n grows the exponent &beta;/n &rarr; 0 and
+&pi;(x)<sup>&beta;/n</sup> &rarr; 1 &mdash; <em>the data always wins eventually</em>, and a wrong
+prior costs only the early iterations (the paper proves EI&rsquo;s convergence rate survives).
+Compare Maths I&rsquo;s marginal likelihood: that fits the <em>smoothness</em> prior from data;
+&pi;BO adds a <em>location</em> prior from humans. The two compose.</p>
+
+<h3>PFNs: surrogates without fitting</h3>
+<p>The pretrained-surrogate line replaces GP fitting with in-context learning. Draw synthetic
+tasks from a prior over functions; train a transformer q<sub>&theta;</sub> to predict a held-out
+value from the context set D by straight cross-entropy:</p>
+<div class='math'>min<sub>&theta;</sub> &nbsp;&#120124;<sub>D, x<sup>*</sup>, y<sup>*</sup></sub> [ &minus;log q<sub>&theta;</sub>( y<sup>*</sup> | x<sup>*</sup>, D ) ]</div>
+<p>The identity that makes this Bayesian rather than a heuristic: that expectation decomposes as
+&#120124;<sub>D,x*</sub>[ KL( p(&middot;|x<sup>*</sup>, D) &Vert; q<sub>&theta;</sub>(&middot;|x<sup>*</sup>, D) ) ] plus an
+entropy constant &mdash; so the loss is minimized <em>exactly</em> when q<sub>&theta;</sub>
+equals the true posterior predictive under the synthetic prior. <strong>A PFN is amortized
+Bayesian inference: the prior is baked into the weights, and the O(n&sup3;) fit becomes one
+forward pass.</strong> PFNs4BO plugs this predictive (a binned &ldquo;Riemann&rdquo;
+distribution over y) straight into EI; GIT-BO rides the same idea on tabular foundation models
+into hundreds of dimensions. The open question is the one you&rsquo;d expect: you no longer
+choose the prior &mdash; the pretraining distribution did, and auditing what a network
+believes is harder than reading a kernel.</p>
+"""
+
+QUIZ_MATH_SOTA = [
+    {
+        "question": "For x, x&prime; uniform in [0,1]<sup>d</sup>, &#120124;&Vert;x&minus;x&prime;&Vert;&sup2; = d/6. To keep typical RBF correlations from collapsing as d grows, the lengthscale must scale like:",
+        "options": [
+            {"text": "&#8467; &prop; &radic;d",
+             "correct": True,
+             "explanation": "The kernel sees ||x−x′||²/ℓ² — with the numerator growing linearly in d, ℓ² must grow linearly too, i.e. ℓ ∝ √d. This one line of arithmetic is the core of the 2024 'vanilla BO' result, implemented as the LogNormal(μ₀ + ½log d, σ₀²) prior."},
+            {"text": "&#8467; &prop; d",
+             "explanation": "Scaling ℓ linearly in d over-corrects: typical distances grow like √d (distances, not squared distances), so linear ℓ would make everything look correlated and the posterior overly smooth."},
+            {"text": "&#8467; &prop; log d",
+             "explanation": "Logarithmic growth is far too slow — the d/6 in the exponent would still crush correlations to zero for moderate d."},
+            {"text": "&#8467; constant, with more observations instead",
+             "explanation": "The budget is the one thing you can't scale in BO — and the required sample count for a fixed-ℓ GP grows exponentially in d. The prior fix costs nothing."},
+        ],
+    },
+    {
+        "question": "Why does SAASBO put a half-Cauchy prior on the inverse squared lengthscales &rho;<sub>i</sub>?",
+        "options": [
+            {"text": "Mass at zero turns dimensions off by default; heavy tails let the data turn a few on.",
+             "correct": True,
+             "explanation": "The half-Cauchy's mode at 0 encodes 'irrelevant until proven otherwise' (ρᵢ ≈ 0 removes coordinate i from the kernel), while its fat tail permits the few truly relevant ρᵢ to grow large without penalty. Global scale τ adapts how many escape."},
+            {"text": "It is conjugate to the Gaussian likelihood, giving closed-form posteriors.",
+             "explanation": "Nothing about half-Cauchy is conjugate here — that's exactly why SAASBO needs NUTS sampling rather than closed-form updates."},
+            {"text": "It forces all dimensions to share one common lengthscale.",
+             "explanation": "That's the opposite design — a single shared ℓ is the non-ARD kernel; SAASBO's point is per-dimension relevance."},
+            {"text": "It guarantees the marginal likelihood surface becomes unimodal.",
+             "explanation": "No prior rescues LML unimodality; SAASBO sidesteps the issue by integrating over the posterior instead of optimizing to a point."},
+        ],
+    },
+    {
+        "question": "In TuRBO, what happens after &tau;<sub>fail</sub> consecutive non-improving evaluations, and after L falls below L<sub>min</sub>?",
+        "options": [
+            {"text": "The side length halves; below L<sub>min</sub> the region restarts elsewhere.",
+             "correct": True,
+             "explanation": "Failures shrink the box (L ← L/2) to concentrate near the incumbent; collapse below L_min is read as 'local optimum found', triggering a fresh region — with Thompson sampling allocating budget across regions in the full algorithm."},
+            {"text": "The side length halves; below L<sub>min</sub> the region freezes at the incumbent.",
+             "explanation": "Freezing would waste the remaining budget polishing a solved local problem — the restart is the mechanism that converts local searches into global coverage."},
+            {"text": "The side length doubles to escape the plateau; below L<sub>min</sub> it resets to L<sub>max</sub>.",
+             "explanation": "Doubling is the SUCCESS response (after τ_succ improvements). Expanding on failure would abandon the locality that makes the local GP trustworthy."},
+            {"text": "The lengthscales are refit; L never changes, only its shape λ<sub>i</sub>.",
+             "explanation": "The per-dimension shaping λᵢ ∝ ℓᵢ is real, but it modulates a base L that very much changes — the breathing L is the whole control loop."},
+        ],
+    },
+    {
+        "question": "The PFN training loss &#120124;[&minus;log q<sub>&theta;</sub>(y*|x*, D)] over synthetic tasks is minimized exactly when q<sub>&theta;</sub> equals:",
+        "options": [
+            {"text": "The posterior predictive p(y*|x*, D) under the synthetic prior.",
+             "correct": True,
+             "explanation": "The expected cross-entropy decomposes into E[KL(p‖q_θ)] plus a constant entropy term, and KL vanishes iff q_θ matches p(y*|x*,D). That identity is what makes a PFN amortized Bayesian inference rather than curve-fitting — with the prior baked into the weights."},
+            {"text": "The MAP estimate of the function under the synthetic prior.",
+             "explanation": "Cross-entropy against sampled y* penalizes point-mass answers — the optimum is the full predictive distribution, not its mode."},
+            {"text": "The marginal likelihood of the context set D.",
+             "explanation": "The LML scores hyperparameters given data (Maths I); the PFN objective targets prediction of held-out values, a different conditional."},
+            {"text": "The true black-box function f itself.",
+             "explanation": "No optimizer output can converge to f from finite noisy context — and the loss explicitly rewards honest uncertainty about it."},
+        ],
+    },
+    {
+        "question": "In &pi;BO's reweighting &alpha;(x)&middot;&pi;(x)<sup>&beta;/n</sup>, what happens to a WRONG expert prior as evaluations accumulate?",
+        "options": [
+            {"text": "Its influence decays to nothing — it only taxes the early iterations.",
+             "correct": True,
+             "explanation": "The exponent β/n → 0, so π(x)^(β/n) → 1 for every x and the acquisition returns to its data-driven form; the paper shows EI's convergence rate survives a misleading prior. Cheap insurance: strong when you know something, harmless when you don't."},
+            {"text": "It permanently biases the search away from the true optimum.",
+             "explanation": "That's the failure mode of hard constraints or fixed prior means — the decaying exponent is πBO's specific device for avoiding it."},
+            {"text": "It is overwritten by refitting the GP lengthscales each iteration.",
+             "explanation": "Lengthscale fitting (Maths I) adapts the smoothness model; πBO's π(x) lives in the acquisition and decays by schedule, not by refitting."},
+            {"text": "The method detects the conflict and switches to pure UCB.",
+             "explanation": "No detection logic exists or is needed — the vanishing exponent handles wrong priors continuously, without a mode switch."},
+        ],
+    },
+]
+
 PAPERS = """
-<p>Reading order for the literature, organized as three waves: the foundations that defined the
-loop, the modern toolbox that made it industrial, and the three live research threads of
-2024&ndash;2026. Every arXiv-hosted paper below was title-verified against the arXiv API on
-2026-08-02; citation magnitudes are approximate.</p>
+<p>One section for the whole literature: the narrative arc first (what each work fixed), then
+the complete reference list. Methodology: this survey was run on 2026-08-02; every arXiv-hosted
+paper was verified against the arXiv API (exact title, ID, date, first author) and
+recent-submission sweeps ground the 2025&ndash;26 claims. Citation magnitudes are approximate
+(&sim;) reputation figures, as arXiv carries none. The math sections follow Frazier&rsquo;s and
+Garnett&rsquo;s notation. Errors of interpretation are this page&rsquo;s, not the
+sources&rsquo;.</p>
 
 <h3>The foundations</h3>
-<h4>Kushner (1964) &amp; Mockus (1974&ndash;78) &mdash; the origin</h4>
-<p>Kushner proposed maximizing the probability of improvement over a stochastic-process model of
-an unknown one-dimensional curve; Mockus generalized, introduced <em>expected</em> improvement,
-and named the field. Journal-era papers, read today mostly as history &mdash; but PI and EI are
-still the axes of the acquisition zoo.</p>
-<h4>Jones, Schonlau &amp; Welch (1998) &mdash; EGO, the seminal paper (~8k citations)</h4>
-<p><em>Efficient Global Optimization of Expensive Black-Box Functions</em> (J. Global
-Optimization) assembled the modern template: kriging surrogate, closed-form EI, expensive
-engineering objectives falling in tens of evaluations. Its worked examples and its honesty about
-kriging&rsquo;s failure modes still read well.</p>
-<h4>Srinivas, Krause, Kakade &amp; Seeger (2010) &mdash; GP-UCB, the theory pillar (~4k)</h4>
-<p><a href='https://arxiv.org/abs/0912.3995'>arXiv:0912.3995</a> (ICML 2010) recast BO as a
-bandit problem and proved sublinear regret for UCB with a scheduled &beta; &mdash; the result
-that lets anyone say &ldquo;BO provably converges&rdquo; with a straight face.</p>
-<h4>Snoek, Larochelle &amp; Adams (2012) &mdash; the breakout (~10k)</h4>
-<p><a href='https://arxiv.org/abs/1206.2944'>arXiv:1206.2944</a> (NeurIPS 2012): BO beats human
-experts at tuning deep networks; Spearmint ships; AutoML is born. Also quietly a great
-engineering paper: MCMC over GP hyperparameters, expected improvement per <em>second</em> when
-evaluations vary in cost, and asynchronous parallelism.</p>
-<h4>Surveys to keep at hand</h4>
-<p>Shahriari et al. (2016), <em>Taking the Human Out of the Loop</em> (Proc. IEEE, ~5k) &mdash;
-the canonical field survey. Frazier (2018), <a href='https://arxiv.org/abs/1807.02811'>A
-Tutorial on Bayesian Optimization</a> &mdash; the cleanest 30-page mathematical entry; this
-page&rsquo;s notation follows it. Garnett (2023), <em>Bayesian Optimization</em> (Cambridge) —
-the full textbook treatment, free at bayesoptbook.com.</p>
+<p><strong>Kushner (1964)</strong> proposed maximizing the probability of improvement over a
+stochastic-process model; <strong>Mockus (1974&ndash;78)</strong> introduced expected
+improvement and named the field. The modern template is <strong>Jones, Schonlau &amp; Welch
+(1998)</strong> &mdash; EGO: kriging surrogate + closed-form EI, expensive engineering
+objectives falling in tens of evaluations (~8k citations); its worked examples and its honesty
+about kriging&rsquo;s failure modes still read well. <strong>GP-UCB</strong>
+(<a href='https://arxiv.org/abs/0912.3995'>arXiv:0912.3995</a>, ICML 2010, ~4k) recast BO as a
+bandit problem and proved sublinear regret &mdash; the reason &ldquo;BO provably
+converges&rdquo; can be said with a straight face. And <strong>Snoek, Larochelle &amp; Adams
+(2012)</strong> (<a href='https://arxiv.org/abs/1206.2944'>arXiv:1206.2944</a>, NeurIPS 2012,
+~10k) took the machinery to ML hyperparameters, beat human experts, shipped Spearmint, and
+started AutoML &mdash; quietly also a great engineering paper (MCMC over GP hyperparameters,
+EI-per-second for cost-aware search, asynchronous parallelism).</p>
 
 <h3>The modern toolbox</h3>
-<h4>Beyond-GP surrogates: TPE and SMAC (2011)</h4>
-<p>Bergstra et al.&rsquo;s <em>Tree-structured Parzen Estimator</em> (NeurIPS 2011, ~5k) turns
-the problem sideways &mdash; model p(x|good) and p(x|bad) densities and pick x maximizing their
-ratio &mdash; and handles the conditional, tree-shaped search spaces real ML pipelines have.
-It is the engine inside Optuna and Hyperopt. SMAC (Hutter et al., 2011) made the surrogate a
-random forest for the same reason. If you have used AutoML, you have probably used one of
-these, not a GP.</p>
-<h4>Scaling the loop</h4>
-<p><strong>TuRBO</strong> (<a href='https://arxiv.org/abs/1910.01739'>1910.01739</a>, NeurIPS
-2019): abandon global modeling in high dimensions; run trust regions that shrink on failure and
-grow on success. <strong>SAASBO</strong>
-(<a href='https://arxiv.org/abs/2103.00349'>2103.00349</a>, UAI 2021): sparse axis-aligned
-priors on inverse lengthscales &mdash; assume few dimensions matter, let the data reveal which.
-<strong>Bounce</strong> (<a href='https://arxiv.org/abs/2307.00618'>2307.00618</a>, NeurIPS
-2023) extends trust-region ideas to combinatorial and mixed spaces. For parallel and
-multi-objective experiments: <strong>qEHVI</strong>
-(<a href='https://arxiv.org/abs/2006.05078'>2006.05078</a>, NeurIPS 2020). To inject expert
-beliefs about where the optimum lies: <strong>&pi;BO</strong>
-(<a href='https://arxiv.org/abs/2204.11051'>2204.11051</a>, ICLR 2022).</p>
-<h4>The software layer</h4>
-<p><strong>BoTorch</strong> (<a href='https://arxiv.org/abs/1910.06403'>1910.06403</a>, NeurIPS
-2020) rebuilt acquisition optimization on Monte-Carlo estimators and autograd &mdash; it is why
-qEI/qEHVI/LogEI are usable one-liners; Ax wraps it for practitioners. Optuna (KDD 2019) ships
-TPE to everyone; SMAC3 and <strong>HEBO</strong> (the NeurIPS 2020 black-box competition winner,
-freshly modernized in <a href='https://arxiv.org/abs/2607.10669'>arXiv:2607.10669</a>, July
-2026) round out the field. And the application that best justifies the machinery:
-<strong>Shields et al. (Nature 2021)</strong> &mdash; BO matching-to-beating expert chemists at
-reaction optimization, the template for today&rsquo;s self-driving laboratories.</p>
+<p><strong>Beyond-GP surrogates:</strong> TPE (Bergstra et al., NeurIPS 2011, ~5k) models
+p(x|good)/p(x|bad) densities &mdash; the engine of Optuna and Hyperopt, natural for
+conditional, tree-shaped search spaces; SMAC (Hutter et al., 2011) uses random forests for the
+same reason. <strong>Scaling</strong> (the equations are in
+<a href='#math-sota'>Maths III</a>): TuRBO
+(<a href='https://arxiv.org/abs/1910.01739'>1910.01739</a>, NeurIPS 2019) with trust regions;
+SAASBO (<a href='https://arxiv.org/abs/2103.00349'>2103.00349</a>, UAI 2021) with sparsity
+priors; Bounce (<a href='https://arxiv.org/abs/2307.00618'>2307.00618</a>, NeurIPS 2023) for
+combinatorial and mixed spaces; qEHVI
+(<a href='https://arxiv.org/abs/2006.05078'>2006.05078</a>, NeurIPS 2020) for parallel
+multi-objective; &pi;BO (<a href='https://arxiv.org/abs/2204.11051'>2204.11051</a>, ICLR 2022)
+for expert beliefs. <strong>Numerics:</strong> LogEI
+(<a href='https://arxiv.org/abs/2310.20708'>2310.20708</a>, NeurIPS 2023) fixed EI&rsquo;s
+silent underflow and is the modern default. <strong>Software:</strong> BoTorch
+(<a href='https://arxiv.org/abs/1910.06403'>1910.06403</a>, NeurIPS 2020) rebuilt acquisitions
+on Monte Carlo + autograd; Ax wraps it; Optuna (KDD 2019) ships TPE to everyone; HEBO won the
+NeurIPS 2020 black-box competition and was modernized in
+<a href='https://arxiv.org/abs/2607.10669'>2607.10669</a> (July 2026). <strong>The
+application:</strong> Shields et al. (<em>Nature</em> 2021) &mdash; BO matching-to-beating
+expert chemists, the template for self-driving laboratories.</p>
 
 <h3>Three live SOTA threads (2024 &rarr; mid-2026)</h3>
-<h4>1. The high-dimensional controversy</h4>
-<p>An honest, unresolved fight. <em>Vanilla BO Performs Great in High Dimensions</em>
-(<a href='https://arxiv.org/abs/2402.02229'>2402.02229</a>, ICML 2024) and <em>Standard GP is
-All You Need</em> (<a href='https://arxiv.org/abs/2402.02746'>2402.02746</a>, ICLR 2025) argue
-the specialized machinery was never necessary &mdash; scale the prior right and plain GPs match
-TuRBO/SAASBO. Then <em>We Still Don&rsquo;t Understand High-Dimensional Bayesian
-Optimization</em> (<a href='https://arxiv.org/abs/2512.00170'>2512.00170</a>, Nov 2025) pushed
-back: the wins are benchmark-dependent and the explanations don&rsquo;t hold up. Follow-ups
-continue into 2026 (automated kernel discovery,
-<a href='https://arxiv.org/abs/2605.20249'>2605.20249</a>). Watch this space.</p>
-<h4>2. Pretrained (amortized) surrogates</h4>
-<p>Replace GP fitting with one forward pass of a transformer pre-trained on millions of
-synthetic functions: <strong>OptFormer</strong>
-(<a href='https://arxiv.org/abs/2205.13320'>2205.13320</a>, NeurIPS 2022) for hyperparameter
-trajectories, <strong>PFNs4BO</strong>
-(<a href='https://arxiv.org/abs/2305.17535'>2305.17535</a>, ICML 2023) for prior-fitted-network
-surrogates, <strong>GIT-BO</strong> (<a href='https://arxiv.org/abs/2505.20685'>2505.20685</a>,
-2025) riding tabular foundation models into high dimensions. The same in-context-learning wave
-that produced TabPFN, aimed at the O(n&sup3;) GP and at the prior-choice problem
-simultaneously.</p>
-<h4>3. LLMs enter the loop</h4>
-<p><strong>LLAMBO</strong> (<a href='https://arxiv.org/abs/2402.03921'>2402.03921</a>, ICLR
-2024) uses a language model as warm-starter, surrogate and candidate sampler; 2026 work gates
-LLM-derived priors by evidence (<a href='https://arxiv.org/abs/2606.01730'>2606.01730</a>) and
-even evolves new multi-objective BO algorithms with LLMs
-(<a href='https://arxiv.org/abs/2607.08791'>2607.08791</a>). The counterweight is equally
-current: budget-matched studies ask <em>when an LLM is actually worth it</em> for HPO
-(<a href='https://arxiv.org/abs/2606.21641'>2606.21641</a>) and whether LLM-BO helps in
-scientific domains at all (<a href='https://arxiv.org/abs/2509.21403'>2509.21403</a>). Verdict:
-genuinely promising for warm starts and priors; not yet a surrogate replacement.</p>
+<p><strong>1. The high-dimensional controversy.</strong> <em>Vanilla BO Performs Great in High
+Dimensions</em> (<a href='https://arxiv.org/abs/2402.02229'>2402.02229</a>, ICML 2024) and
+<em>Standard GP is All You Need</em>
+(<a href='https://arxiv.org/abs/2402.02746'>2402.02746</a>, ICLR 2025) argue the specialized
+machinery was never necessary &mdash; the &radic;d prior from Maths III does the work. <em>We
+Still Don&rsquo;t Understand High-Dimensional BO</em>
+(<a href='https://arxiv.org/abs/2512.00170'>2512.00170</a>, Nov 2025) pushes back: wins are
+benchmark-dependent, explanations don&rsquo;t hold. Follow-ups continue
+(<a href='https://arxiv.org/abs/2605.20249'>2605.20249</a>, May 2026). Genuinely unresolved.
+<strong>2. Pretrained surrogates.</strong> OptFormer
+(<a href='https://arxiv.org/abs/2205.13320'>2205.13320</a>, NeurIPS 2022), PFNs4BO
+(<a href='https://arxiv.org/abs/2305.17535'>2305.17535</a>, ICML 2023), GIT-BO
+(<a href='https://arxiv.org/abs/2505.20685'>2505.20685</a>, 2025): amortized Bayesian inference
+in a transformer forward pass (the objective is derived in Maths III).
+<strong>3. LLMs in the loop.</strong> LLAMBO
+(<a href='https://arxiv.org/abs/2402.03921'>2402.03921</a>, ICLR 2024), evidence-gated LLM
+priors (<a href='https://arxiv.org/abs/2606.01730'>2606.01730</a>, 2026), LLM-evolved MOBO
+algorithms (<a href='https://arxiv.org/abs/2607.08791'>2607.08791</a>, 2026) &mdash; against
+budget-matched skepticism (<a href='https://arxiv.org/abs/2606.21641'>2606.21641</a>;
+<a href='https://arxiv.org/abs/2509.21403'>2509.21403</a>). Current verdict: strong for warm
+starts and priors, not yet a surrogate replacement.</p>
 
-<h3>The full list</h3>
-<table>
-<tr><th>Work</th><th>Year</th><th>One-line contribution</th></tr>
-<tr><td>Kushner; Mockus</td><td>1964; 1974&ndash;78</td><td>PI; EI and the field&rsquo;s name</td></tr>
-<tr><td>Jones, Schonlau &amp; Welch (EGO)</td><td>1998</td><td>Kriging + EI: the modern loop (seminal)</td></tr>
-<tr><td><a href='https://arxiv.org/abs/0912.3995'>GP-UCB</a></td><td>2010</td><td>Regret bounds; BO provably converges</td></tr>
-<tr><td>TPE (Bergstra et al.); SMAC (Hutter et al.)</td><td>2011</td><td>Non-GP surrogates; conditional spaces; Optuna&rsquo;s engine</td></tr>
-<tr><td><a href='https://arxiv.org/abs/1206.2944'>Snoek et al.</a></td><td>2012</td><td>BO beats experts at ML tuning; AutoML era begins</td></tr>
-<tr><td>Shahriari et al.; <a href='https://arxiv.org/abs/1807.02811'>Frazier</a></td><td>2016; 2018</td><td>The canonical survey; the canonical tutorial</td></tr>
-<tr><td><a href='https://arxiv.org/abs/1406.2541'>PES</a>; <a href='https://arxiv.org/abs/1703.01968'>MES</a></td><td>2014; 2017</td><td>Information-theoretic acquisitions</td></tr>
-<tr><td><a href='https://arxiv.org/abs/1910.01739'>TuRBO</a></td><td>2019</td><td>Trust-region local BO for high dimensions</td></tr>
-<tr><td><a href='https://arxiv.org/abs/1910.06403'>BoTorch</a>; <a href='https://arxiv.org/abs/2006.05078'>qEHVI</a></td><td>2019; 2020</td><td>MC acquisitions + autograd; parallel multi-objective</td></tr>
-<tr><td><a href='https://arxiv.org/abs/2103.00349'>SAASBO</a>; <a href='https://arxiv.org/abs/2204.11051'>&pi;BO</a>; <a href='https://arxiv.org/abs/2307.00618'>Bounce</a></td><td>2021&ndash;23</td><td>Sparsity priors; user beliefs; combinatorial spaces</td></tr>
-<tr><td>Shields et al., <em>Nature</em></td><td>2021</td><td>BO beats expert chemists; self-driving labs</td></tr>
-<tr><td><a href='https://arxiv.org/abs/2310.20708'>LogEI</a></td><td>2023</td><td>Fixed EI&rsquo;s silent numerical failure; new default</td></tr>
-<tr><td><a href='https://arxiv.org/abs/2205.13320'>OptFormer</a>; <a href='https://arxiv.org/abs/2305.17535'>PFNs4BO</a>; <a href='https://arxiv.org/abs/2505.20685'>GIT-BO</a></td><td>2022&ndash;25</td><td>Pretrained transformer surrogates</td></tr>
-<tr><td><a href='https://arxiv.org/abs/2402.02229'>Vanilla-BO</a>; <a href='https://arxiv.org/abs/2402.02746'>Standard-GP</a>; <a href='https://arxiv.org/abs/2512.00170'>We-Still-Don&rsquo;t-Understand</a></td><td>2024&ndash;25</td><td>The live high-dimensional controversy</td></tr>
-<tr><td><a href='https://arxiv.org/abs/2402.03921'>LLAMBO</a>; <a href='https://arxiv.org/abs/2606.21641'>budget-matched study</a></td><td>2024; 2026</td><td>LLMs in the loop &mdash; promise and skepticism</td></tr>
-</table>
-<p>Suggested reading order: Frazier&rsquo;s tutorial first (it is this page with more proofs),
-then EGO for the origin, Snoek et al. for the practice, LogEI to update your defaults, and the
-three 2024&ndash;25 high-dimensional papers as a set to watch a live scientific argument unfold.
+<h3>The complete reference list</h3>
+<ol>
+<li>H. J. Kushner (1964). A New Method of Locating the Maximum Point of an Arbitrary Multipeak
+Curve in the Presence of Noise. <em>J. Basic Engineering</em> 86(1). <em>Probability of
+improvement.</em></li>
+<li>J. Mockus (1974/1978). On Bayesian Methods for Seeking the Extremum. <em>Optimization
+Techniques / Towards Global Optimization 2</em>. <em>Expected improvement; the name.</em></li>
+<li>Donald R. Jones, Matthias Schonlau, William J. Welch (1998). Efficient Global Optimization
+of Expensive Black-Box Functions. <em>J. Global Optimization</em> 13:455&ndash;492. <em>The
+seminal EGO template.</em></li>
+<li>Niranjan Srinivas, Andreas Krause, Sham Kakade, Matthias Seeger (2010).
+<a href='https://arxiv.org/abs/0912.3995'>Gaussian Process Optimization in the Bandit Setting:
+No Regret and Experimental Design</a>. ICML 2010. arXiv:0912.3995.</li>
+<li>James Bergstra, R&eacute;mi Bardenet, Yoshua Bengio, Bal&aacute;zs K&eacute;gl (2011).
+Algorithms for Hyper-Parameter Optimization (TPE). NeurIPS 2011.</li>
+<li>Frank Hutter, Holger H. Hoos, Kevin Leyton-Brown (2011). Sequential Model-Based
+Optimization for General Algorithm Configuration (SMAC). LION 5.</li>
+<li>Jasper Snoek, Hugo Larochelle, Ryan P. Adams (2012).
+<a href='https://arxiv.org/abs/1206.2944'>Practical Bayesian Optimization of Machine Learning
+Algorithms</a>. NeurIPS 2012. arXiv:1206.2944.</li>
+<li>Philipp Hennig, Christian J. Schuler (2012). <a href='https://arxiv.org/abs/1112.1217'>
+Entropy Search for Information-Efficient Global Optimization</a>. arXiv:1112.1217.</li>
+<li>Jos&eacute; Miguel Hern&aacute;ndez-Lobato, Matthew W. Hoffman, Zoubin Ghahramani (2014).
+<a href='https://arxiv.org/abs/1406.2541'>Predictive Entropy Search</a>. NeurIPS 2014.
+arXiv:1406.2541.</li>
+<li>Bobak Shahriari, Kevin Swersky, Ziyu Wang, Ryan P. Adams, Nando de Freitas (2016). Taking
+the Human Out of the Loop: A Review of Bayesian Optimization. <em>Proc. IEEE</em> 104(1).</li>
+<li>Zi Wang, Stefanie Jegelka (2017). <a href='https://arxiv.org/abs/1703.01968'>Max-value
+Entropy Search for Efficient Bayesian Optimization</a>. ICML 2017. arXiv:1703.01968.</li>
+<li>Peter I. Frazier (2018). <a href='https://arxiv.org/abs/1807.02811'>A Tutorial on Bayesian
+Optimization</a>. arXiv:1807.02811. <em>This page&rsquo;s notation.</em></li>
+<li>David Eriksson, Michael Pearce, Jacob R. Gardner, Ryan Turner, Matthias Poloczek (2019).
+<a href='https://arxiv.org/abs/1910.01739'>Scalable Global Optimization via Local Bayesian
+Optimization (TuRBO)</a>. NeurIPS 2019. arXiv:1910.01739.</li>
+<li>Maximilian Balandat, Brian Karrer, Daniel R. Jiang, Samuel Daulton, Benjamin Letham,
+Andrew Gordon Wilson, Eytan Bakshy (2020). <a href='https://arxiv.org/abs/1910.06403'>BoTorch:
+A Framework for Efficient Monte-Carlo Bayesian Optimization</a>. NeurIPS 2020.
+arXiv:1910.06403.</li>
+<li>Samuel Daulton, Maximilian Balandat, Eytan Bakshy (2020).
+<a href='https://arxiv.org/abs/2006.05078'>Differentiable Expected Hypervolume Improvement for
+Parallel Multi-Objective Bayesian Optimization (qEHVI)</a>. NeurIPS 2020. arXiv:2006.05078.</li>
+<li>David Eriksson, Martin Jankowiak (2021). <a href='https://arxiv.org/abs/2103.00349'>
+High-Dimensional Bayesian Optimization with Sparse Axis-Aligned Subspaces (SAASBO)</a>. UAI
+2021. arXiv:2103.00349.</li>
+<li>Benjamin J. Shields, Jason Stevens, Jun Li, et al. (2021). Bayesian reaction optimization
+as a tool for chemical synthesis. <em>Nature</em> 590:89&ndash;96.</li>
+<li>Carl Hvarfner, Danny Stoll, Artur Souza, Marius Lindauer, Frank Hutter, Luigi Nardi (2022).
+<a href='https://arxiv.org/abs/2204.11051'>&pi;BO: Augmenting Acquisition Functions with User
+Beliefs</a>. ICLR 2022. arXiv:2204.11051.</li>
+<li>Yutian Chen et al. (2022). <a href='https://arxiv.org/abs/2205.13320'>Towards Learning
+Universal Hyperparameter Optimizers with Transformers (OptFormer)</a>. NeurIPS 2022.
+arXiv:2205.13320.</li>
+<li>Alexander I. Cowen-Rivers et al. (2022). HEBO: Pushing the Limits of Sample-Efficient
+Hyper-parameter Optimisation. <em>JAIR</em> 74; modernized in
+<a href='https://arxiv.org/abs/2607.10669'>arXiv:2607.10669</a> (2026).</li>
+<li>Samuel M&uuml;ller, Matthias Feurer, Noah Hollmann, Frank Hutter (2023).
+<a href='https://arxiv.org/abs/2305.17535'>PFNs4BO: In-Context Learning for Bayesian
+Optimization</a>. ICML 2023. arXiv:2305.17535.</li>
+<li>Leonard Papenmeier, Luigi Nardi, Matthias Poloczek (2023).
+<a href='https://arxiv.org/abs/2307.00618'>Bounce: Reliable High-Dimensional Bayesian
+Optimization for Combinatorial and Mixed Spaces</a>. NeurIPS 2023. arXiv:2307.00618.</li>
+<li>Sebastian Ament, Samuel Daulton, David Eriksson, Maximilian Balandat, Eytan Bakshy (2023).
+<a href='https://arxiv.org/abs/2310.20708'>Unexpected Improvements to Expected Improvement for
+Bayesian Optimization (LogEI)</a>. NeurIPS 2023. arXiv:2310.20708.</li>
+<li>Carl Hvarfner, Erik Orm Hellsten, Luigi Nardi (2024).
+<a href='https://arxiv.org/abs/2402.02229'>Vanilla Bayesian Optimization Performs Great in High
+Dimensions</a>. ICML 2024. arXiv:2402.02229.</li>
+<li>Zhitong Xu, Shandian Zhe (2024). <a href='https://arxiv.org/abs/2402.02746'>Standard
+Gaussian Process is All You Need for High-Dimensional Bayesian Optimization</a>. ICLR 2025.
+arXiv:2402.02746.</li>
+<li>Tennison Liu, Nicol&aacute;s Astorga, Nabeel Seedat, Mihaela van der Schaar (2024).
+<a href='https://arxiv.org/abs/2402.03921'>Large Language Models to Enhance Bayesian
+Optimization (LLAMBO)</a>. ICLR 2024. arXiv:2402.03921.</li>
+<li>Willie Neiswanger et al. (2025). <a href='https://arxiv.org/abs/2502.06789'>
+Information-theoretic Bayesian Optimization: Survey and Tutorial</a>. arXiv:2502.06789.</li>
+<li>(2025). <a href='https://arxiv.org/abs/2505.20685'>GIT-BO: High-Dimensional Bayesian
+Optimization with Tabular Foundation Models</a>. arXiv:2505.20685.</li>
+<li>(2025). <a href='https://arxiv.org/abs/2509.21403'>LLMs for Bayesian Optimization in
+Scientific Domains: Are We There Yet?</a>. arXiv:2509.21403.</li>
+<li>Leonard Papenmeier et al. (2025). <a href='https://arxiv.org/abs/2512.00170'>We Still
+Don&rsquo;t Understand High-Dimensional Bayesian Optimization</a>. arXiv:2512.00170.</li>
+<li>(2026). <a href='https://arxiv.org/abs/2605.20249'>Automated Kernel Discovery Towards
+Understanding High-dimensional Bayesian Optimization</a>. arXiv:2605.20249.</li>
+<li>(2026). <a href='https://arxiv.org/abs/2606.01730'>Evidence-Gated LLM Priors for
+Multi-Objective Bayesian Optimization</a>. arXiv:2606.01730.</li>
+<li>(2026). <a href='https://arxiv.org/abs/2606.21641'>When Is an LLM Worth It for
+Hyperparameter Optimization? A Budget-Matched Study</a>. arXiv:2606.21641.</li>
+<li>(2026). <a href='https://arxiv.org/abs/2607.08791'>LLM-Driven Evolutionary Generation of
+Multi-Objective Bayesian Optimization Algorithms</a>. arXiv:2607.08791.</li>
+<li>Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, Masanori Koyama (2019). Optuna:
+A Next-generation Hyperparameter Optimization Framework. KDD 2019.</li>
+<li>Roman Garnett (2023). <em>Bayesian Optimization</em>. Cambridge University Press. Free at
+<a href='https://bayesoptbook.com/'>bayesoptbook.com</a> (verified live).</li>
+<li>Carl E. Rasmussen, Christopher K. I. Williams (2006). <em>Gaussian Processes for Machine
+Learning</em>. MIT Press. Free at
+<a href='https://gaussianprocess.org/gpml/'>gaussianprocess.org/gpml</a>.</li>
+<li>Robert B. Gramacy (2020). <em>Surrogates</em>. CRC. Free at
+<a href='https://bobby.gramacy.com/surrogates/'>bobby.gramacy.com/surrogates</a>.</li>
+<li>(2023). <a href='https://arxiv.org/abs/2311.13050'>Multi-fidelity Bayesian Optimization: A
+Review</a>. arXiv:2311.13050. <em>The fidelity axis this page leaves aside.</em></li>
+<li>James Bergstra, Yoshua Bengio (2012). Random Search for Hyper-Parameter Optimization.
+<em>JMLR</em> 13. <em>The random-beats-grid argument in the Background.</em></li>
+<li>Nikolaus Hansen (2016). <a href='https://arxiv.org/abs/1604.00772'>The CMA Evolution
+Strategy: A Tutorial</a>. arXiv:1604.00772. <em>The evolutionary baseline in tables and quiz
+distractors.</em></li>
+<li>Peter I. Frazier, Warren B. Powell, Savas Dayanik (2008). A Knowledge-Gradient Policy for
+Sequential Information Collection. <em>SIAM J. Control Optim.</em> 47(5). <em>The
+one-step-deeper lookahead mentioned under myopia.</em></li>
+<li>Jacob R. Gardner et al. (2018). <a href='https://arxiv.org/abs/1809.11165'>GPyTorch</a>.
+NeurIPS 2018. <em>The GP engine under BoTorch.</em></li>
+</ol>
+
+<p>Suggested reading order: Frazier&rsquo;s tutorial first (this page with more proofs), EGO
+for the origin, Snoek et al. for the practice, LogEI to update your defaults, then the three
+high-dimensional papers as a set &mdash; a live scientific argument in motion.
 Garnett&rsquo;s book whenever a chapter-length treatment is wanted.</p>
 """
 
@@ -967,7 +1194,7 @@ sense.&rdquo;</p>
 <h3>Spaced review (retention)</h3>
 <ul>
 <li><strong><a href='2026-08-02-bayesian-optimization-review.html'>The review deck</a></strong>
-&mdash; spaced repetition over this page&rsquo;s 25 questions (Leitner boxes,
+&mdash; spaced repetition over this page&rsquo;s 30 questions (Leitner boxes,
 1&rarr;3&rarr;7&rarr;14&rarr;30 days). Open it tomorrow, then whenever it says cards are due;
 finish a session and use <em>copy results for Claude</em> for targeted follow-up.</li>
 <li><strong><a href='bayesian-optimization.apkg'>Anki deck</a></strong> &mdash; the same
@@ -1021,146 +1248,6 @@ statistician&rsquo;s view with code.</p>
 one-sentence punchline.</p>
 """
 
-SOURCES = """
-<p>How this page was built: a literature survey on 2026-08-02, with every arXiv-hosted paper
-verified against the arXiv API (exact title, ID, date, first author) and recent-submission
-sweeps used to characterize the 2025&ndash;26 state of the art. Citation counts are approximate
-(&sim;) reputation figures, as arXiv carries none. The math sections follow the notation of
-Frazier&rsquo;s tutorial and Garnett&rsquo;s book. Errors of interpretation are this
-page&rsquo;s, not the sources&rsquo;.</p>
-
-<h3>Seminal line</h3>
-<ol>
-<li>H. J. Kushner (1964). A New Method of Locating the Maximum Point of an Arbitrary Multipeak
-Curve in the Presence of Noise. <em>J. Basic Engineering</em> 86(1). <em>Probability of
-improvement.</em></li>
-<li>J. Mockus (1974/1978). On Bayesian Methods for Seeking the Extremum. <em>Optimization
-Techniques / Towards Global Optimization 2</em>. <em>Expected improvement; the name.</em></li>
-<li>Donald R. Jones, Matthias Schonlau, William J. Welch (1998). Efficient Global Optimization
-of Expensive Black-Box Functions. <em>J. Global Optimization</em> 13:455&ndash;492. <em>EGO;
-the seminal template (~8k).</em></li>
-<li>Niranjan Srinivas, Andreas Krause, Sham Kakade, Matthias Seeger (2010).
-<a href='https://arxiv.org/abs/0912.3995'>Gaussian Process Optimization in the Bandit Setting:
-No Regret and Experimental Design</a>. ICML 2010. arXiv:0912.3995.</li>
-<li>Jasper Snoek, Hugo Larochelle, Ryan P. Adams (2012).
-<a href='https://arxiv.org/abs/1206.2944'>Practical Bayesian Optimization of Machine Learning
-Algorithms</a>. NeurIPS 2012. arXiv:1206.2944 (~10k).</li>
-</ol>
-
-<h3>Surveys, tutorials, books</h3>
-<ol>
-<li>Bobak Shahriari, Kevin Swersky, Ziyu Wang, Ryan P. Adams, Nando de Freitas (2016). Taking
-the Human Out of the Loop: A Review of Bayesian Optimization. <em>Proc. IEEE</em> 104(1)
-(~5k).</li>
-<li>Peter I. Frazier (2018). <a href='https://arxiv.org/abs/1807.02811'>A Tutorial on Bayesian
-Optimization</a>. arXiv:1807.02811. <em>This page&rsquo;s notation.</em></li>
-<li>Roman Garnett (2023). <em>Bayesian Optimization</em>. Cambridge University Press. Free at
-<a href='https://bayesoptbook.com/'>bayesoptbook.com</a> (verified live).</li>
-<li>Carl E. Rasmussen, Christopher K. I. Williams (2006). <em>Gaussian Processes for Machine
-Learning</em>. MIT Press. Free at <a href='https://gaussianprocess.org/gpml/'>gaussianprocess.org/gpml</a>.</li>
-<li>Robert B. Gramacy (2020). <em>Surrogates: Gaussian Process Modeling, Design, and
-Optimization for the Applied Sciences</em>. CRC. Free at
-<a href='https://bobby.gramacy.com/surrogates/'>bobby.gramacy.com/surrogates</a>.</li>
-<li>Willie Neiswanger et al. (2025). <a href='https://arxiv.org/abs/2502.06789'>
-Information-theoretic Bayesian Optimization: Survey and Tutorial</a>. arXiv:2502.06789.</li>
-</ol>
-
-<h3>The modern toolbox</h3>
-<ol>
-<li>James Bergstra, R&eacute;mi Bardenet, Yoshua Bengio, Bal&aacute;zs K&eacute;gl (2011).
-Algorithms for Hyper-Parameter Optimization (TPE). NeurIPS 2011 (~5k).</li>
-<li>Frank Hutter, Holger H. Hoos, Kevin Leyton-Brown (2011). Sequential Model-Based
-Optimization for General Algorithm Configuration (SMAC). LION 5.</li>
-<li>Jos&eacute; Miguel Hern&aacute;ndez-Lobato, Matthew W. Hoffman, Zoubin Ghahramani (2014).
-<a href='https://arxiv.org/abs/1406.2541'>Predictive Entropy Search</a>. NeurIPS 2014.
-arXiv:1406.2541.</li>
-<li>Zi Wang, Stefanie Jegelka (2017). <a href='https://arxiv.org/abs/1703.01968'>Max-value
-Entropy Search for Efficient Bayesian Optimization</a>. ICML 2017. arXiv:1703.01968.</li>
-<li>David Eriksson, Michael Pearce, Jacob R. Gardner, Ryan Turner, Matthias Poloczek (2019).
-<a href='https://arxiv.org/abs/1910.01739'>Scalable Global Optimization via Local Bayesian
-Optimization (TuRBO)</a>. NeurIPS 2019. arXiv:1910.01739.</li>
-<li>Maximilian Balandat, Brian Karrer, Daniel R. Jiang, Samuel Daulton, Benjamin Letham,
-Andrew Gordon Wilson, Eytan Bakshy (2020). <a href='https://arxiv.org/abs/1910.06403'>BoTorch:
-A Framework for Efficient Monte-Carlo Bayesian Optimization</a>. NeurIPS 2020.
-arXiv:1910.06403.</li>
-<li>Samuel Daulton, Maximilian Balandat, Eytan Bakshy (2020).
-<a href='https://arxiv.org/abs/2006.05078'>Differentiable Expected Hypervolume Improvement for
-Parallel Multi-Objective Bayesian Optimization (qEHVI)</a>. NeurIPS 2020. arXiv:2006.05078.</li>
-<li>David Eriksson, Martin Jankowiak (2021). <a href='https://arxiv.org/abs/2103.00349'>
-High-Dimensional Bayesian Optimization with Sparse Axis-Aligned Subspaces (SAASBO)</a>. UAI
-2021. arXiv:2103.00349.</li>
-<li>Carl Hvarfner, Danny Stoll, Artur Souza, Marius Lindauer, Frank Hutter, Luigi Nardi (2022).
-<a href='https://arxiv.org/abs/2204.11051'>&pi;BO: Augmenting Acquisition Functions with User
-Beliefs</a>. ICLR 2022. arXiv:2204.11051.</li>
-<li>Leonard Papenmeier, Luigi Nardi, Matthias Poloczek (2023).
-<a href='https://arxiv.org/abs/2307.00618'>Bounce: Reliable High-Dimensional Bayesian
-Optimization for Combinatorial and Mixed Spaces</a>. NeurIPS 2023. arXiv:2307.00618.</li>
-<li>Sebastian Ament, Samuel Daulton, David Eriksson, Maximilian Balandat, Eytan Bakshy (2023).
-<a href='https://arxiv.org/abs/2310.20708'>Unexpected Improvements to Expected Improvement for
-Bayesian Optimization (LogEI)</a>. NeurIPS 2023. arXiv:2310.20708.</li>
-<li>Benjamin J. Shields, Jason Stevens, Jun Li, et al. (2021). Bayesian reaction optimization
-as a tool for chemical synthesis. <em>Nature</em> 590:89&ndash;96.</li>
-<li>Alexander I. Cowen-Rivers et al. (2022). HEBO: Pushing the Limits of Sample-Efficient
-Hyper-parameter Optimisation. <em>JAIR</em> 74; modernized in
-<a href='https://arxiv.org/abs/2607.10669'>arXiv:2607.10669</a> (2026).</li>
-<li>Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, Masanori Koyama (2019). Optuna:
-A Next-generation Hyperparameter Optimization Framework. KDD 2019.</li>
-</ol>
-
-<h3>The 2024&ndash;2026 threads</h3>
-<ol>
-<li>Carl Hvarfner, Erik Orm Hellsten, Luigi Nardi (2024).
-<a href='https://arxiv.org/abs/2402.02229'>Vanilla Bayesian Optimization Performs Great in High
-Dimensions</a>. ICML 2024. arXiv:2402.02229.</li>
-<li>Zhitong Xu, Shandian Zhe (2024). <a href='https://arxiv.org/abs/2402.02746'>Standard
-Gaussian Process is All You Need for High-Dimensional Bayesian Optimization</a>. ICLR 2025.
-arXiv:2402.02746.</li>
-<li>Leonard Papenmeier et al. (2025). <a href='https://arxiv.org/abs/2512.00170'>We Still
-Don&rsquo;t Understand High-Dimensional Bayesian Optimization</a>. arXiv:2512.00170.</li>
-<li>Yutian Chen et al. (2022). <a href='https://arxiv.org/abs/2205.13320'>Towards Learning
-Universal Hyperparameter Optimizers with Transformers (OptFormer)</a>. NeurIPS 2022.
-arXiv:2205.13320.</li>
-<li>Samuel M&uuml;ller, Matthias Feurer, Noah Hollmann, Frank Hutter (2023).
-<a href='https://arxiv.org/abs/2305.17535'>PFNs4BO: In-Context Learning for Bayesian
-Optimization</a>. ICML 2023. arXiv:2305.17535.</li>
-<li>(2025). <a href='https://arxiv.org/abs/2505.20685'>GIT-BO: High-Dimensional Bayesian
-Optimization with Tabular Foundation Models</a>. arXiv:2505.20685.</li>
-<li>Tennison Liu, Nicol&aacute;s Astorga, Nabeel Seedat, Mihaela van der Schaar (2024).
-<a href='https://arxiv.org/abs/2402.03921'>Large Language Models to Enhance Bayesian
-Optimization (LLAMBO)</a>. ICLR 2024. arXiv:2402.03921.</li>
-<li>(2026). <a href='https://arxiv.org/abs/2606.01730'>Evidence-Gated LLM Priors for
-Multi-Objective Bayesian Optimization</a>. arXiv:2606.01730.</li>
-<li>(2026). <a href='https://arxiv.org/abs/2607.08791'>LLM-Driven Evolutionary Generation of
-Multi-Objective Bayesian Optimization Algorithms</a>. arXiv:2607.08791.</li>
-<li>(2026). <a href='https://arxiv.org/abs/2606.21641'>When Is an LLM Worth It for
-Hyperparameter Optimization? A Budget-Matched Study</a>. arXiv:2606.21641.</li>
-<li>(2025). <a href='https://arxiv.org/abs/2509.21403'>LLMs for Bayesian Optimization in
-Scientific Domains: Are We There Yet?</a>. arXiv:2509.21403.</li>
-<li>(2026). <a href='https://arxiv.org/abs/2605.20249'>Automated Kernel Discovery Towards
-Understanding High-dimensional Bayesian Optimization</a>. arXiv:2605.20249.</li>
-<li>(2023). <a href='https://arxiv.org/abs/2311.13050'>Multi-fidelity Bayesian Optimization: A
-Review</a>. arXiv:2311.13050.</li>
-</ol>
-
-<h3>Supporting literature (including quiz distractors)</h3>
-<ol>
-<li>James Bergstra, Yoshua Bengio (2012). Random Search for Hyper-Parameter Optimization.
-<em>JMLR</em> 13. <em>The random-beats-grid argument in the Background.</em></li>
-<li>Nikolaus Hansen (2016). <a href='https://arxiv.org/abs/1604.00772'>The CMA Evolution
-Strategy: A Tutorial</a>. arXiv:1604.00772. <em>The evolutionary baseline in the comparison
-table and quizzes.</em></li>
-<li>Philipp Hennig, Christian J. Schuler (2012). <a href='https://arxiv.org/abs/1112.1217'>
-Entropy Search for Information-Efficient Global Optimization</a>. arXiv:1112.1217. <em>Origin
-of the information-theoretic family.</em></li>
-<li>Peter I. Frazier, Warren B. Powell, Savas Dayanik (2008). A Knowledge-Gradient Policy for
-Sequential Information Collection. <em>SIAM J. Control Optim.</em> 47(5). <em>The one-step-
-deeper lookahead mentioned under myopia.</em></li>
-<li>Jacob R. Gardner et al. (2018). <a href='https://arxiv.org/abs/1809.11165'>GPyTorch:
-Blackbox Matrix-Matrix Gaussian Process Inference with GPU Acceleration</a>. NeurIPS 2018.
-<em>The GP engine under BoTorch.</em></li>
-</ol>
-"""
-
 spec = {
     "title": "Fifty Evaluations to Find the Best: Bayesian Optimization",
     "subtitle": "Gaussian process surrogates, acquisition functions derived by hand, and the 2024–2026 state of the art — every paper verified on arXiv",
@@ -1184,7 +1271,7 @@ skimmed: each part ends with a hard five-question quiz, the math parts carry fad
 to attempt on paper, and the simulations ask you to predict outcomes before running them.</p>
 <p>Read the parts in order. If you already know why gradient descent doesn&rsquo;t apply to
 black boxes, start at Part&nbsp;2; if you want only the story without equations, Parts 1, 2 and
-5 stand on their own. The interactive GP playground in Part&nbsp;2 is the heart of the page
+8 stand on their own. The interactive GP playground in Part&nbsp;2 is the heart of the page
 &mdash; everything before it motivates it, everything after it formalizes it.</p>
 """,
     "sections": [
@@ -1192,10 +1279,10 @@ black boxes, start at Part&nbsp;2; if you want only the story without equations,
         {"id": "intuition", "title": "Intuition", "html": INTUITION, "quiz": QUIZ_INTUITION},
         {"id": "math-gp", "title": "The Maths I: Gaussian Process Surrogates", "html": MATH_GP, "quiz": QUIZ_MATH_GP},
         {"id": "math-acq", "title": "The Maths II: Acquisition Functions", "html": MATH_ACQ, "quiz": QUIZ_MATH_ACQ},
-        {"id": "papers", "title": "The Papers", "html": PAPERS, "quiz": QUIZ_PAPERS},
+        {"id": "math-sota", "title": "The Maths III: Inside the SOTA Methods", "html": MATH_SOTA, "quiz": QUIZ_MATH_SOTA},
         {"id": "concept-map", "title": "The Concept Map", "html": CONCEPT_MAP},
         {"id": "keep-learning", "title": "Keep Learning", "html": KEEP_LEARNING},
-        {"id": "sources", "title": "Sources", "html": SOURCES},
+        {"id": "papers", "title": "The Papers & Sources", "html": PAPERS, "quiz": QUIZ_PAPERS},
     ],
     "scripts": [(TOOLS / "widgets_lib.js").read_text(),
                 (HERE / "widgets.js").read_text()],
@@ -1210,6 +1297,7 @@ subs = {
     "__FIG_REGRET__": (PLOTS / "fig_regret.html").read_text(),
     "__FIG_LS_SAMPLES__": (PLOTS / "fig_ls_samples.html").read_text(),
     "__FIG_ACQ_ANATOMY__": (PLOTS / "fig_acq_anatomy.html").read_text(),
+    "__FIG_TURBO__": (PLOTS / "fig_turbo.html").read_text(),
 }
 for s in spec["sections"]:
     for k, v in subs.items():

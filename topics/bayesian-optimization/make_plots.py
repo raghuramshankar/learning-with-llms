@@ -165,4 +165,59 @@ fig.update_yaxes(title="acquisition (scaled)", row=2, col=1)
 fig.update_xaxes(title="x", row=2, col=1)
 style(fig, height=520)
 save_div(fig, OUT / "fig_acq_anatomy.html", "fig-acq-anatomy")
+
+# --------------------------------------------------------- fig_turbo -----
+# Simplified single-trust-region TuRBO on negated Branin: success/failure
+# counters drive the region side length L (double on 3 successes, halve on
+# 3 failures, restart below L_min keeping only the incumbent).
+rng = np.random.default_rng(7)
+T, LS_T = 42, 0.2
+L, L_INIT, L_MAX, L_MIN = 0.4, 0.4, 0.8, 0.03
+TAU_S, TAU_F = 3, 3
+X = rng.uniform(0, 1, (4, 2)); y = f2(X)
+succ = fail = 0
+best_hist = list(np.maximum.accumulate(y))
+L_hist = [L] * len(y)
+restarts = []
+while len(best_hist) < T:
+    c = X[np.argmax(y)]
+    C = np.clip(c + L * (rng.uniform(size=(256, 2)) - 0.5), 0, 1)
+    mu, sd = gp_post(C, X, y, LS_T)
+    nxt = C[np.argmax(ei(mu, sd, y.max()))]
+    y_new = f2(nxt[None, :])[0]
+    improved = y_new > y.max() + 1e-4
+    X = np.vstack([X, nxt]); y = np.append(y, y_new)
+    best_hist.append(max(best_hist[-1], y_new)); L_hist.append(L)
+    if improved: succ += 1; fail = 0
+    else: fail += 1; succ = 0
+    if succ >= TAU_S: L = min(L_MAX, 2 * L); succ = 0
+    if fail >= TAU_F: L = L / 2; fail = 0
+    if L < L_MIN and len(best_hist) < T - 4:
+        restarts.append(len(y)); L = L_INIT
+        keep = int(np.argmax(y))
+        Xr = rng.uniform(0, 1, (3, 2)); yr = f2(Xr)
+        X = np.vstack([X[keep][None, :], Xr]); y = np.append(y[keep], yr)
+        best_hist.extend([max(best_hist[-1], v) for v in yr])
+        L_hist.extend([L] * 3)
+evals = np.arange(1, len(best_hist) + 1)
+fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.55, 0.45],
+                    vertical_spacing=0.08)
+fig.add_trace(go.Scatter(x=evals, y=best_hist, name="best value found",
+                         line=dict(color=GREEN, width=2.5),
+                         hovertemplate="eval %{x}: best = %{y:.3f}<extra></extra>"),
+              row=1, col=1)
+fig.add_trace(go.Scatter(x=evals, y=L_hist, name="trust-region side L",
+                         line=dict(color=RED, width=2.5, shape="hv"),
+                         hovertemplate="eval %{x}: L = %{y:.3f}<extra></extra>"),
+              row=2, col=1)
+for rx in restarts:
+    fig.add_vline(x=rx, line=dict(color=GREY, dash="dot", width=1.5))
+fig.update_yaxes(title="best f", row=1, col=1)
+fig.update_yaxes(title="side length L", row=2, col=1)
+fig.update_xaxes(title="function evaluations", row=2, col=1)
+style(fig, height=430, showlegend=False,
+      title=dict(text="Simplified TuRBO, one run: the trust region breathes",
+                 font=dict(size=15)))
+save_div(fig, OUT / "fig_turbo.html", "fig-turbo")
 print("all figures written")
+

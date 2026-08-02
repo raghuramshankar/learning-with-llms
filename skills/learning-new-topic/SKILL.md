@@ -64,25 +64,29 @@ Sections, in this order (adapt names to the topic):
 3. **Maths deep dives** — one or more sections, as technical as needed; never dumb it down. Real
    derivations with display math, notation defined at first use, each key formula followed by a
    "why this matters" callout. Bold the punchline sentence of each derivation. Carry ONE running
-   example/notation through all math sections.
-4. **Source walkthrough** — the papers/codebase organized as a narrative arc (e.g. foundations vs
-   the main line; each entry = which obstacle it removes, referencing the math section that derived
-   the relevant formula). Full reference table with links, plus a suggested reading order.
-5. **Concept map** — a final interactive SVG map of every idea on the page: hover a node to
+   example/notation through all math sections. **The LAST maths section must cover the SOTA
+   methods from the literature survey** — the actual equations each modern method changes (its
+   prior, update rule, search region, or training objective), one h3 per method, cross-referenced
+   from the papers narrative; not just prose about what the papers claim.
+4. **Concept map** — a final interactive SVG map of every idea on the page: hover a node to
    highlight its connections (dim the rest), click for a one-breath recap + jump link to its
    section. Mark the 2–3 load-bearing hub nodes. Build it from a nodes/edges data array in the
    widgets JS (`.cmap-*` classes in the renderer); the self-test framing: "every edge is one
    sentence you should be able to produce."
-6. **Keep Learning** — closes the loop past reading (see "Beyond the page" below): links to the
+5. **Keep Learning** — closes the loop past reading (see "Beyond the page" below): links to the
    review deck, Anki deck, and cheat sheet; the copyable teach-back prompt; the tutorial instructions.
-7. **Sources** — a full bibliography, last section on the page: the primary source(s) with
-   access dates and a note on which claims are theirs; every paper discussed, with complete
-   author lists, year, venue (only when confident — else "arXiv preprint"), and verified links;
-   and the supporting literature behind background claims INCLUDING the real papers used as quiz
-   distractors (one italic line each on what the page uses it for). State which papers' notation
-   the math sections follow, and own your errors ("errors of interpretation are this page's").
-8. **Quiz after every section** — 5 questions each (rules below). The concept-map,
-   keep-learning, and sources sections don't need quizzes.
+6. **Papers & Sources** — ONE combined section, the LAST part of the topic. Never create two
+   separate citing sections (no standalone "Sources"): the narrative arc (foundations → modern
+   toolbox → live SOTA threads; each entry = which obstacle it removes, cross-referencing the
+   maths sections that derive its formulas) followed, in the same section, by THE COMPLETE
+   REFERENCE LIST: every work discussed plus the supporting literature behind background claims
+   INCLUDING the real papers used as quiz distractors — complete author lists, year, venue (only
+   when confident — else "arXiv preprint"), verified links, and one italic purpose note each for
+   the supporting entries. Open the section with the survey-methodology note (how papers were
+   verified, access date, citation-magnitude caveat, whose notation the maths follows, "errors of
+   interpretation are this page's"). Close with a suggested reading order.
+7. **Quiz after every section** — 5 questions each (rules below). The concept-map and
+   keep-learning sections don't need quizzes; the combined Papers & Sources section DOES get one.
 
 ## Quiz rules (learned from user feedback — do not regress)
 
