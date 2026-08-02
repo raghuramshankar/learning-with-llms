@@ -16,14 +16,14 @@ for si, s in enumerate(spec["sections"]):
 
 CSS = """
 :root { --bg:#ffffff; --fg:#000000; --muted:#555e66; --line:#e1e5ea;
-  --accent:#063c92; --accent-soft:#eef2fb; --ok:#168551; --ok-soft:#e9f5ee;
+  --accent:#b509ac; --accent-soft:#f9e9f8; --ok:#168551; --ok-soft:#e9f5ee;
   --fail:#b03434; --fail-soft:#faeceb; --box-bg:#f8f9fb; --mast:#f5f5f5; }
 :root[data-theme="dark"] { --bg:#000000; --fg:#e5e8ee;
-  --muted:#9aa3b0; --line:#2a313b; --accent:#7d9fdd; --accent-soft:#1b2540;
+  --muted:#9aa3b0; --line:#2a313b; --accent:#2698ba; --accent-soft:#0d2e38;
   --ok:#57b98a; --ok-soft:#16301f; --fail:#e08585; --fail-soft:#3a2020;
   --box-bg:#181c23; --mast:#1a1e25; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#000000; --fg:#e5e8ee;
-  --muted:#9aa3b0; --line:#2a313b; --accent:#7d9fdd; --accent-soft:#1b2540;
+  --muted:#9aa3b0; --line:#2a313b; --accent:#2698ba; --accent-soft:#0d2e38;
   --ok:#57b98a; --ok-soft:#16301f; --fail:#e08585; --fail-soft:#3a2020;
   --box-bg:#181c23; --mast:#1a1e25; } }
 .masthead { background:var(--mast); border-bottom:1px solid var(--line); }

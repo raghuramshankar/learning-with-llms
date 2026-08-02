@@ -14,18 +14,18 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 <style>
 :root {
   --bg:#ffffff; --fg:#000000; --muted:#555e66; --line:#e1e5ea;
-  --accent:#063c92; --accent-soft:#eef2fb; --ok:#168551; --ok-soft:#e9f5ee;
-  --card:#f8f9fb; --hero-glow:rgba(6,60,146,0.07);
+  --accent:#b509ac; --accent-soft:#f9e9f8; --ok:#168551; --ok-soft:#e9f5ee;
+  --card:#f8f9fb; --hero-glow:rgba(181,9,172,0.06);
 }
 :root[data-theme="dark"] {
   --bg:#000000; --fg:#e5e8ee; --muted:#9aa3b0; --line:#2a313b;
-  --accent:#7d9fdd; --accent-soft:#1b2540; --ok:#57b98a; --ok-soft:#16301f;
-  --card:#181c23; --hero-glow:rgba(125,159,221,0.08);
+  --accent:#2698ba; --accent-soft:#0d2e38; --ok:#57b98a; --ok-soft:#16301f;
+  --card:#181c23; --hero-glow:rgba(38,152,186,0.08);
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg:#000000; --fg:#e5e8ee; --muted:#9aa3b0; --line:#2a313b;
-  --accent:#7d9fdd; --accent-soft:#1b2540; --ok:#57b98a; --ok-soft:#16301f;
-  --card:#181c23; --hero-glow:rgba(125,159,221,0.08);
+  --accent:#2698ba; --accent-soft:#0d2e38; --ok:#57b98a; --ok-soft:#16301f;
+  --card:#181c23; --hero-glow:rgba(38,152,186,0.08);
 } }
 .theme-toggle { position:fixed; top:.9rem; right:1rem; z-index:50;
   border:1px solid var(--line); background:var(--bg); color:var(--fg);
@@ -104,15 +104,21 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
 <button id="theme-toggle" class="theme-toggle" type="button">&#9789; dark</button>
 <main class="wrap">
 
-<section id="topics" style="padding-top:2.2rem">
+<section id="intro" style="padding:2.4rem 0 0">
+  <p style="max-width:64ch;font-size:1.04rem">I use large language models to teach myself new
+  technical topics. This site collects the results. Each topic is a complete learning system.
+  You get an explainer with the full mathematics, live simulations, hard quizzes, a spaced
+  repetition deck, a cheat sheet, and a tutorial where you write the code yourself.</p>
+</section>
+
+<section id="topics" style="padding-top:1.2rem">
   <h2>Topics</h2>
-  <p class="secsub">Newest first. Each one is self-contained.</p>
+  <p class="secsub">Newest first. Each topic stands alone.</p>
   <div class="topic">
     <div class="topic-head">
       <h3><a href="2026-08-02-bayesian-optimization.html">Bayesian Optimization</a></h3>
       <span class="tdate">2026-08-02</span>
     </div>
-    <div class="tags"><span class='tag'>optimization</span><span class='tag'>Gaussian processes</span><span class='tag'>SOTA 2026</span></div>
     <p>How to find the best settings of an expensive black-box function in a few dozen tries — Gaussian process surrogates and acquisition functions derived by hand, a live GP playground, and the 2024–26 fights over high dimensions and LLMs. Every paper arXiv-verified.</p>
     <div class="tlinks">
       <a href="2026-08-02-bayesian-optimization-review.html">Review deck</a>
@@ -125,7 +131,6 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
       <h3><a href="2026-08-01-diffusion-language-models.html">Diffusion Language Models</a></h3>
       <span class="tdate">2026-08-01</span>
     </div>
-    <div class="tags"><span class='tag'>generative models</span><span class='tag'>NLP</span><span class='tag'>9 papers</span></div>
     <p>Why frontier LLMs type one token at a time, and how diffusion lets them paint the whole answer instead — from Gaussian noise to masked tokens to Mercury, grounded in the nine papers on Inception Labs&#x27; about page.</p>
     <div class="tlinks">
       <a href="2026-08-02-diffusion-review.html">Review deck</a>
