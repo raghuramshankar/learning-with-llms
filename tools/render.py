@@ -104,11 +104,11 @@ body {
 /* global band: replica of the personal site's header */
 .masthead { position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   background: var(--bg); border-bottom: 1px solid var(--line); }
-.mast-inner { max-width: 1160px; margin: 0 auto; padding: .85rem 1.4rem;
+.mast-inner { max-width: 1160px; margin: 0 auto; padding: .8rem 1.4rem;
   display: flex; align-items: baseline; gap: 1.35rem; flex-wrap: wrap;
-  justify-content: flex-end; }
+  justify-content: flex-end; line-height: 1.5; }
 .mast-brand { margin-right: auto; color: var(--fg); text-decoration: none;
-  font-size: 1rem; font-weight: 300; }
+  font-size: 1.25rem; font-weight: 300; }
 .mast-brand strong { font-weight: 700; }
 .mast-brand:hover { color: var(--accent); }
 .gnav-link { color: var(--accent); text-decoration: none; font-size: 1rem; }
@@ -117,7 +117,7 @@ body {
   cursor: pointer; font-size: 1rem; padding: 0; line-height: inherit;
   font-family: inherit; }
 .theme-toggle:hover { text-decoration: underline; }
-body { padding-top: 56px; }
+body { padding-top: 58px; }
 /* topic band */
 .topicbar { background: var(--mast); border-bottom: 1px solid var(--line); }
 .topicbar-inner { max-width: 1160px; margin: 0 auto; padding: .5rem 1.4rem;
@@ -147,8 +147,8 @@ main.content { min-width: 0; padding-top: 1.6rem; }
 .topnav a:hover { color: var(--link); text-decoration: underline; }
 .topnav .tn-next { margin-left: auto; }
 /* sidebar */
-aside.sidebar { position: sticky; top: 56px; align-self: start;
-  max-height: calc(100vh - 56px); overflow-y: auto; padding: 1.8rem 0 2rem;
+aside.sidebar { position: sticky; top: 58px; align-self: start;
+  max-height: calc(100vh - 58px); overflow-y: auto; padding: 1.8rem 0 2rem;
   font-size: .84rem; line-height: 1.55; }
 .side-topic { font-weight: 700; margin-bottom: .7rem; font-size: .9rem; }
 .side-topic a { color: var(--accent); text-decoration: none; }

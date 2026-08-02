@@ -44,11 +44,11 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 } }
 .masthead { position:fixed; top:0; left:0; right:0; z-index:100;
   background:var(--bg); border-bottom:1px solid var(--line); }
-.mast-inner { max-width:1160px; margin:0 auto; padding:.85rem 1.4rem;
+.mast-inner { max-width:1160px; margin:0 auto; padding:.8rem 1.4rem;
   display:flex; align-items:baseline; gap:1.35rem; flex-wrap:wrap;
-  justify-content:flex-end; }
+  justify-content:flex-end; line-height:1.5; }
 .mast-brand { margin-right:auto; color:var(--fg); text-decoration:none;
-  font-size:1rem; font-weight:300; }
+  font-size:1.25rem; font-weight:300; }
 .mast-brand strong { font-weight:700; }
 .mast-brand:hover { color:var(--accent); }
 .gnav-link { color:var(--accent); text-decoration:none; font-size:1rem; }
@@ -56,7 +56,7 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 .theme-toggle { border:none; background:none; color:var(--accent);
   cursor:pointer; font-size:1rem; padding:0; font-family:inherit; }
 .theme-toggle:hover { text-decoration:underline; }
-body { padding-top:56px; }
+body { padding-top:58px; }
 .topicbar { background:var(--mast); border-bottom:1px solid var(--line); }
 .topicbar-inner { max-width:1160px; margin:0 auto; padding:.5rem 1.4rem;
   display:flex; align-items:baseline; gap:1.1rem; flex-wrap:wrap; }
@@ -146,6 +146,7 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
 <main class="wrap">
 
 <section id="intro" style="padding:2.4rem 0 0">
+  <h1 style="font-size:1.5rem;margin:0 0 .8rem">Learning with LLMs</h1>
   <p style="max-width:64ch;font-size:1.04rem">I use large language models to teach myself new
   technical topics. This site collects the results. Each topic is a complete learning system.
   You get an explainer with the full mathematics, live simulations, hard quizzes, a spaced

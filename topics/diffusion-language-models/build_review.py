@@ -28,11 +28,11 @@ CSS = """
   --box-bg:#181c23; --mast:#1a1e25; } }
 .masthead { position:fixed; top:0; left:0; right:0; z-index:100;
   background:var(--bg); border-bottom:1px solid var(--line); }
-.mast-inner { max-width:1160px; margin:0 auto; padding:.85rem 1.4rem;
+.mast-inner { max-width:1160px; margin:0 auto; padding:.8rem 1.4rem;
   display:flex; align-items:baseline; gap:1.35rem; flex-wrap:wrap;
-  justify-content:flex-end; }
+  justify-content:flex-end; line-height:1.5; }
 .mast-brand { margin-right:auto; color:var(--fg); text-decoration:none;
-  font-size:1rem; font-weight:300; }
+  font-size:1.25rem; font-weight:300; }
 .mast-brand strong { font-weight:700; }
 .mast-brand:hover { color:var(--accent); }
 .gnav-link { color:var(--accent); text-decoration:none; font-size:1rem; }
@@ -40,7 +40,7 @@ CSS = """
 .theme-toggle { border:none; background:none; color:var(--accent);
   cursor:pointer; font-size:1rem; padding:0; font-family:inherit; }
 .theme-toggle:hover { text-decoration:underline; }
-body { padding-top:56px; }
+body { padding-top:58px; }
 .topicbar { background:var(--mast); border-bottom:1px solid var(--line); }
 .topicbar-inner { max-width:1160px; margin:0 auto; padding:.5rem 1.4rem;
   display:flex; align-items:baseline; gap:1.1rem; flex-wrap:wrap; }
