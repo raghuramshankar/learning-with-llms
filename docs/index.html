@@ -6,20 +6,23 @@
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="Interactive deep dives into technical topics: intuition, full mathematics, live simulations, spaced repetition, and build-it-yourself labs.">
 <title>Learning with LLMs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#fbfbfd; --fg:#171b22; --muted:#5b6472; --line:#e4e7ee;
-  --accent:#2458c5; --accent-soft:#e9effc; --ok:#1e7e46; --ok-soft:#e8f5ec;
-  --card:#ffffff; --hero-glow:rgba(36,88,197,0.09);
+  --bg:#ffffff; --fg:#111418; --muted:#5c6670; --line:#e1e5ea;
+  --accent:#063c92; --accent-soft:#eef2fb; --ok:#168551; --ok-soft:#e9f5ee;
+  --card:#f8f9fb; --hero-glow:rgba(6,60,146,0.07);
 }
 @media (prefers-color-scheme: dark) { :root {
-  --bg:#12151a; --fg:#e7eaef; --muted:#98a1af; --line:#2a303a;
-  --accent:#7aa5f0; --accent-soft:#1c2841; --ok:#62c088; --ok-soft:#17301f;
-  --card:#181c23; --hero-glow:rgba(122,165,240,0.08);
+  --bg:#13161b; --fg:#e5e8ee; --muted:#9aa3b0; --line:#2a313b;
+  --accent:#7d9fdd; --accent-soft:#1b2540; --ok:#57b98a; --ok-soft:#16301f;
+  --card:#181c23; --hero-glow:rgba(125,159,221,0.08);
 } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg);
-  font:17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font:16px/1.7 Merriweather, Georgia, serif;
   -webkit-font-smoothing:antialiased; }
 .wrap { max-width:960px; margin:0 auto; padding:0 1.4rem; }
 a { color:var(--accent); }
@@ -30,7 +33,7 @@ header { position:relative; overflow:hidden; border-bottom:1px solid var(--line)
 .hero { padding:4.5rem 0 3.5rem; }
 .eyebrow { font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size:.82rem; color:var(--accent); letter-spacing:.06em; margin-bottom:1rem; }
-h1 { font-family:Georgia, 'Times New Roman', serif; font-weight:600;
+h1 { font-family:Merriweather, Georgia, serif; font-weight:700; color:var(--accent);
   font-size:clamp(2rem, 5vw, 3rem); line-height:1.15; margin:0 0 1rem; max-width:21ch; }
 .lede { color:var(--muted); font-size:1.12rem; max-width:56ch; margin:0 0 1.8rem; }
 .cta { display:inline-block; padding:.6rem 1.2rem; border-radius:10px;
@@ -41,8 +44,9 @@ h1 { font-family:Georgia, 'Times New Roman', serif; font-weight:600;
 
 /* sections */
 section { padding:3rem 0 1rem; }
-h2 { font-family:Georgia, 'Times New Roman', serif; font-weight:600;
-  font-size:1.5rem; margin:0 0 .4rem; }
+h2 { font-family:Merriweather, Georgia, serif; font-weight:700;
+  font-size:1.3rem; margin:0 0 .4rem; color:var(--accent);
+  border-bottom:1px solid var(--accent); padding-bottom:.3rem; }
 .secsub { color:var(--muted); margin:0 0 1.6rem; max-width:62ch; }
 
 /* system cards */
@@ -59,7 +63,7 @@ h2 { font-family:Georgia, 'Times New Roman', serif; font-weight:600;
   padding:1.5rem 1.6rem; margin:1.1rem 0; transition:border-color .12s; }
 .topic:hover { border-color:var(--accent); }
 .topic-head { display:flex; align-items:baseline; gap:.8rem; flex-wrap:wrap; }
-.topic h3 { font-family:Georgia, serif; font-size:1.35rem; margin:0; }
+.topic h3 { font-family:Merriweather, Georgia, serif; font-size:1.25rem; margin:0; }
 .topic h3 a { color:var(--fg); text-decoration:none; }
 .topic h3 a:hover { color:var(--accent); }
 .tdate { color:var(--muted); font-size:.85rem;

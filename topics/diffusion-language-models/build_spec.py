@@ -1355,6 +1355,20 @@ spec = {
     "subtitle": "What diffusion models are, the mathematics underneath, and the nine papers behind Inception Labs' Mercury",
     "slug": "diffusion-language-models",
     "date": "2026-08-01",
+    "multipage": True,
+    "nav": [["All topics", "index.html"],
+            ["Review deck", "2026-08-02-diffusion-review.html"],
+            ["Cheat sheet", "2026-08-02-dllm-cheatsheet.html"],
+            ["GitHub", "https://github.com/raghuramshankar/learning-with-llms"]],
+    "intro": """
+<p>This is a deep dive into diffusion language models, grounded in the nine papers listed on
+Inception Labs&rsquo; about page. It is built to be worked through, not skimmed: each part ends
+with a hard five-question quiz, the math parts carry faded derivations to attempt on paper, and
+the simulations ask you to predict before they run.</p>
+<p>Read the parts in order &mdash; each one owes its vocabulary to the one before. If you already
+know how LLMs generate text, start at Part&nbsp;2; if you only want the story without the
+equations, Parts 1, 2 and 5 stand on their own.</p>
+""",
     "repo": "inceptionlabs.ai/about · Some of the technologies we've developed",
     "sections": [
         {"id": "background", "title": "Background", "html": BACKGROUND, "quiz": QUIZ_BACKGROUND},

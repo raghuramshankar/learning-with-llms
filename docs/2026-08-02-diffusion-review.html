@@ -5,19 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Review Deck: Diffusion Language Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-:root { --bg:#ffffff; --fg:#1a1f27; --muted:#5b6472; --line:#e3e7ee;
-  --accent:#2458c5; --accent-soft:#eaf0fc; --ok:#1e7e46; --ok-soft:#e8f5ec;
-  --fail:#b33a3a; --fail-soft:#faecec; --box-bg:#f9fafc; }
-@media (prefers-color-scheme: dark) { :root { --bg:#14171c; --fg:#e6e9ee;
-  --muted:#9aa3b0; --line:#2b313b; --accent:#7aa5f0; --accent-soft:#1d2942;
-  --ok:#62c088; --ok-soft:#17301f; --fail:#e08585; --fail-soft:#3a2020;
-  --box-bg:#1a1f27; } }
+:root { --bg:#ffffff; --fg:#111418; --muted:#5c6670; --line:#e1e5ea;
+  --accent:#063c92; --accent-soft:#eef2fb; --ok:#168551; --ok-soft:#e9f5ee;
+  --fail:#b03434; --fail-soft:#faeceb; --box-bg:#f8f9fb; }
+@media (prefers-color-scheme: dark) { :root { --bg:#13161b; --fg:#e5e8ee;
+  --muted:#9aa3b0; --line:#2a313b; --accent:#7d9fdd; --accent-soft:#1b2540;
+  --ok:#57b98a; --ok-soft:#16301f; --fail:#e08585; --fail-soft:#3a2020;
+  --box-bg:#181c23; } }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--fg);
-  font:17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  font:16px/1.7 Merriweather, Georgia, serif; }
 .wrap { max-width:760px; margin:0 auto; padding:2.2rem 1.3rem 4rem; }
-h1 { font-size:1.6rem; margin:0 0 .3rem; }
+h1 { font-size:1.5rem; margin:0 0 .3rem; color:var(--accent); }
 .sub { color:var(--muted); margin:0 0 1.4rem; font-size:.95rem; }
 .stats { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.2rem; }
 .stat { background:var(--box-bg); border:1px solid var(--line); border-radius:10px;
