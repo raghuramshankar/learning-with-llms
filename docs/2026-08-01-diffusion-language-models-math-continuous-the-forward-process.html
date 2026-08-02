@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Sources — From Typewriter to Editor: Diffusion Language Models</title>
+<title>The forward process — From Typewriter to Editor: Diffusion Language Models</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -271,15 +271,30 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 <nav class="mast-nav"><a href="index.html">All topics</a><a href="2026-08-02-diffusion-review.html">Review deck</a><a href="2026-08-02-dllm-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms">GitHub</a><button id="theme-toggle" class="theme-toggle"
  type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
 </div></div>
-<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a><ul><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ul></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-keep-learning-the-cheat-sheet-consolidation.html">&larr; The cheat sheet (consolidation)</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source &rarr;</a></div><p class="part-eyebrow">Part 8 of 8</p><h1>Sources</h1>
-<p>Everything on this page was built from the sources below. The seed was Inception Labs&rsquo;
-about page; the nine papers it lists were read and are cited in full; the supporting literature
-covers every background claim, historical reference, and &mdash; deliberately &mdash; the real
-papers used as quiz distractors. The math sections follow the notation of DDIM (continuous case)
-and MDLM (discrete case) so you can move from this page into those papers without translation.
-Any errors of interpretation are this page&rsquo;s, not the sources&rsquo;.</p>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a><ul><li class="cur"><a href="2026-08-01-diffusion-language-models-math-continuous-the-forward-process.html">The forward process</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous-the-reverse-process-and-the-elbo.html">The reverse process and the ELBO</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous-ddim-same-training-a-fraction-of-the-steps.html">DDIM: same training, a fraction of the steps</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-math-continuous.html">&larr; The Maths I: Continuous Diffusion</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-math-continuous-the-reverse-process-and-the-elbo.html">The reverse process and the ELBO &rarr;</a></div><p class="part-eyebrow">Part 3 &middot; The Maths I: Continuous Diffusion</p><h1>The forward process</h1>
+<p>Fix a <em>noise schedule</em> &beta;<sub>1</sub>, &hellip;, &beta;<sub>T</sub> &isin; (0,1) of small,
+typically increasing values, and let data be <span class='m'>x<sub>0</sub> ~ q(x<sub>0</sub>)</span>.
+The forward process is a Markov chain that corrupts one step at a time:</p>
+<div class='math'>q(x<sub>t</sub> | x<sub>t&minus;1</sub>) = &#119977;( x<sub>t</sub> ; &radic;(1&minus;&beta;<sub>t</sub>) &middot; x<sub>t&minus;1</sub> , &beta;<sub>t</sub>&middot;I )</div>
+<p>The odd-looking <span class='m'>&radic;(1&minus;&beta;<sub>t</sub>)</span> is deliberate: if
+<span class='m'>Var(x<sub>t&minus;1</sub>) = I</span>, then
+<span class='m'>Var(x<sub>t</sub>) = (1&minus;&beta;<sub>t</sub>)&middot;I + &beta;<sub>t</sub>&middot;I = I</span>.
+Signal shrinks at exactly the rate noise grows &mdash; a <em>variance-preserving</em> chain that
+neither explodes nor collapses. Because Gaussians compose, the whole chain telescopes into a single
+jump. Writing <span class='m'>&alpha;<sub>t</sub> = 1&minus;&beta;<sub>t</sub></span> and
+<span class='m'>&#8113;<sub>t</sub> = &alpha;<sub>1</sub>&alpha;<sub>2</sub>&ctdot;&alpha;<sub>t</sub></span>:</p>
+<div class='math'>q(x<sub>t</sub> | x<sub>0</sub>) = &#119977;( &radic;&#8113;<sub>t</sub>&middot;x<sub>0</sub> , (1&minus;&#8113;<sub>t</sub>)&middot;I )
+&nbsp;&nbsp;&hArr;&nbsp;&nbsp; x<sub>t</sub> = &radic;&#8113;<sub>t</sub>&middot;x<sub>0</sub> + &radic;(1&minus;&#8113;<sub>t</sub>)&middot;&epsilon;,&nbsp;&nbsp;&epsilon; ~ &#119977;(0, I)</div>
+<div class='callout'>
+<p><strong>Why this closed form matters.</strong> Training never has to simulate the chain: draw a
+random t, draw &epsilon;, and you have a corrupted sample at exactly noise level t in one line of
+code. This is what makes diffusion training as cheap per example as ordinary supervised learning.
+By design <span class='m'>&#8113;<sub>T</sub> &asymp; 0</span>, so
+<span class='m'>x<sub>T</sub> ~ &#119977;(0, I)</span>: all information about the data is destroyed,
+and generation can start from pure noise.</p>
+</div>
 
-<ol class="parts"><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ol><div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-keep-learning-the-cheat-sheet-consolidation.html">&larr; The cheat sheet (consolidation)</a><a class="pn-next" href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
+<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-math-continuous.html">&larr; The Maths I: Continuous Diffusion</a><a class="pn-next" href="2026-08-01-diffusion-language-models-math-continuous-the-reverse-process-and-the-elbo.html">The reverse process and the ELBO &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "papers": "2026-08-01-diffusion-language-models-papers.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "sources": "2026-08-01-diffusion-language-models-sources.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>

@@ -8,23 +8,30 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #ffffff; --fg: #111418; --muted: #5c6670; --line: #e1e5ea;
+<style>:root {
+  --bg: #ffffff; --fg: #000000; --muted: #555e66; --line: #e1e5ea;
   --accent: #063c92; --link: #053075; --accent-soft: #eef2fb;
   --ok: #168551; --ok-soft: #e9f5ee; --fail: #b03434; --fail-soft: #faeceb;
   --warn-soft: #fdf6e3; --warn-line: #c9a227;
   --code-bg: #f6f8fa; --box-bg: #f8f9fb; --mast: #f5f5f5;
 }
+:root[data-theme="dark"] {
+  --bg: #13161b; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --accent: #7d9fdd; --link: #8fb0e8; --accent-soft: #1b2540;
+  --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
+  --warn-soft: #33290f; --warn-line: #a8842e;
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
+}
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #13161b; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
-    --accent: #7d9fdd; --link: #8fb0e8; --accent-soft: #1b2540;
-    --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
-    --warn-soft: #33290f; --warn-line: #a8842e;
-    --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
+  :root:not([data-theme="light"]) {
+  --bg: #13161b; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --accent: #7d9fdd; --link: #8fb0e8; --accent-soft: #1b2540;
+  --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
+  --warn-soft: #33290f; --warn-line: #a8842e;
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
   }
 }
+
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--bg); color: var(--fg);
@@ -37,14 +44,26 @@ body {
   display: flex; align-items: baseline; gap: 1.4rem; flex-wrap: wrap; }
 .mast-title { font-weight: 700; font-size: .98rem; }
 .mast-title a { color: var(--fg); text-decoration: none; }
-.mast-nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap; }
+.mast-nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap;
+  align-items: baseline; }
 .mast-nav a { color: var(--muted); text-decoration: none; font-size: .85rem; }
 .mast-nav a:hover { color: var(--link); text-decoration: underline; }
+.theme-toggle { border: 1px solid var(--line); background: var(--bg);
+  color: var(--fg); border-radius: 8px; cursor: pointer;
+  padding: .05rem .5rem; font-size: .85rem; line-height: 1.5; }
+.theme-toggle:hover { border-color: var(--accent); }
 /* layout */
 .wrap { max-width: 950px; margin: 0 auto; padding: 2.2rem 1.4rem 5rem; }
 .layout { max-width: 1160px; margin: 0 auto; padding: 0 1.4rem 4rem;
   display: grid; grid-template-columns: 235px minmax(0, 1fr); gap: 2.6rem; }
-main.content { min-width: 0; padding-top: 1.8rem; }
+main.content { min-width: 0; padding-top: 1.6rem; }
+/* top nav row */
+.topnav { display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: .8rem;
+  margin-bottom: 1.4rem; border-bottom: 1px solid var(--line);
+  padding-bottom: .6rem; }
+.topnav a { color: var(--muted); text-decoration: none; }
+.topnav a:hover { color: var(--link); text-decoration: underline; }
+.topnav .tn-next { margin-left: auto; }
 /* sidebar */
 aside.sidebar { position: sticky; top: 0; align-self: start;
   max-height: 100vh; overflow-y: auto; padding: 1.8rem 0 2rem;
@@ -63,6 +82,7 @@ aside.sidebar ol > li > a:hover { color: var(--link); }
 aside.sidebar ul { list-style: none; margin: .3rem 0 .1rem; padding: 0 0 0 .9rem; }
 aside.sidebar ul li { padding: .12rem 0; }
 aside.sidebar ul a { color: var(--muted); text-decoration: none; font-size: .8rem; }
+aside.sidebar ul li.cur a { color: var(--accent); font-weight: 700; }
 aside.sidebar ul a:hover { color: var(--link); }
 .side-foot { margin-top: 1rem; }
 .side-foot a { color: var(--muted); text-decoration: none; font-size: .8rem; }
@@ -73,11 +93,11 @@ aside.sidebar ul a:hover { color: var(--link); }
     padding: .9rem 1.1rem; border: 1px solid var(--line); border-radius: 10px;
     background: var(--box-bg); }
 }
-/* headings, in the adaptive-bayesian style */
+/* headings */
 header.pagehead { padding-bottom: 1rem; margin-bottom: 1.2rem; }
 .part-eyebrow { color: var(--ok); font-weight: 700; font-size: .82rem;
   margin: 0 0 .35rem; letter-spacing: .02em; }
-h1 { font-size: 1.55rem; line-height: 1.3; margin: 0 0 .5rem; font-weight: 700; }
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 .5rem; font-weight: 700; }
 .subtitle { color: var(--muted); font-size: 1.02rem; margin: 0; }
 .repo { color: var(--muted); font-size: .8rem; margin-top: .55rem; }
 h2 { font-size: 1.12rem; color: var(--accent); font-weight: 700;
@@ -88,7 +108,6 @@ h4 { font-size: .95rem; margin: 1.5rem 0 .4rem; color: var(--fg); }
 p, ul, ol { margin: 0 0 1rem; }
 li { margin-bottom: .35rem; }
 a { color: var(--link); }
-/* toc box (single-page mode) */
 nav.toc { background: var(--box-bg); border: 1px solid var(--line);
   border-radius: 10px; padding: 1rem 1.3rem; margin-bottom: 2.2rem; }
 nav.toc .toc-title { font-weight: 700; font-size: .78rem; letter-spacing: .08em;
@@ -135,7 +154,6 @@ th { background: var(--box-bg); font-weight: 700; }
 .tag { display: inline-block; background: var(--accent-soft);
   color: var(--accent); border-radius: 999px; padding: .05em .6em;
   font-size: .76em; font-weight: 700; }
-/* math */
 .math { font-family: Georgia, 'Times New Roman', serif; text-align: center;
   margin: 1.2rem 0; padding: .2rem 0; overflow-x: auto; font-size: 1.02rem;
   line-height: 2.1; }
@@ -144,7 +162,6 @@ th { background: var(--box-bg); font-weight: 700; }
   margin: 0 .15em; line-height: 1.25; }
 .frac .num, .frac .den { display: block; padding: 0 .3em; }
 .frac .den { border-top: 1px solid currentColor; }
-/* interactive widgets */
 .widget { background: var(--box-bg); border: 1px solid var(--line);
   border-radius: 10px; padding: 1.1rem; margin: 1.4rem 0; }
 .widget canvas { display: block; margin: .6rem auto; max-width: 100%;
@@ -167,7 +184,6 @@ th { background: var(--box-bg); font-weight: 700; }
   padding: .05em .55em; }
 .wchip.good { border-color: var(--ok); background: var(--ok-soft); }
 .wchip.bad { border-color: var(--fail); background: var(--fail-soft); }
-/* faded derivations */
 .deriv { border: 1px solid var(--line); border-radius: 10px;
   background: var(--box-bg); padding: 1rem 1.2rem; margin: 1.4rem 0; }
 .deriv-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
@@ -180,7 +196,6 @@ th { background: var(--box-bg); font-weight: 700; }
 .dstep-body { display: none; margin-top: .55rem; }
 .dstep.open .dstep-body { display: block; }
 .dstep.open .dstep-toggle { opacity: .55; }
-/* concept map */
 .cmap-edge { stroke: var(--muted); stroke-width: 1.2; opacity: .4; fill: none; }
 .cmap-edge.hl { stroke: var(--accent); opacity: 1; stroke-width: 2.4; }
 .cmap-node { cursor: pointer; }
@@ -190,7 +205,6 @@ th { background: var(--box-bg); font-weight: 700; }
 .cmap-node.hub rect { stroke: var(--accent); stroke-width: 2; }
 .cmap-node.hl rect { stroke: var(--accent); stroke-width: 2.2; }
 .cmap-node.dim, .cmap-edge.dim { opacity: .15; }
-/* cheat-sheet grid */
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1rem; margin: 1.2rem 0; }
 .cheat-card { border: 1px solid var(--line); border-radius: 10px;
@@ -198,7 +212,6 @@ th { background: var(--box-bg); font-weight: 700; }
 .cheat-card h4 { margin: 0 0 .4rem; color: var(--accent); }
 .cheat-card .math { margin: .6rem 0; font-size: .95rem; }
 .cheat-card p { font-size: .86rem; margin-bottom: .4rem; }
-/* quiz */
 .quiz-heading { color: var(--accent); }
 .quiz-note { color: var(--muted); font-size: .84rem; }
 .quiz-q { border: 1px solid var(--line); border-radius: 10px;
@@ -226,7 +239,6 @@ th { background: var(--box-bg); font-weight: 700; }
 .quiz-fb.right { display: block; background: var(--ok-soft); color: var(--fg); }
 .quiz-fb.wrong { display: block; background: var(--fail-soft); color: var(--fg); }
 .quiz-score { font-weight: 700; margin-top: 1rem; display: none; }
-/* prev/next + overview parts */
 .pn { display: flex; justify-content: space-between; gap: 1rem;
   border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 1.2rem;
   flex-wrap: wrap; }
@@ -238,7 +250,7 @@ th { background: var(--box-bg); font-weight: 700; }
   background: var(--box-bg); margin: .6rem 0; counter-increment: part; }
 .parts li a { display: block; padding: .8rem 1.1rem; text-decoration: none;
   color: var(--fg); }
-.parts li a:hover { border-color: var(--accent); color: var(--link); }
+.parts li a:hover { color: var(--link); }
 .parts li a::before { content: counter(part) ". "; color: var(--ok);
   font-weight: 700; }
 .startbtn { display: inline-block; background: var(--accent); color: var(--bg);
@@ -248,145 +260,26 @@ th { background: var(--box-bg); font-weight: 700; }
 footer.pagefoot { color: var(--muted); font-size: .8rem;
   border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 3rem; }
 </style>
+<script>(function(){try{var t=localStorage.getItem('theme');
+if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <script src="plotly.min.js"></script>
 
 </head>
 <body>
 <div class="masthead"><div class="mast-inner">
 <span class="mast-title"><a href="index.html">Learning with LLMs</a></span>
-<nav class="mast-nav"><a href="index.html">All topics</a><a href="2026-08-02-diffusion-review.html">Review deck</a><a href="2026-08-02-dllm-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms">GitHub</a></nav>
+<nav class="mast-nav"><a href="index.html">All topics</a><a href="2026-08-02-diffusion-review.html">Review deck</a><a href="2026-08-02-dllm-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms">GitHub</a><button id="theme-toggle" class="theme-toggle"
+ type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
 </div></div>
-<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a><ul><li><a href="#papers-h1">Group 1: the foundations</a></li><li><a href="#papers-h2">Group 2: the diffusion-LLM line</a></li><li><a href="#papers-h3">How it adds up</a></li><li><a href="#papers-h4">The full list</a></li><li><a href="#qh-papers-title">Quiz</a></li></ul></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><p class="part-eyebrow">Part 5 of 8 &middot; From Typewriter to Editor: Diffusion Language Models</p><h1>The Nine Papers</h1>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a><ul><li><a href="2026-08-01-diffusion-language-models-papers-group-1-the-foundations.html">Group 1: the foundations</a></li><li><a href="2026-08-01-diffusion-language-models-papers-group-2-the-diffusion-llm-line.html">Group 2: the diffusion-LLM line</a></li><li><a href="2026-08-01-diffusion-language-models-papers-how-it-adds-up.html">How it adds up</a></li><li><a href="2026-08-01-diffusion-language-models-papers-the-full-list.html">The full list</a></li><li><a href="2026-08-01-diffusion-language-models-papers-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-math-discrete-quiz.html">&larr; Quiz: The Maths II: Masked Discrete Diffusion</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-papers-group-1-the-foundations.html">Group 1: the foundations &rarr;</a></div><p class="part-eyebrow">Part 5 of 8</p><h1>The Nine Papers</h1>
 <p>The nine links on the about page split cleanly into two groups: four papers that are
 general-purpose LLM foundations from the founders&rsquo; earlier careers, and five that form the
 diffusion-LLM research line proper &mdash; each one removing an obstacle you can now name in
 equations.</p>
 
-<h3 id="papers-h1">Group 1: the foundations</h3>
-
-<h4>Diffusion Models &mdash; DDIM (Song, Meng &amp; Ermon, 2020)</h4>
-<p>The paper behind the page&rsquo;s &ldquo;Diffusion Models&rdquo; link is
-<a href='https://arxiv.org/abs/2010.02502'>Denoising Diffusion Implicit Models</a> &mdash; the
-&sigma;<sub>t</sub>-indexed sampler family derived at the end of Maths I. Original diffusion models
-(DDPM) needed on the order of a thousand denoising steps per image; DDIM&rsquo;s deterministic member
-of the family produces comparable quality in a few dozen, with the same trained network. Thematically
-it&rsquo;s the company thesis in embryo: <em>the step count is a dial, and driving it down is how you
-win on speed.</em></p>
-
-<h4>FlashAttention (Dao et al., 2022)</h4>
-<p><a href='https://arxiv.org/abs/2205.14135'>FlashAttention</a> (Ermon is a co-author) computes
-<em>exact</em> transformer attention in a way that respects the GPU memory hierarchy: Q, K, V are
-processed in tiles sized to fit on-chip SRAM, and the N&times;N attention matrix is never
-materialized in slow HBM (the backward pass recomputes what it needs rather than storing it). No
-approximation, no sparsity &mdash; just radically less memory traffic. Its presence on the list
-signals that Inception&rsquo;s speed claims rest on systems engineering as much as on modeling: a
-dLLM&rsquo;s big parallel refinement passes are only fast if the kernels are.</p>
-
-<h4>Decision Transformers (Chen et al., 2021)</h4>
-<p><a href='https://arxiv.org/abs/2106.01345'>Decision Transformer</a> (Grover is a co-author)
-reframed reinforcement learning as sequence modeling: condition a transformer on the
-<em>return-to-go</em> you want, and it predicts the actions that achieve it. No value functions, no
-policy-gradient machinery &mdash; just next-token prediction over trajectories. It matters here as an
-early demonstration that transformers are general sequence engines whose training paradigm can absorb
-whole other fields &mdash; the same conviction that says text generation need not be autoregressive.</p>
-
-<h4>Direct Preference Optimization (Rafailov et al., 2023)</h4>
-<p><a href='https://arxiv.org/abs/2305.18290'>DPO</a> (Ermon again) made aligning models to human
-preferences radically simpler. Classic RLHF fits a reward model to preference pairs and then runs PPO
-against it. DPO notices that the KL-regularized RL objective has a closed-form optimal policy,
-<span class='m'>&pi;*(y|x) &prop; &pi;<sub>ref</sub>(y|x)&middot;exp(r(x,y)/&beta;)</span>, inverts it
-to express the reward as a log-ratio of policies, and substitutes that into the Bradley&ndash;Terry
-preference likelihood &mdash; collapsing the whole pipeline into one classification-style loss on
-preference pairs. No reward model, no RL loop. Any production model family, Mercury included, needs
-an alignment recipe; DPO is the founders&rsquo; contribution to that toolbox.</p>
-
-<h3 id="papers-h2">Group 2: the diffusion-LLM line</h3>
-<p>Read these five in this order &mdash; each solves a problem the previous one exposes.</p>
-
-<h4>1. Masked Diffusion &mdash; MDLM (Sahoo et al., 2024)</h4>
-<p><a href='https://arxiv.org/abs/2406.07524'>Simple and Effective Masked Diffusion Language
-Models</a> is the workhorse recipe &mdash; the entire Maths II section up to the extensions.
-Its contributions: the SUBS parameterization that Rao-Blackwellizes the bound, the clean
-weighted-MLM continuous-time objective, and the schedule-invariance theorem. With them, masked
-diffusion went from mathematically intricate and badly lagging to simple and nearly
-perplexity-competitive with AR training &mdash; the proof that the approach deserved scaling.</p>
-
-<h4>2. Block Diffusion &mdash; BD3-LM (Arriola et al., 2025)</h4>
-<p>Vanilla masked diffusion paints on a fixed-size canvas and re-reads the whole canvas every pass,
-forfeiting KV caching. <a href='https://arxiv.org/abs/2503.09573'>Block Diffusion</a> puts the AR
-chain rule at block granularity &mdash; <span class='m'>&sum;<sub>b</sub> L<sub>MDLM</sub>(x<sup>(b)</sup> | x<sup>(&lt;b)</sup>)</span>
-&mdash; so each block diffuses in parallel while conditioning on cached previous blocks.</p>
-
-<div class='diagram'>
-  <div class='flow'>
-    <div class='box ok'>Block 1<small>done &middot; cached</small></div>
-    <span class='arr'>&rarr;</span>
-    <div class='box accent'>Block 2<small>diffusing in parallel now</small></div>
-    <span class='arr'>&rarr;</span>
-    <div class='box dim'>Block 3<small>not started</small></div>
-  </div>
-  <div class='caption'>Autoregressive <em>across</em> blocks (variable length, KV caching),
-  diffusion <em>within</em> blocks (parallel speed). Block size 1 is pure AR; block size = sequence
-  length is vanilla diffusion; production lives in between.</div>
-</div>
-
-<h4>3. Remasking Diffusion &mdash; ReMDM (Wang et al., 2025)</h4>
-<p><a href='https://remdm.github.io/'>Remasking Discrete Diffusion Models</a> fixes the frozen-token
-theorem: a modified sampler kernel that returns committed tokens to <code>[MASK]</code> with
-probability &sigma;<sub>t</sub>, constructed to preserve the forward marginals &mdash; which is
-precisely why it needs no retraining. This is what makes a dLLM a true editor, and it gives dLLMs an
-inference-time scaling law: more sampling steps &rarr; more self-correction &rarr; measurably better
-text.</p>
-
-<h4>4. Discrete Diffusion Guidance (Schiff et al., 2024)</h4>
-<p><a href='https://arxiv.org/abs/2412.10193'>Simple Guidance Mechanisms for Discrete Diffusion
-Models</a> ports image diffusion&rsquo;s best control trick to discrete data: the
-&gamma;-exponentiated conditional/unconditional ratio from Maths II, applied per position per step,
-plus a classifier-based variant for when no conditional model exists. Turn &gamma; and you push
-generation toward a sentiment, a style, or drug-likeness when the &ldquo;tokens&rdquo; are molecule
-fragments &mdash; at sampling time, no retraining.</p>
-
-<h4>5. d1 Reasoning (Zhao et al., 2025)</h4>
-<p><a href='https://arxiv.org/abs/2504.12216'>d1</a> (from Grover&rsquo;s lab) answers the
-frontier-relevance question: can dLLMs do the long chain-of-thought reasoning that made o1-style
-models famous? The recipe: supervised fine-tuning on worked reasoning traces, then diffu-GRPO
-&mdash; the one-step log-prob estimator and group-relative advantages from Maths II. It works:
-reasoning improves substantially, showing the modern capability playbook transfers to diffusion.
-Note the pleasing symmetry with the foundations group: RL-as-sequence-modeling (Decision
-Transformer) and preference training (DPO) were both founder groundwork for this step.</p>
-
-<h3 id="papers-h3">How it adds up</h3>
-<p>Stack the five contributions and you get the spec sheet for <strong>Mercury</strong>,
-Inception&rsquo;s commercial model family and, by their description, the first commercially available
-diffusion LLM: MDLM&rsquo;s training recipe, Block Diffusion&rsquo;s variable-length caching,
-ReMDM&rsquo;s self-correction, guidance for control, and d1&rsquo;s reasoning recipe &mdash; running
-on FlashAttention-class kernels, aligned with DPO-class methods, chasing DDIM&rsquo;s goal of
-ever-fewer steps. Inception claims roughly 5&times; the speed of comparable AR models; whether dLLMs
-reach frontier quality is still an open bet, but you now know exactly which obstacles have been
-cleared, which papers cleared them, and with which equations.</p>
-
-<h3 id="papers-h4">The full list</h3>
-<table>
-<tr><th>As listed on the page</th><th>Paper</th><th>Year</th><th>One-line contribution</th></tr>
-<tr><td>Diffusion Models</td><td><a href='https://arxiv.org/abs/2010.02502'>Denoising Diffusion Implicit Models</a></td><td>2020</td><td>High-quality diffusion sampling in far fewer steps</td></tr>
-<tr><td>Decision Transformers</td><td><a href='https://arxiv.org/abs/2106.01345'>Decision Transformer</a></td><td>2021</td><td>Reinforcement learning recast as sequence modeling</td></tr>
-<tr><td>Flash Attention</td><td><a href='https://arxiv.org/abs/2205.14135'>FlashAttention</a></td><td>2022</td><td>Exact attention, tiled for the GPU memory hierarchy</td></tr>
-<tr><td>Direct Preference Optimization</td><td><a href='https://arxiv.org/abs/2305.18290'>DPO</a></td><td>2023</td><td>Preference alignment as a simple loss &mdash; no reward model, no RL</td></tr>
-<tr><td>Masked Diffusion</td><td><a href='https://arxiv.org/abs/2406.07524'>MDLM</a></td><td>2024</td><td>Clean masking recipe that makes text diffusion competitive</td></tr>
-<tr><td>Discrete Diffusion Guidance</td><td><a href='https://arxiv.org/abs/2412.10193'>Simple Guidance Mechanisms</a></td><td>2024</td><td>Steerable generation for discrete diffusion</td></tr>
-<tr><td>Block Diffusion</td><td><a href='https://arxiv.org/abs/2503.09573'>BD3-LM</a></td><td>2025</td><td>AR across blocks, diffusion within &mdash; length + caching solved</td></tr>
-<tr><td>Remasking Diffusion</td><td><a href='https://remdm.github.io/'>ReMDM</a></td><td>2025</td><td>Sampler that re-masks and revises committed tokens</td></tr>
-<tr><td>d1 Reasoning</td><td><a href='https://arxiv.org/abs/2504.12216'>d1</a></td><td>2025</td><td>SFT + diffusion-adapted RL brings reasoning to dLLMs</td></tr>
-</table>
-
-<p>Suggested reading order if you want to go to the sources: skim <strong>MDLM</strong> first (its
-intro is the best short statement of the whole field, and Maths II is your map of its notation), then
-<strong>Block Diffusion</strong> and <strong>ReMDM</strong> for the two big fixes, <strong>d1</strong>
-for where this is headed, and keep <strong>DDIM</strong> for when you want the image-diffusion roots
-in full mathematical dress.</p>
-<h3 class='quiz-heading' id='qh-papers-title'>Quiz: The Nine Papers</h3><p class='quiz-note'>Option order is shuffled on every load; answers lock after one click.</p><div id='qh-papers'></div><div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-math-discrete.html">&larr; The Maths II: Masked Discrete Diffusion</a><a class="pn-next" href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
+<ol class="parts"><li><a href="2026-08-01-diffusion-language-models-papers-group-1-the-foundations.html">Group 1: the foundations</a></li><li><a href="2026-08-01-diffusion-language-models-papers-group-2-the-diffusion-llm-line.html">Group 2: the diffusion-LLM line</a></li><li><a href="2026-08-01-diffusion-language-models-papers-how-it-adds-up.html">How it adds up</a></li><li><a href="2026-08-01-diffusion-language-models-papers-the-full-list.html">The full list</a></li><li><a href="2026-08-01-diffusion-language-models-papers-quiz.html">Quiz: 5 questions</a></li></ol><div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-math-discrete-quiz.html">&larr; Quiz: The Maths II: Masked Discrete Diffusion</a><a class="pn-next" href="2026-08-01-diffusion-language-models-papers-group-1-the-foundations.html">Group 1: the foundations &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "papers": "2026-08-01-diffusion-language-models-papers.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "sources": "2026-08-01-diffusion-language-models-sources.html"};</script>
-<script>window.__QUIZZES__ = [{"host": "qh-papers", "questions": [{"question": "Which pairing of vanilla-masked-diffusion limitation \u2192 fixing paper is correct?", "options": [{"text": "Fixed-length canvas and lost KV caching \u2192 Block Diffusion.", "correct": true, "explanation": "AR-across-blocks restores variable length and cached prefixes; diffusion-within-blocks keeps the parallelism. The other three pairings each swap in the wrong paper: frozen tokens is ReMDM's target, steering is Guidance, likelihood competitiveness is MDLM."}, {"text": "Frozen committed tokens \u2192 Discrete Diffusion Guidance.", "explanation": "Frozen tokens are ReMDM's territory (the marginal-preserving remasking sampler). Guidance is about steering generation toward attributes."}, {"text": "No steerability toward attributes \u2192 Remasking Diffusion.", "explanation": "Steering is the Guidance paper's contribution (the \u03b3-sharpened conditional ratio). ReMDM is about revising committed tokens."}, {"text": "Uncompetitive likelihoods versus AR models \u2192 d1 Reasoning.", "explanation": "Closing the perplexity gap was MDLM's achievement; d1 is about adding reasoning through SFT + diffusion-adapted RL."}]}, {"question": "Why does ReMDM work with an off-the-shelf pretrained MDLM, with no retraining at all?", "options": [{"text": "Its sampler preserves the forward marginals, so every visited state looks like training data.", "correct": true, "explanation": "The remasking kernel is constructed so per-token marginals stay \u03b1<sub>t</sub>x + (1\u2212\u03b1<sub>t</sub>)m \u2014 and a remasked token is indistinguishable from an ordinarily masked one. In-distribution states are the whole license."}, {"text": "It only ever remasks the tokens the model originally predicted with low confidence.", "explanation": "Remasking policies can be confidence-aware, but that's a heuristic layered on top \u2014 the no-retraining guarantee comes from marginal preservation, not from which tokens get picked."}, {"text": "It attaches a small trained adapter that specializes in handling remasked inputs.", "explanation": "No new parameters are involved anywhere \u2014 ReMDM is purely a change to the sampling procedure."}, {"text": "MDLM training already includes remasking as one of its data augmentations.", "explanation": "MDLM's forward process only ever masks monotonically; no remasking appears in training. It doesn't need to \u2014 masked is masked, however it got that way."}]}, {"question": "DPO eliminates the explicit reward model by...", "options": [{"text": "Inverting the closed-form optimal policy of the KL-regularized objective to rewrite the reward.", "correct": true, "explanation": "\u03c0*(y|x) \u221d \u03c0<sub>ref</sub>(y|x)\u00b7exp(r/\u03b2) inverts to r = \u03b2\u00b7log(\u03c0/\u03c0<sub>ref</sub>) + const; substituted into Bradley\u2013Terry, the partition function cancels and a simple classification loss on preference pairs remains."}, {"text": "Distilling PPO rollouts from a stronger teacher model into the policy.", "explanation": "No distillation and no PPO anywhere \u2014 avoiding that machinery is the paper's selling point."}, {"text": "Scoring preferences with the raw perplexity gap between the two answers.", "explanation": "Close in flavor but not it: the implicit reward is the log-probability <em>ratio against a frozen reference policy</em>, scaled by \u03b2 \u2014 not a raw perplexity difference \u2014 and it's derived, not assumed."}, {"text": "Alternating between reward-model fitting and policy updates inside one loop.", "explanation": "That alternation is roughly what classic RLHF does; DPO's contribution is collapsing the two stages into a single supervised loss."}]}, {"question": "Which claim about FlashAttention is FALSE?", "options": [{"text": "It sparsifies the attention pattern to cut the number of floating-point operations.", "correct": true, "explanation": "FlashAttention is <em>exact</em> \u2014 every query still attends to every key, and FLOPs slightly increase (backward-pass recomputation). The speedup is entirely from IO: tiling into SRAM and never materializing the N\u00d7N matrix in HBM."}, {"text": "It processes Q, K, V in tiles sized to fit in on-chip SRAM.", "explanation": "True \u2014 tiling with an online softmax is the core mechanism, keeping the working set in fast memory."}, {"text": "It avoids materializing the N&times;N attention matrix in GPU main memory.", "explanation": "True \u2014 that avoided read/write traffic is where the wall-clock win comes from."}, {"text": "It recomputes attention during the backward pass instead of storing it.", "explanation": "True \u2014 recomputation trades cheap FLOPs for expensive memory, the same IO-aware logic."}]}, {"question": "At inference time, a Decision Transformer produces good actions by...", "options": [{"text": "Conditioning on a high desired return-to-go and predicting the next action.", "correct": true, "explanation": "RL as conditional sequence modeling: prompt the model with the outcome you want and let it emit the actions consistent with achieving it. No value function, no planning \u2014 and a direct ancestor of d1's conviction that sequence models can absorb RL."}, {"text": "Rolling out a learned world model and selecting the best imagined trajectory.", "explanation": "That's model-based planning (e.g. MuZero's family); DT never simulates the environment."}, {"text": "Maximizing a Q-function that was trained on the same offline dataset.", "explanation": "Dispensing with value functions is the paper's point \u2014 conditioning replaces maximization."}, {"text": "Sampling many candidate actions and reranking them with a reward model.", "explanation": "No reranking stage exists; the return-to-go conditioning does the selection implicitly in one pass."}]}]}];</script>
+<script>window.__QUIZZES__ = [];</script>
 <script>
 window.copyTextFallback = function (text) {
   function legacy() {
@@ -404,20 +297,15 @@ window.copyTextFallback = function (text) {
   const LOGKEY = 'quizlog:' + location.pathname.split('/').pop();
   const loadLog = () => { try { return JSON.parse(localStorage.getItem(LOGKEY)) || {}; } catch (e) { return {}; } };
   const saveLog = (l) => { try { localStorage.setItem(LOGKEY, JSON.stringify(l)); } catch (e) {} };
-  const sectionTitle = (host) => {
-    const sec = document.getElementById(host.replace(/^qh-/, ''));
-    const h = sec && sec.querySelector('h2');
-    return h ? h.textContent : document.title;
-  };
   const buildSummary = () => {
     const log = loadLog();
     const lines = ['Quiz results — ' + document.title + ' — ' + new Date().toISOString().slice(0, 10)];
     let tot = 0, got = 0;
     groups.forEach(g => {
       const e = log[g.host];
-      if (!e) { lines.push(sectionTitle(g.host) + ': not attempted'); return; }
+      if (!e) return;
       tot += e.total; got += e.score;
-      lines.push(sectionTitle(g.host) + ': ' + e.score + '/' + e.total +
+      lines.push(e.score + '/' + e.total +
         (e.wrong.length ? '. Missed: ' + e.wrong.map(w => '"' + w + '"').join('; ') : ''));
     });
     lines.push('Total: ' + got + '/' + tot);
@@ -445,7 +333,7 @@ window.copyTextFallback = function (text) {
       const fb = document.createElement('div');
       fb.className = 'quiz-fb';
       const opts = q.options.map((o, i) => ({ o, i }));
-      for (let i = opts.length - 1; i > 0; i--) {          // shuffle
+      for (let i = opts.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [opts[i], opts[j]] = [opts[j], opts[i]];
       }
@@ -478,7 +366,7 @@ window.copyTextFallback = function (text) {
           }
           results.push({ q: q.question.replace(/<[^>]*>/g, ''), ok: !!o.correct });
           if (answered === data.length) {
-            score.textContent = 'Section score: ' + right + ' / ' + data.length;
+            score.textContent = 'Score: ' + right + ' / ' + data.length;
             score.style.display = 'block';
             const log = loadLog();
             log[group.host] = { ts: Date.now(), score: right, total: data.length,
@@ -528,6 +416,24 @@ window.copyTextFallback = function (text) {
       b.textContent = 'copied \u2713';
       setTimeout(() => { b.textContent = old; }, 1500);
     }));
+  // light/dark toggle
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    const mode = () => {
+      const a = document.documentElement.getAttribute('data-theme');
+      if (a) return a;
+      return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    };
+    const paint = () => { btn.textContent = mode() === 'dark' ? '\u2600 light' : '\u263E dark'; };
+    btn.addEventListener('click', () => {
+      const next = mode() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+      paint();
+      window.dispatchEvent(new Event('themechange'));
+    });
+    paint();
+  }
 })();
 </script>
 <script>/* Shared helpers for explainer widgets. Load BEFORE the topic's widgets.js
@@ -555,10 +461,10 @@ window.WLib = (function () {
   }
   var redraws = [];
   function onTheme(fn) { redraws.push(fn); }   // canvases re-render on theme flip
+  var repaint = function () { redraws.forEach(function (f) { f(); }); };
   var mq = window.matchMedia('(prefers-color-scheme: dark)');
-  if (mq.addEventListener) mq.addEventListener('change', function () {
-    redraws.forEach(function (f) { f(); });
-  });
+  if (mq.addEventListener) mq.addEventListener('change', repaint);
+  window.addEventListener('themechange', repaint);  // fired by the masthead toggle
   return { $: $, cssVar: cssVar, mulberry32: mulberry32, gauss: gauss, onTheme: onTheme };
 })();
 </script><script>(function () {

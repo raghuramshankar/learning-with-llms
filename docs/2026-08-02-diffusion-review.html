@@ -5,17 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Review Deck: Diffusion Language Models</title>
+<script>(function(){try{var t=localStorage.getItem('theme');
+if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-:root { --bg:#ffffff; --fg:#111418; --muted:#5c6670; --line:#e1e5ea;
+:root { --bg:#ffffff; --fg:#000000; --muted:#555e66; --line:#e1e5ea;
   --accent:#063c92; --accent-soft:#eef2fb; --ok:#168551; --ok-soft:#e9f5ee;
   --fail:#b03434; --fail-soft:#faeceb; --box-bg:#f8f9fb; }
-@media (prefers-color-scheme: dark) { :root { --bg:#13161b; --fg:#e5e8ee;
+:root[data-theme="dark"] { --bg:#13161b; --fg:#e5e8ee;
+  --muted:#9aa3b0; --line:#2a313b; --accent:#7d9fdd; --accent-soft:#1b2540;
+  --ok:#57b98a; --ok-soft:#16301f; --fail:#e08585; --fail-soft:#3a2020;
+  --box-bg:#181c23; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#13161b; --fg:#e5e8ee;
   --muted:#9aa3b0; --line:#2a313b; --accent:#7d9fdd; --accent-soft:#1b2540;
   --ok:#57b98a; --ok-soft:#16301f; --fail:#e08585; --fail-soft:#3a2020;
   --box-bg:#181c23; } }
+.theme-toggle { position:fixed; top:.9rem; right:1rem; z-index:50;
+  border:1px solid var(--line); background:var(--bg); color:var(--fg);
+  border-radius:8px; cursor:pointer; padding:.1rem .55rem; font:inherit; font-size:.8rem; }
+.theme-toggle:hover { border-color:var(--accent); }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--fg);
   font:16px/1.7 Merriweather, Georgia, serif; }
@@ -55,6 +65,7 @@ a { color:var(--accent); }
 </style>
 </head>
 <body>
+<button id="theme-toggle" class="theme-toggle" type="button">&#9789; dark</button>
 <div class="wrap">
 <h1>Review deck: diffusion language models</h1>
 <p class="sub">Spaced repetition over the explainer's 25 questions (Leitner boxes:
@@ -203,6 +214,20 @@ $('reset').addEventListener('click', () => {
   if (confirm('Erase all review progress?')) { state = {}; save(state); refreshStats(); }
 });
 refreshStats();
+
+(function(){
+  var btn=document.getElementById('theme-toggle'); if(!btn) return;
+  function mode(){var a=document.documentElement.getAttribute('data-theme');
+    if(a) return a;
+    return (window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}
+  function paint(){btn.textContent = mode()==='dark' ? '\u2600 light' : '\u263E dark';}
+  btn.addEventListener('click',function(){
+    var next=mode()==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    try{localStorage.setItem('theme',next);}catch(e){}
+    paint(); window.dispatchEvent(new Event('themechange'));});
+  paint();
+})();
 </script>
 </body>
 </html>

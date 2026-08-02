@@ -5,20 +5,26 @@ Usage:
     python render.py <spec.json> [-o OUTDIR]
 
 Single-page mode (default): writes <OUTDIR>/<date>-<slug>.html.
-Multipage mode ("multipage": true): writes one page per section named
-<date>-<slug>-<section-id>.html plus an overview page <date>-<slug>.html,
-each with a sticky sidebar table of contents, the current page's h3
-subsections nested under it, and prev/next navigation. Cross-section anchors
-(href="#<section-id>") in section html are rewritten to page links
-automatically, and every page defines window.__PAGES__ = {sectionId: href}
-so widget JS can link across pages (falls back to #anchors in single-page
-mode).
 
-Theme: academic light theme modeled on adaptive-bayesian.ai — Merriweather
-serif, deep-blue section headings over a thin blue rule, green sub-headings,
-navy underlined links, light-gray masthead. Dark-scheme variant preserves the
-hue system. Merriweather loads from Google Fonts and degrades to Georgia
-offline.
+Multipage mode ("multipage": true): splits EVERY section at its <h3>
+subtopics and writes one page per subtopic:
+  <date>-<slug>.html                       topic overview (parts list)
+  <date>-<slug>-<section-id>.html          part landing (intro + subtopic list)
+  <date>-<slug>-<section-id>-<sub>.html    one page per h3 subtopic
+  <date>-<slug>-<section-id>-quiz.html     the part's quiz page
+Every page gets: a masthead (site home + nav + theme toggle), a top nav row
+(previous page / topic overview / next page), a sticky sidebar listing all
+parts with the current part's subtopic pages nested under it, and prev/next
+links at the bottom. Reading order is linear across all pages. Cross-section
+anchors (href="#<section-id>") are rewritten to part-landing links, and every
+page defines window.__PAGES__ = {sectionId: href} for widget JS.
+
+Theme: academic style modeled on adaptive-bayesian.ai — Merriweather serif,
+deep-blue headings over a thin rule, green sub-headings, navy links, gray
+masthead. Light theme is pure #ffffff background with #000000 text. A
+masthead toggle switches light/dark, persists in localStorage, and fires a
+'themechange' event so canvas widgets repaint; with no explicit choice the
+system preference applies.
 
 JSON spec schema
 ----------------
@@ -27,63 +33,29 @@ JSON spec schema
   "subtitle": "One-line subtitle",           (optional)
   "slug":     "kebab-case-name",             (required; used in the filename)
   "date":     "YYYY-MM-DD",                  (optional; defaults to today —
-                                              PIN THIS on rebuilds so links
-                                              stay stable)
+                                              PIN THIS on rebuilds)
   "repo":     "project name / branch note",  (optional; shown under subtitle)
-  "multipage": true,                         (optional; one page per section)
-  "intro":    "<p>overview html...</p>",     (optional; multipage overview
-                                              body above the parts list)
-  "site_title": "Learning with LLMs",        (optional; masthead brand, links
-                                              to index.html)
-  "nav": [["All topics", "index.html"],      (optional; masthead links)
-          ["GitHub", "https://..."]],
-  "sections": [                              (required)
-    { "id":    "background",                 (optional; derived from title)
-      "title": "Background",
-      "html":  "<p>raw HTML body...</p>",
-      "quiz":  [ ...questions... ] }         (optional; rendered as a quiz
-  ],                                          block at the end of the section)
-  "quiz": [ ... ],                           (optional; single-page mode only:
-                                              a final "Quiz" section. Question
-                                              and option text may contain
-                                              inline HTML, e.g. <sub>/<sup>.
-                                              Exactly one option correct.)
-  "scripts": [ "raw JS ..." ],               (optional; emitted at the end of
-                                              <body> on EVERY page — widget JS
-                                              guards on its container ids)
-  "head_scripts": [ "raw JS ..." ],          (optional; inlined in <head>)
-  "head_script_srcs": [ "plotly.min.js" ]    (optional; <script src=...> in
-}                                             <head> — share one library file
-                                              next to the pages instead of
-                                              inlining megabytes per page)
+  "multipage": true,                         (optional; see above)
+  "intro":    "<p>overview html...</p>",     (optional; overview body)
+  "site_title": "Learning with LLMs",        (optional; masthead brand ->
+                                              index.html)
+  "nav": [["All topics", "index.html"]],     (optional; masthead links)
+  "sections": [
+    { "id": "background", "title": "Background",
+      "html": "<p>...</p>", "quiz": [...] }
+  ],
+  "quiz": [ ... ],                           (single-page mode only)
+  "scripts": [ "raw JS ..." ],               (end of <body>, every page)
+  "head_scripts": [ "raw JS ..." ],          (inlined in <head>)
+  "head_script_srcs": [ "plotly.min.js" ]    (<script src> in <head>)
+}
 
-HTML vocabulary available inside section "html" bodies
-------------------------------------------------------
-  <pre>...</pre>                 code block (white-space: pre-wrap, scrolls)
-  <div class="diagram">          centred figure container with padding
-    <div class="flow">           horizontal flex row (wraps on small screens)
-      <div class="box">A</div>   node; variants: box ok / box fail / box dim
-      <span class="arr">→</span> arrow between boxes
-    <div class="flow vertical">  column variant; use <span class="arr">↓</span>
-    <div class="caption">...</div>
-  </div>
-  <div class="callout">...</div>           key definition / edge case
-  <div class="callout warn">...</div>      warning variant
-  <div class="math">...</div>              display math (serif, centred)
-  <span class="m">...</span>               inline math (serif, no-wrap)
-  <span class="frac"><span class="num">a</span><span class="den">b</span></span>
-  <table>...</table>                       styled automatically
-  <span class="tag">label</span>           small inline pill
-  <div class="widget">...</div>            interactive-widget container with
-    <div class="wctl">controls</div>       .wbtn buttons, range inputs,
-    <canvas>, .wstat, .wchips              status lines, outcome chips
-  <div class="deriv">...</div>             faded derivation: .deriv-head with
-    .deriv-practice/.deriv-worked buttons, .dstep rows with .dstep-label
-    (.tag number + .dstep-goal + .dstep-toggle button) and hidden .dstep-body
-  <div class="grid2"> + .cheat-card        cheat-sheet card grid
-Everything else (h3, p, ul, code, strong, em) is styled sensibly. Quizzes
-shuffle options per load, reveal every option's explanation on answer, track
-results in localStorage, and offer a "copy results for Claude" button.
+HTML vocabulary in section bodies: <pre>, .diagram/.flow/.box(ok|fail|dim|
+accent)/.arr/.caption, .callout(.warn), .math/.m/.frac(.num/.den), <table>,
+.tag, .widget/.wctl/.wbtn/.wstat/.wchips, .deriv/.dstep faded derivations,
+.grid2/.cheat-card. Quizzes shuffle options, reveal every option's
+explanation on answer, persist results to localStorage, and offer a
+"copy results for Claude" button.
 """
 
 from __future__ import annotations
@@ -100,23 +72,24 @@ FONTS = """<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">"""
 
-CSS = """
-:root {
-  --bg: #ffffff; --fg: #111418; --muted: #5c6670; --line: #e1e5ea;
+LIGHT_VARS = """  --bg: #ffffff; --fg: #000000; --muted: #555e66; --line: #e1e5ea;
   --accent: #063c92; --link: #053075; --accent-soft: #eef2fb;
   --ok: #168551; --ok-soft: #e9f5ee; --fail: #b03434; --fail-soft: #faeceb;
   --warn-soft: #fdf6e3; --warn-line: #c9a227;
-  --code-bg: #f6f8fa; --box-bg: #f8f9fb; --mast: #f5f5f5;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #13161b; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
-    --accent: #7d9fdd; --link: #8fb0e8; --accent-soft: #1b2540;
-    --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
-    --warn-soft: #33290f; --warn-line: #a8842e;
-    --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
-  }
-}
+  --code-bg: #f6f8fa; --box-bg: #f8f9fb; --mast: #f5f5f5;"""
+
+DARK_VARS = """  --bg: #13161b; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --accent: #7d9fdd; --link: #8fb0e8; --accent-soft: #1b2540;
+  --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
+  --warn-soft: #33290f; --warn-line: #a8842e;
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;"""
+
+CSS = (
+    ":root {\n" + LIGHT_VARS + "\n}\n"
+    ':root[data-theme="dark"] {\n' + DARK_VARS + "\n}\n"
+    "@media (prefers-color-scheme: dark) {\n"
+    '  :root:not([data-theme="light"]) {\n' + DARK_VARS + "\n  }\n}\n"
+) + """
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--bg); color: var(--fg);
@@ -129,14 +102,26 @@ body {
   display: flex; align-items: baseline; gap: 1.4rem; flex-wrap: wrap; }
 .mast-title { font-weight: 700; font-size: .98rem; }
 .mast-title a { color: var(--fg); text-decoration: none; }
-.mast-nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap; }
+.mast-nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap;
+  align-items: baseline; }
 .mast-nav a { color: var(--muted); text-decoration: none; font-size: .85rem; }
 .mast-nav a:hover { color: var(--link); text-decoration: underline; }
+.theme-toggle { border: 1px solid var(--line); background: var(--bg);
+  color: var(--fg); border-radius: 8px; cursor: pointer;
+  padding: .05rem .5rem; font-size: .85rem; line-height: 1.5; }
+.theme-toggle:hover { border-color: var(--accent); }
 /* layout */
 .wrap { max-width: 950px; margin: 0 auto; padding: 2.2rem 1.4rem 5rem; }
 .layout { max-width: 1160px; margin: 0 auto; padding: 0 1.4rem 4rem;
   display: grid; grid-template-columns: 235px minmax(0, 1fr); gap: 2.6rem; }
-main.content { min-width: 0; padding-top: 1.8rem; }
+main.content { min-width: 0; padding-top: 1.6rem; }
+/* top nav row */
+.topnav { display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: .8rem;
+  margin-bottom: 1.4rem; border-bottom: 1px solid var(--line);
+  padding-bottom: .6rem; }
+.topnav a { color: var(--muted); text-decoration: none; }
+.topnav a:hover { color: var(--link); text-decoration: underline; }
+.topnav .tn-next { margin-left: auto; }
 /* sidebar */
 aside.sidebar { position: sticky; top: 0; align-self: start;
   max-height: 100vh; overflow-y: auto; padding: 1.8rem 0 2rem;
@@ -155,6 +140,7 @@ aside.sidebar ol > li > a:hover { color: var(--link); }
 aside.sidebar ul { list-style: none; margin: .3rem 0 .1rem; padding: 0 0 0 .9rem; }
 aside.sidebar ul li { padding: .12rem 0; }
 aside.sidebar ul a { color: var(--muted); text-decoration: none; font-size: .8rem; }
+aside.sidebar ul li.cur a { color: var(--accent); font-weight: 700; }
 aside.sidebar ul a:hover { color: var(--link); }
 .side-foot { margin-top: 1rem; }
 .side-foot a { color: var(--muted); text-decoration: none; font-size: .8rem; }
@@ -165,11 +151,11 @@ aside.sidebar ul a:hover { color: var(--link); }
     padding: .9rem 1.1rem; border: 1px solid var(--line); border-radius: 10px;
     background: var(--box-bg); }
 }
-/* headings, in the adaptive-bayesian style */
+/* headings */
 header.pagehead { padding-bottom: 1rem; margin-bottom: 1.2rem; }
 .part-eyebrow { color: var(--ok); font-weight: 700; font-size: .82rem;
   margin: 0 0 .35rem; letter-spacing: .02em; }
-h1 { font-size: 1.55rem; line-height: 1.3; margin: 0 0 .5rem; font-weight: 700; }
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 .5rem; font-weight: 700; }
 .subtitle { color: var(--muted); font-size: 1.02rem; margin: 0; }
 .repo { color: var(--muted); font-size: .8rem; margin-top: .55rem; }
 h2 { font-size: 1.12rem; color: var(--accent); font-weight: 700;
@@ -180,7 +166,6 @@ h4 { font-size: .95rem; margin: 1.5rem 0 .4rem; color: var(--fg); }
 p, ul, ol { margin: 0 0 1rem; }
 li { margin-bottom: .35rem; }
 a { color: var(--link); }
-/* toc box (single-page mode) */
 nav.toc { background: var(--box-bg); border: 1px solid var(--line);
   border-radius: 10px; padding: 1rem 1.3rem; margin-bottom: 2.2rem; }
 nav.toc .toc-title { font-weight: 700; font-size: .78rem; letter-spacing: .08em;
@@ -227,7 +212,6 @@ th { background: var(--box-bg); font-weight: 700; }
 .tag { display: inline-block; background: var(--accent-soft);
   color: var(--accent); border-radius: 999px; padding: .05em .6em;
   font-size: .76em; font-weight: 700; }
-/* math */
 .math { font-family: Georgia, 'Times New Roman', serif; text-align: center;
   margin: 1.2rem 0; padding: .2rem 0; overflow-x: auto; font-size: 1.02rem;
   line-height: 2.1; }
@@ -236,7 +220,6 @@ th { background: var(--box-bg); font-weight: 700; }
   margin: 0 .15em; line-height: 1.25; }
 .frac .num, .frac .den { display: block; padding: 0 .3em; }
 .frac .den { border-top: 1px solid currentColor; }
-/* interactive widgets */
 .widget { background: var(--box-bg); border: 1px solid var(--line);
   border-radius: 10px; padding: 1.1rem; margin: 1.4rem 0; }
 .widget canvas { display: block; margin: .6rem auto; max-width: 100%;
@@ -259,7 +242,6 @@ th { background: var(--box-bg); font-weight: 700; }
   padding: .05em .55em; }
 .wchip.good { border-color: var(--ok); background: var(--ok-soft); }
 .wchip.bad { border-color: var(--fail); background: var(--fail-soft); }
-/* faded derivations */
 .deriv { border: 1px solid var(--line); border-radius: 10px;
   background: var(--box-bg); padding: 1rem 1.2rem; margin: 1.4rem 0; }
 .deriv-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
@@ -272,7 +254,6 @@ th { background: var(--box-bg); font-weight: 700; }
 .dstep-body { display: none; margin-top: .55rem; }
 .dstep.open .dstep-body { display: block; }
 .dstep.open .dstep-toggle { opacity: .55; }
-/* concept map */
 .cmap-edge { stroke: var(--muted); stroke-width: 1.2; opacity: .4; fill: none; }
 .cmap-edge.hl { stroke: var(--accent); opacity: 1; stroke-width: 2.4; }
 .cmap-node { cursor: pointer; }
@@ -282,7 +263,6 @@ th { background: var(--box-bg); font-weight: 700; }
 .cmap-node.hub rect { stroke: var(--accent); stroke-width: 2; }
 .cmap-node.hl rect { stroke: var(--accent); stroke-width: 2.2; }
 .cmap-node.dim, .cmap-edge.dim { opacity: .15; }
-/* cheat-sheet grid */
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1rem; margin: 1.2rem 0; }
 .cheat-card { border: 1px solid var(--line); border-radius: 10px;
@@ -290,7 +270,6 @@ th { background: var(--box-bg); font-weight: 700; }
 .cheat-card h4 { margin: 0 0 .4rem; color: var(--accent); }
 .cheat-card .math { margin: .6rem 0; font-size: .95rem; }
 .cheat-card p { font-size: .86rem; margin-bottom: .4rem; }
-/* quiz */
 .quiz-heading { color: var(--accent); }
 .quiz-note { color: var(--muted); font-size: .84rem; }
 .quiz-q { border: 1px solid var(--line); border-radius: 10px;
@@ -318,7 +297,6 @@ th { background: var(--box-bg); font-weight: 700; }
 .quiz-fb.right { display: block; background: var(--ok-soft); color: var(--fg); }
 .quiz-fb.wrong { display: block; background: var(--fail-soft); color: var(--fg); }
 .quiz-score { font-weight: 700; margin-top: 1rem; display: none; }
-/* prev/next + overview parts */
 .pn { display: flex; justify-content: space-between; gap: 1rem;
   border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 1.2rem;
   flex-wrap: wrap; }
@@ -330,7 +308,7 @@ th { background: var(--box-bg); font-weight: 700; }
   background: var(--box-bg); margin: .6rem 0; counter-increment: part; }
 .parts li a { display: block; padding: .8rem 1.1rem; text-decoration: none;
   color: var(--fg); }
-.parts li a:hover { border-color: var(--accent); color: var(--link); }
+.parts li a:hover { color: var(--link); }
 .parts li a::before { content: counter(part) ". "; color: var(--ok);
   font-weight: 700; }
 .startbtn { display: inline-block; background: var(--accent); color: var(--bg);
@@ -340,6 +318,9 @@ th { background: var(--box-bg); font-weight: 700; }
 footer.pagefoot { color: var(--muted); font-size: .8rem;
   border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 3rem; }
 """
+
+THEME_HEAD_JS = """(function(){try{var t=localStorage.getItem('theme');
+if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();"""
 
 QUIZ_JS = """
 window.copyTextFallback = function (text) {
@@ -358,20 +339,15 @@ window.copyTextFallback = function (text) {
   const LOGKEY = 'quizlog:' + location.pathname.split('/').pop();
   const loadLog = () => { try { return JSON.parse(localStorage.getItem(LOGKEY)) || {}; } catch (e) { return {}; } };
   const saveLog = (l) => { try { localStorage.setItem(LOGKEY, JSON.stringify(l)); } catch (e) {} };
-  const sectionTitle = (host) => {
-    const sec = document.getElementById(host.replace(/^qh-/, ''));
-    const h = sec && sec.querySelector('h2');
-    return h ? h.textContent : document.title;
-  };
   const buildSummary = () => {
     const log = loadLog();
     const lines = ['Quiz results — ' + document.title + ' — ' + new Date().toISOString().slice(0, 10)];
     let tot = 0, got = 0;
     groups.forEach(g => {
       const e = log[g.host];
-      if (!e) { lines.push(sectionTitle(g.host) + ': not attempted'); return; }
+      if (!e) return;
       tot += e.total; got += e.score;
-      lines.push(sectionTitle(g.host) + ': ' + e.score + '/' + e.total +
+      lines.push(e.score + '/' + e.total +
         (e.wrong.length ? '. Missed: ' + e.wrong.map(w => '"' + w + '"').join('; ') : ''));
     });
     lines.push('Total: ' + got + '/' + tot);
@@ -399,7 +375,7 @@ window.copyTextFallback = function (text) {
       const fb = document.createElement('div');
       fb.className = 'quiz-fb';
       const opts = q.options.map((o, i) => ({ o, i }));
-      for (let i = opts.length - 1; i > 0; i--) {          // shuffle
+      for (let i = opts.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [opts[i], opts[j]] = [opts[j], opts[i]];
       }
@@ -432,7 +408,7 @@ window.copyTextFallback = function (text) {
           }
           results.push({ q: q.question.replace(/<[^>]*>/g, ''), ok: !!o.correct });
           if (answered === data.length) {
-            score.textContent = 'Section score: ' + right + ' / ' + data.length;
+            score.textContent = 'Score: ' + right + ' / ' + data.length;
             score.style.display = 'block';
             const log = loadLog();
             log[group.host] = { ts: Date.now(), score: right, total: data.length,
@@ -483,6 +459,24 @@ PAGE_JS = """
       b.textContent = 'copied \\u2713';
       setTimeout(() => { b.textContent = old; }, 1500);
     }));
+  // light/dark toggle
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    const mode = () => {
+      const a = document.documentElement.getAttribute('data-theme');
+      if (a) return a;
+      return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    };
+    const paint = () => { btn.textContent = mode() === 'dark' ? '\\u2600 light' : '\\u263E dark'; };
+    btn.addEventListener('click', () => {
+      const next = mode() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+      paint();
+      window.dispatchEvent(new Event('themechange'));
+    });
+    paint();
+  }
 })();
 """
 
@@ -508,33 +502,7 @@ def _strip_tags(s: str) -> str:
     return re.sub(r"<[^>]+>", "", s).strip()
 
 
-def _inject_h3_ids(html_str: str, sid: str):
-    """Give plain <h3> headings ids and return (html, [(id, label), ...])."""
-    subs = []
-
-    def repl(m):
-        hid = f"{sid}-h{len(subs) + 1}"
-        subs.append((hid, _strip_tags(m.group(1))))
-        return f'<h3 id="{hid}">{m.group(1)}</h3>'
-
-    return re.sub(r"<h3>(.*?)</h3>", repl, html_str, flags=re.S), subs
-
-
-def _quiz_block(s: dict, quizzes: list) -> str:
-    if not s.get("quiz"):
-        return ""
-    _check_quiz(s["quiz"])
-    hid = f"qh-{s['_sid']}"
-    quizzes.append({"host": hid, "questions": s["quiz"]})
-    return (
-        f"<h3 class='quiz-heading' id='{hid}-title'>Quiz: {_html.escape(s['title'])}</h3>"
-        "<p class='quiz-note'>Option order is shuffled on every load; "
-        "answers lock after one click.</p>"
-        f"<div id='{hid}'></div>"
-    )
-
-
-def _shell(spec, *, title, body, quizzes, pages_map, date) -> str:
+def _shell(spec, *, title, body, quizzes, pages_map) -> str:
     site_title = spec.get("site_title", "Learning with LLMs")
     nav = spec.get("nav", [["All topics", "index.html"]])
     nav_html = "".join(
@@ -552,13 +520,15 @@ def _shell(spec, *, title, body, quizzes, pages_map, date) -> str:
 <title>{_html.escape(title)}</title>
 {FONTS}
 <style>{CSS}</style>
+<script>{THEME_HEAD_JS}</script>
 {head_srcs}
 {head_inline}
 </head>
 <body>
 <div class="masthead"><div class="mast-inner">
 <span class="mast-title"><a href="index.html">{_html.escape(site_title)}</a></span>
-<nav class="mast-nav">{nav_html}</nav>
+<nav class="mast-nav">{nav_html}<button id="theme-toggle" class="theme-toggle"
+ type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
 </div></div>
 {body}
 <script>window.__PAGES__ = {json.dumps(pages_map)};</script>
@@ -596,15 +566,23 @@ def render(spec: dict) -> list:
     foot = f'<footer class="pagefoot">Generated by explain-diff &middot; {date}</footer>'
 
     if not spec.get("multipage"):
-        # ---- single page -------------------------------------------------
         pages_map = {s["_sid"]: f"#{s['_sid']}" for s in sections}
         quizzes, toc_items, body_parts = [], [], []
         for s in sections:
             toc_items.append((s["_sid"], s["title"]))
+            quiz_html = ""
+            if s.get("quiz"):
+                _check_quiz(s["quiz"])
+                hid = f"qh-{s['_sid']}"
+                quizzes.append({"host": hid, "questions": s["quiz"]})
+                quiz_html = (
+                    f"<h3 class='quiz-heading'>Quiz: {_html.escape(s['title'])}</h3>"
+                    "<p class='quiz-note'>Option order is shuffled on every load; "
+                    "answers lock after one click.</p>"
+                    f"<div id='{hid}'></div>")
             body_parts.append(
                 f'<section id="{_html.escape(s["_sid"])}">'
-                f'<h2>{_html.escape(s["title"])}</h2>{s["html"]}{_quiz_block(s, quizzes)}</section>'
-            )
+                f'<h2>{_html.escape(s["title"])}</h2>{s["html"]}{quiz_html}</section>')
         if spec.get("quiz"):
             _check_quiz(spec["quiz"])
             quizzes.append({"host": "qh-quiz", "questions": spec["quiz"]})
@@ -613,8 +591,7 @@ def render(spec: dict) -> list:
                 '<section id="quiz"><h2>Quiz</h2>'
                 "<p class='quiz-note'>Option order is shuffled on every load; "
                 "answers lock after one click.</p>"
-                '<div id="qh-quiz"></div></section>'
-            )
+                '<div id="qh-quiz"></div></section>')
         toc = "".join(
             f'<li><a href="#{_html.escape(sid)}">{_html.escape(t)}</a></li>'
             for sid, t in toc_items)
@@ -623,88 +600,144 @@ def render(spec: dict) -> list:
                 f'{"".join(body_parts)}{foot}</div>')
         return [(f"{prefix}.html",
                  _shell(spec, title=spec["title"], body=body, quizzes=quizzes,
-                        pages_map=pages_map, date=date))]
+                        pages_map=pages_map))]
 
-    # ---- multipage -------------------------------------------------------
+    # ---- multipage: one page per h3 subtopic -----------------------------
     if spec.get("quiz"):
         sys.exit("multipage mode: attach quizzes to sections, not a global quiz")
-    files = []
-    page_files = {s["_sid"]: f"{prefix}-{s['_sid']}.html" for s in sections}
+
     overview_file = f"{prefix}.html"
-    pages_map = dict(page_files)
+    landing = {s["_sid"]: f"{prefix}-{s['_sid']}.html" for s in sections}
+    pages_map = dict(landing)
 
     def rewrite_anchors(html_str: str) -> str:
-        for osid, fname in page_files.items():
+        for osid, fname in landing.items():
             html_str = (html_str
                         .replace(f"href='#{osid}'", f"href='{fname}'")
                         .replace(f'href="#{osid}"', f'href="{fname}"'))
         return html_str
 
-    def sidebar(cur_sid, cur_subs) -> str:
+    # split each section into intro + h3 subtopics
+    parts = []
+    for s in sections:
+        chunks = re.split(r"(?=<h3>)", rewrite_anchors(s["html"]))
+        subs = []
+        for c in chunks[1:]:
+            m = re.match(r"<h3>(.*?)</h3>", c, re.S)
+            label = _strip_tags(m.group(1))
+            subs.append({
+                "slug": _slugify(label) or f"sub-{len(subs) + 1}",
+                "title": label,
+                "html": c[m.end():],
+            })
+        parts.append({"sec": s, "intro": chunks[0], "subs": subs})
+
+    # linear sequence of pages: overview, then per part: landing, subs, quiz
+    seq = [{"file": overview_file, "title": "Overview", "kind": "overview"}]
+    for i, part in enumerate(parts):
+        sid = part["sec"]["_sid"]
+        seq.append({"file": landing[sid], "title": part["sec"]["title"],
+                    "kind": "landing", "pi": i})
+        for j, sub in enumerate(part["subs"]):
+            seq.append({"file": f"{prefix}-{sid}-{sub['slug']}.html",
+                        "title": sub["title"], "kind": "sub", "pi": i, "si": j})
+        if part["sec"].get("quiz"):
+            seq.append({"file": f"{prefix}-{sid}-quiz.html",
+                        "title": f"Quiz: {part['sec']['title']}",
+                        "kind": "quiz", "pi": i})
+
+    def sidebar(cur_file, cur_pi):
         items = [f'<div class="side-topic"><a href="{overview_file}">'
                  f'{_html.escape(spec["title"])}</a></div><ol>']
-        for s in sections:
-            cur = s["_sid"] == cur_sid
-            cls = ' class="cur"' if cur else ''
-            items.append(f'<li{cls}>'
-                         f'<a href="{page_files[s["_sid"]]}">{_html.escape(s["title"])}</a>')
-            if cur and cur_subs:
-                items.append("<ul>")
-                for hid, label in cur_subs:
-                    items.append(f'<li><a href="#{hid}">{_html.escape(label)}</a></li>')
-                if s.get("quiz"):
-                    items.append(f'<li><a href="#qh-{cur_sid}-title">Quiz</a></li>')
-                items.append("</ul>")
+        for j, part in enumerate(parts):
+            sid = part["sec"]["_sid"]
+            cur = (j == cur_pi)
+            cls = ' class="cur"' if cur and cur_file == landing[sid] else (
+                ' class="cur"' if cur else '')
+            items.append(f'<li{cls}><a href="{landing[sid]}">'
+                         f'{_html.escape(part["sec"]["title"])}</a>')
+            if cur:
+                sub_pages = [p for p in seq if p.get("pi") == j and p["kind"] in ("sub", "quiz")]
+                if sub_pages:
+                    items.append("<ul>")
+                    for p in sub_pages:
+                        licls = ' class="cur"' if p["file"] == cur_file else ""
+                        label = "Quiz" if p["kind"] == "quiz" else p["title"]
+                        items.append(f'<li{licls}><a href="{p["file"]}">'
+                                     f'{_html.escape(label)}</a></li>')
+                    items.append("</ul>")
             items.append("</li>")
         items.append("</ol>")
         items.append('<div class="side-foot"><a href="index.html">&larr; all topics</a></div>')
         return f'<aside class="sidebar"><nav>{"".join(items)}</nav></aside>'
 
-    n = len(sections)
-    for i, s in enumerate(sections):
-        quizzes = []
-        body_html, subs = _inject_h3_ids(rewrite_anchors(s["html"]), s["_sid"])
-        quiz_html = _quiz_block(s, quizzes)
-        pn = ['<div class="pn">']
-        if i > 0:
-            p = sections[i - 1]
-            pn.append(f'<a class="pn-prev" href="{page_files[p["_sid"]]}">&larr; '
-                      f'{_html.escape(p["title"])}</a>')
-        else:
-            pn.append(f'<a class="pn-prev" href="{overview_file}">&larr; Overview</a>')
-        if i < n - 1:
-            nx = sections[i + 1]
-            pn.append(f'<a class="pn-next" href="{page_files[nx["_sid"]]}">'
-                      f'{_html.escape(nx["title"])} &rarr;</a>')
-        pn.append("</div>")
-        content = (
-            '<main class="content">'
-            f'<p class="part-eyebrow">Part {i + 1} of {n} &middot; '
-            f'{_html.escape(spec["title"])}</p>'
-            f'<h1>{_html.escape(s["title"])}</h1>'
-            f'{body_html}{quiz_html}{"".join(pn)}{foot}</main>'
-        )
-        body = f'<div class="layout">{sidebar(s["_sid"], subs)}{content}</div>'
-        files.append((page_files[s["_sid"]],
-                      _shell(spec, title=f'{s["title"]} — {spec["title"]}',
-                             body=body, quizzes=quizzes, pages_map=pages_map,
-                             date=date)))
+    def navrows(k):
+        prev_a = next_a = ""
+        tn = ['<div class="topnav">']
+        if k > 0:
+            p = seq[k - 1]
+            prev_a = f'<a class="pn-prev" href="{p["file"]}">&larr; {_html.escape(p["title"])}</a>'
+            tn.append(f'<a href="{p["file"]}">&larr; {_html.escape(p["title"])}</a>')
+        tn.append(f'<a href="{overview_file}">&#8962; {_html.escape(spec["title"])}</a>')
+        if k < len(seq) - 1:
+            nx = seq[k + 1]
+            next_a = f'<a class="pn-next" href="{nx["file"]}">{_html.escape(nx["title"])} &rarr;</a>'
+            tn.append(f'<a class="tn-next" href="{nx["file"]}">{_html.escape(nx["title"])} &rarr;</a>')
+        tn.append("</div>")
+        return "".join(tn), f'<div class="pn">{prev_a}{next_a}</div>'
 
-    # overview page
-    parts = "".join(
-        f'<li><a href="{page_files[s["_sid"]]}">{_html.escape(s["title"])}</a></li>'
-        for s in sections)
-    intro = spec.get("intro", "")
-    ov_content = (
-        f'<main class="content">{head_block}{intro}'
-        f'<ol class="parts">{parts}</ol>'
-        f'<p><a class="startbtn" href="{page_files[sections[0]["_sid"]]}">'
-        f'Start reading &rarr;</a></p>{foot}</main>'
-    )
-    ov_body = f'<div class="layout">{sidebar(None, [])}{ov_content}</div>'
-    files.append((overview_file,
-                  _shell(spec, title=spec["title"], body=ov_body, quizzes=[],
-                         pages_map=pages_map, date=date)))
+    files = []
+    n = len(parts)
+    for k, page in enumerate(seq):
+        quizzes = []
+        top, bottom = navrows(k)
+        if page["kind"] == "overview":
+            parts_list = "".join(
+                f'<li><a href="{landing[p["sec"]["_sid"]]}">'
+                f'{_html.escape(p["sec"]["title"])}</a></li>' for p in parts)
+            content = (
+                f'<main class="content">{head_block}{spec.get("intro", "")}'
+                f'<ol class="parts">{parts_list}</ol>'
+                f'<p><a class="startbtn" href="{seq[1]["file"]}">Start reading &rarr;</a></p>'
+                f'{foot}</main>')
+            body = f'<div class="layout">{sidebar(page["file"], None)}{content}</div>'
+            files.append((page["file"], _shell(spec, title=spec["title"], body=body,
+                                               quizzes=[], pages_map=pages_map)))
+            continue
+
+        part = parts[page["pi"]]
+        sec = part["sec"]
+        eyebrow = (f'Part {page["pi"] + 1} of {n}' if page["kind"] == "landing"
+                   else f'Part {page["pi"] + 1} &middot; {_html.escape(sec["title"])}')
+        if page["kind"] == "landing":
+            sub_pages = [p for p in seq if p.get("pi") == page["pi"] and p["kind"] in ("sub", "quiz")]
+            sub_list = "".join(
+                f'<li><a href="{p["file"]}">'
+                f'{_html.escape("Quiz: 5 questions" if p["kind"] == "quiz" else p["title"])}'
+                f'</a></li>' for p in sub_pages)
+            inner = part["intro"] + (f'<ol class="parts">{sub_list}</ol>' if sub_list else "")
+            h1 = sec["title"]
+        elif page["kind"] == "sub":
+            inner = part["subs"][page["si"]]["html"]
+            h1 = page["title"]
+        else:  # quiz
+            _check_quiz(sec["quiz"])
+            hid = f"qh-{sec['_sid']}"
+            quizzes.append({"host": hid, "questions": sec["quiz"]})
+            inner = ("<p class='quiz-note'>Five questions on this part. Option order is "
+                     "shuffled on every load; answers lock after one click, and every "
+                     "option's explanation is revealed.</p>"
+                     f"<div id='{hid}'></div>")
+            h1 = f'Quiz: {sec["title"]}'
+        content = (
+            f'<main class="content">{top}'
+            f'<p class="part-eyebrow">{eyebrow}</p>'
+            f'<h1>{_html.escape(h1)}</h1>'
+            f'{inner}{bottom}{foot}</main>')
+        body = f'<div class="layout">{sidebar(page["file"], page["pi"])}{content}</div>'
+        files.append((page["file"],
+                      _shell(spec, title=f'{page["title"]} — {spec["title"]}',
+                             body=body, quizzes=quizzes, pages_map=pages_map)))
     return files
 
 

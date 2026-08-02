@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Sources — From Typewriter to Editor: Diffusion Language Models</title>
+<title>Group 2: the diffusion-LLM line — From Typewriter to Editor: Diffusion Language Models</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -271,15 +271,62 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 <nav class="mast-nav"><a href="index.html">All topics</a><a href="2026-08-02-diffusion-review.html">Review deck</a><a href="2026-08-02-dllm-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms">GitHub</a><button id="theme-toggle" class="theme-toggle"
  type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
 </div></div>
-<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a><ul><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ul></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-keep-learning-the-cheat-sheet-consolidation.html">&larr; The cheat sheet (consolidation)</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source &rarr;</a></div><p class="part-eyebrow">Part 8 of 8</p><h1>Sources</h1>
-<p>Everything on this page was built from the sources below. The seed was Inception Labs&rsquo;
-about page; the nine papers it lists were read and are cited in full; the supporting literature
-covers every background claim, historical reference, and &mdash; deliberately &mdash; the real
-papers used as quiz distractors. The math sections follow the notation of DDIM (continuous case)
-and MDLM (discrete case) so you can move from this page into those papers without translation.
-Any errors of interpretation are this page&rsquo;s, not the sources&rsquo;.</p>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a><ul><li><a href="2026-08-01-diffusion-language-models-papers-group-1-the-foundations.html">Group 1: the foundations</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-papers-group-2-the-diffusion-llm-line.html">Group 2: the diffusion-LLM line</a></li><li><a href="2026-08-01-diffusion-language-models-papers-how-it-adds-up.html">How it adds up</a></li><li><a href="2026-08-01-diffusion-language-models-papers-the-full-list.html">The full list</a></li><li><a href="2026-08-01-diffusion-language-models-papers-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-papers-group-1-the-foundations.html">&larr; Group 1: the foundations</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-papers-how-it-adds-up.html">How it adds up &rarr;</a></div><p class="part-eyebrow">Part 5 &middot; The Nine Papers</p><h1>Group 2: the diffusion-LLM line</h1>
+<p>Read these five in this order &mdash; each solves a problem the previous one exposes.</p>
 
-<ol class="parts"><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ol><div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-keep-learning-the-cheat-sheet-consolidation.html">&larr; The cheat sheet (consolidation)</a><a class="pn-next" href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
+<h4>1. Masked Diffusion &mdash; MDLM (Sahoo et al., 2024)</h4>
+<p><a href='https://arxiv.org/abs/2406.07524'>Simple and Effective Masked Diffusion Language
+Models</a> is the workhorse recipe &mdash; the entire Maths II section up to the extensions.
+Its contributions: the SUBS parameterization that Rao-Blackwellizes the bound, the clean
+weighted-MLM continuous-time objective, and the schedule-invariance theorem. With them, masked
+diffusion went from mathematically intricate and badly lagging to simple and nearly
+perplexity-competitive with AR training &mdash; the proof that the approach deserved scaling.</p>
+
+<h4>2. Block Diffusion &mdash; BD3-LM (Arriola et al., 2025)</h4>
+<p>Vanilla masked diffusion paints on a fixed-size canvas and re-reads the whole canvas every pass,
+forfeiting KV caching. <a href='https://arxiv.org/abs/2503.09573'>Block Diffusion</a> puts the AR
+chain rule at block granularity &mdash; <span class='m'>&sum;<sub>b</sub> L<sub>MDLM</sub>(x<sup>(b)</sup> | x<sup>(&lt;b)</sup>)</span>
+&mdash; so each block diffuses in parallel while conditioning on cached previous blocks.</p>
+
+<div class='diagram'>
+  <div class='flow'>
+    <div class='box ok'>Block 1<small>done &middot; cached</small></div>
+    <span class='arr'>&rarr;</span>
+    <div class='box accent'>Block 2<small>diffusing in parallel now</small></div>
+    <span class='arr'>&rarr;</span>
+    <div class='box dim'>Block 3<small>not started</small></div>
+  </div>
+  <div class='caption'>Autoregressive <em>across</em> blocks (variable length, KV caching),
+  diffusion <em>within</em> blocks (parallel speed). Block size 1 is pure AR; block size = sequence
+  length is vanilla diffusion; production lives in between.</div>
+</div>
+
+<h4>3. Remasking Diffusion &mdash; ReMDM (Wang et al., 2025)</h4>
+<p><a href='https://remdm.github.io/'>Remasking Discrete Diffusion Models</a> fixes the frozen-token
+theorem: a modified sampler kernel that returns committed tokens to <code>[MASK]</code> with
+probability &sigma;<sub>t</sub>, constructed to preserve the forward marginals &mdash; which is
+precisely why it needs no retraining. This is what makes a dLLM a true editor, and it gives dLLMs an
+inference-time scaling law: more sampling steps &rarr; more self-correction &rarr; measurably better
+text.</p>
+
+<h4>4. Discrete Diffusion Guidance (Schiff et al., 2024)</h4>
+<p><a href='https://arxiv.org/abs/2412.10193'>Simple Guidance Mechanisms for Discrete Diffusion
+Models</a> ports image diffusion&rsquo;s best control trick to discrete data: the
+&gamma;-exponentiated conditional/unconditional ratio from Maths II, applied per position per step,
+plus a classifier-based variant for when no conditional model exists. Turn &gamma; and you push
+generation toward a sentiment, a style, or drug-likeness when the &ldquo;tokens&rdquo; are molecule
+fragments &mdash; at sampling time, no retraining.</p>
+
+<h4>5. d1 Reasoning (Zhao et al., 2025)</h4>
+<p><a href='https://arxiv.org/abs/2504.12216'>d1</a> (from Grover&rsquo;s lab) answers the
+frontier-relevance question: can dLLMs do the long chain-of-thought reasoning that made o1-style
+models famous? The recipe: supervised fine-tuning on worked reasoning traces, then diffu-GRPO
+&mdash; the one-step log-prob estimator and group-relative advantages from Maths II. It works:
+reasoning improves substantially, showing the modern capability playbook transfers to diffusion.
+Note the pleasing symmetry with the foundations group: RL-as-sequence-modeling (Decision
+Transformer) and preference training (DPO) were both founder groundwork for this step.</p>
+
+<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-papers-group-1-the-foundations.html">&larr; Group 1: the foundations</a><a class="pn-next" href="2026-08-01-diffusion-language-models-papers-how-it-adds-up.html">How it adds up &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "papers": "2026-08-01-diffusion-language-models-papers.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "sources": "2026-08-01-diffusion-language-models-sources.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>

@@ -23,9 +23,9 @@ window.WLib = (function () {
   }
   var redraws = [];
   function onTheme(fn) { redraws.push(fn); }   // canvases re-render on theme flip
+  var repaint = function () { redraws.forEach(function (f) { f(); }); };
   var mq = window.matchMedia('(prefers-color-scheme: dark)');
-  if (mq.addEventListener) mq.addEventListener('change', function () {
-    redraws.forEach(function (f) { f(); });
-  });
+  if (mq.addEventListener) mq.addEventListener('change', repaint);
+  window.addEventListener('themechange', repaint);  // fired by the masthead toggle
   return { $: $, cssVar: cssVar, mulberry32: mulberry32, gauss: gauss, onTheme: onTheme };
 })();

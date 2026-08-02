@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Sources — From Typewriter to Editor: Diffusion Language Models</title>
+<title>Noising text = hiding it — From Typewriter to Editor: Diffusion Language Models</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -271,15 +271,88 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 <nav class="mast-nav"><a href="index.html">All topics</a><a href="2026-08-02-diffusion-review.html">Review deck</a><a href="2026-08-02-dllm-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms">GitHub</a><button id="theme-toggle" class="theme-toggle"
  type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
 </div></div>
-<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a><ul><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ul></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-keep-learning-the-cheat-sheet-consolidation.html">&larr; The cheat sheet (consolidation)</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source &rarr;</a></div><p class="part-eyebrow">Part 8 of 8</p><h1>Sources</h1>
-<p>Everything on this page was built from the sources below. The seed was Inception Labs&rsquo;
-about page; the nine papers it lists were read and are cited in full; the supporting literature
-covers every background claim, historical reference, and &mdash; deliberately &mdash; the real
-papers used as quiz distractors. The math sections follow the notation of DDIM (continuous case)
-and MDLM (discrete case) so you can move from this page into those papers without translation.
-Any errors of interpretation are this page&rsquo;s, not the sources&rsquo;.</p>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a><ul><li class="cur"><a href="2026-08-01-diffusion-language-models-intuition-noising-text-hiding-it.html">Noising text = hiding it</a></li><li><a href="2026-08-01-diffusion-language-models-intuition-the-catch-parallel-commits-are-independent-commits.html">The catch: parallel commits are independent commits</a></li><li><a href="2026-08-01-diffusion-language-models-intuition-bidirectional-sight.html">Bidirectional sight</a></li><li><a href="2026-08-01-diffusion-language-models-intuition-the-editor-fixing-your-own-mistakes.html">The editor: fixing your own mistakes</a></li><li><a href="2026-08-01-diffusion-language-models-intuition-head-to-head.html">Head-to-head</a></li><li><a href="2026-08-01-diffusion-language-models-intuition-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-intuition.html">&larr; Intuition</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-intuition-the-catch-parallel-commits-are-independent-commits.html">The catch: parallel commits are independent commits &rarr;</a></div><p class="part-eyebrow">Part 2 &middot; Intuition</p><h1>Noising text = hiding it</h1>
+<p>The forward process doesn&rsquo;t add static to a sentence &mdash; it progressively <em>hides</em>
+it, replacing tokens with a special <code>[MASK]</code> symbol (shown as &#9634; below) until nothing
+is left:</p>
 
-<ol class="parts"><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ol><div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-keep-learning-the-cheat-sheet-consolidation.html">&larr; The cheat sheet (consolidation)</a><a class="pn-next" href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
+<div class='diagram'>
+  <div class='flow vertical'>
+    <div class='flow'><span class='tag'>clean</span><div class='box ok'>the</div><div class='box ok'>cat</div><div class='box ok'>sat</div><div class='box ok'>on</div><div class='box ok'>the</div><div class='box ok'>mat</div></div>
+    <span class='arr'>&darr; mask a few</span>
+    <div class='flow'><span class='tag'>partly&nbsp;masked</span><div class='box ok'>the</div><div class='box dim'>&#9634;</div><div class='box ok'>sat</div><div class='box ok'>on</div><div class='box dim'>&#9634;</div><div class='box ok'>mat</div></div>
+    <span class='arr'>&darr; mask more</span>
+    <div class='flow'><span class='tag'>fully&nbsp;masked</span><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div></div>
+  </div>
+  <div class='caption'>The forward process: corruption by masking. Training shows the model sentences
+  at every corruption level and asks it to recover what&rsquo;s hidden &mdash; like BERT&rsquo;s
+  fill-in-the-blank task, but at every masking ratio from 0% to 100%.</div>
+</div>
+
+<p>Scrub it yourself &mdash; and watch the expected-versus-actual masked count while you do
+(this is exactly the quantity the first quiz question below asks about):</p>
+
+<div class='widget' id='w-mask'>
+  <div class='wctl'>
+    <label>corruption t</label>
+    <input type='range' id='w-mask-t' min='0' max='1000' value='0'>
+  </div>
+  <div class='flow' id='w-mask-row'></div>
+  <div class='wstat' id='w-mask-stat'></div>
+  <div class='caption'>Linear schedule &alpha;<sub>t</sub> = 1&minus;t. Each token has a fixed random
+  threshold, so scrubbing back and forth is consistent &mdash; you are conditioning on one draw of
+  the forward process, the same trick training uses.</div>
+</div>
+
+<p>Generation is the reverse movie. Start from a row of blanks. In <strong>one forward pass</strong>,
+the model predicts a probability distribution for <em>every</em> blank simultaneously &mdash; this is
+the crucial difference from the typewriter, which predicts exactly one position per pass. Then commit
+the predictions the model is most confident about, keep the rest masked, and repeat:</p>
+
+<div class='diagram'>
+  <div class='flow vertical'>
+    <div class='flow'><span class='tag'>start</span><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div></div>
+    <span class='arr'>&darr; pass 1: predict all six slots, keep the two most confident</span>
+    <div class='flow'><span class='tag'>step&nbsp;1</span><div class='box dim'>&#9634;</div><div class='box accent'>cat</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box accent'>mat</div></div>
+    <span class='arr'>&darr; pass 2</span>
+    <div class='flow'><span class='tag'>step&nbsp;2</span><div class='box accent'>the</div><div class='box ok'>cat</div><div class='box accent'>sat</div><div class='box dim'>&#9634;</div><div class='box dim'>&#9634;</div><div class='box ok'>mat</div></div>
+    <span class='arr'>&darr; pass 3</span>
+    <div class='flow'><span class='tag'>done</span><div class='box ok'>the</div><div class='box ok'>cat</div><div class='box ok'>sat</div><div class='box accent'>on</div><div class='box accent'>the</div><div class='box ok'>mat</div></div>
+  </div>
+  <div class='caption'>Blue = committed this pass &middot; green = committed earlier &middot;
+  &#9634; = still masked. Six tokens in three passes instead of six. At real scale the ratio is far
+  more dramatic: a thousand tokens in a few dozen passes, with each pass a big, GPU-friendly
+  parallel computation.</div>
+</div>
+
+<div class='callout'>
+<p><strong>Definition.</strong> A <strong>diffusion language model (dLLM)</strong> is a language model
+trained to reverse a corruption process over discrete tokens (in practice, masking), generating text
+by iteratively refining the whole sequence in parallel over a small number of steps &mdash; rather
+than emitting one token per forward pass, left to right. Fewer passes than tokens is the entire
+source of the speed advantage.</p>
+</div>
+
+<p>Here are the two regimes racing on the same sentence. Every tick of the clock is one forward
+pass for both models:</p>
+
+<div class='widget' id='w-race'>
+  <div class='wctl'>
+    <button class='wbtn' id='w-race-play'>&#9654; Race</button>
+    <button class='wbtn' id='w-race-reset'>Reset</button>
+  </div>
+  <p style='margin:.2rem 0 0'><span class='tag'>typewriter (autoregressive)</span></p>
+  <div class='flow' id='w-race-ar'></div>
+  <div class='wstat' id='w-race-ar-stat'>passes: 0</div>
+  <p style='margin:.6rem 0 0'><span class='tag'>editor (diffusion)</span></p>
+  <div class='flow' id='w-race-dl'></div>
+  <div class='wstat' id='w-race-dl-stat'>passes: 0</div>
+  <div class='caption'>The dLLM commits several tokens per pass (easiest first, the commit order is
+  scripted here) and finishes in 4 passes; the typewriter needs 16. Real deployments report the
+  same shape: a few dozen passes for a thousand tokens.</div>
+</div>
+
+<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-intuition.html">&larr; Intuition</a><a class="pn-next" href="2026-08-01-diffusion-language-models-intuition-the-catch-parallel-commits-are-independent-commits.html">The catch: parallel commits are independent commits &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "papers": "2026-08-01-diffusion-language-models-papers.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "sources": "2026-08-01-diffusion-language-models-sources.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>

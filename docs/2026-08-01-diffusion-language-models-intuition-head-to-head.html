@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Sources — From Typewriter to Editor: Diffusion Language Models</title>
+<title>Head-to-head — From Typewriter to Editor: Diffusion Language Models</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -271,15 +271,31 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 <nav class="mast-nav"><a href="index.html">All topics</a><a href="2026-08-02-diffusion-review.html">Review deck</a><a href="2026-08-02-dllm-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms">GitHub</a><button id="theme-toggle" class="theme-toggle"
  type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
 </div></div>
-<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a><ul><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ul></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-keep-learning-the-cheat-sheet-consolidation.html">&larr; The cheat sheet (consolidation)</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source &rarr;</a></div><p class="part-eyebrow">Part 8 of 8</p><h1>Sources</h1>
-<p>Everything on this page was built from the sources below. The seed was Inception Labs&rsquo;
-about page; the nine papers it lists were read and are cited in full; the supporting literature
-covers every background claim, historical reference, and &mdash; deliberately &mdash; the real
-papers used as quiz distractors. The math sections follow the notation of DDIM (continuous case)
-and MDLM (discrete case) so you can move from this page into those papers without translation.
-Any errors of interpretation are this page&rsquo;s, not the sources&rsquo;.</p>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a><ul><li><a href="2026-08-01-diffusion-language-models-intuition-noising-text-hiding-it.html">Noising text = hiding it</a></li><li><a href="2026-08-01-diffusion-language-models-intuition-the-catch-parallel-commits-are-independent-commits.html">The catch: parallel commits are independent commits</a></li><li><a href="2026-08-01-diffusion-language-models-intuition-bidirectional-sight.html">Bidirectional sight</a></li><li><a href="2026-08-01-diffusion-language-models-intuition-the-editor-fixing-your-own-mistakes.html">The editor: fixing your own mistakes</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-intuition-head-to-head.html">Head-to-head</a></li><li><a href="2026-08-01-diffusion-language-models-intuition-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-intuition-the-editor-fixing-your-own-mistakes.html">&larr; The editor: fixing your own mistakes</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-intuition-quiz.html">Quiz: Intuition &rarr;</a></div><p class="part-eyebrow">Part 2 &middot; Intuition</p><h1>Head-to-head</h1>
+<table>
+<tr><th></th><th>Autoregressive (typewriter)</th><th>Masked diffusion (editor)</th></tr>
+<tr><td>Generation order</td><td>Strictly left &rarr; right</td><td>Any order; easiest-first, coarse-to-fine</td></tr>
+<tr><td>Forward passes for N tokens</td><td>N, strictly sequential</td><td>k steps with k &ll; N; k is tunable</td></tr>
+<tr><td>Context per prediction</td><td>Past tokens only</td><td>Both directions</td></tr>
+<tr><td>Revising committed text</td><td>Impossible</td><td>Yes, via remasking</td></tr>
+<tr><td>Speed&ndash;quality trade-off</td><td>Fixed by length</td><td>Dial: number of steps</td></tr>
+<tr><td>Variable length + KV caching</td><td>Natural</td><td>Needs Block Diffusion (see the papers)</td></tr>
+</table>
 
-<ol class="parts"><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ol><div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-keep-learning-the-cheat-sheet-consolidation.html">&larr; The cheat sheet (consolidation)</a><a class="pn-next" href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
+<div class='callout warn'>
+<p><strong>Honesty box.</strong> Autoregressive models still hold the overall quality crown at the
+frontier, and vanilla masked diffusion arrives with real handicaps: it generates fixed-length
+canvases, it can&rsquo;t reuse cached computation the way AR decoding does, and its likelihoods
+historically lagged. The reason Inception&rsquo;s paper list is interesting is that nearly every entry
+knocks down one of these handicaps.</p>
+</div>
+
+<p>That is the intuition in full. The next two sections re-tell the same story with the equations
+attached: first the continuous case, where diffusion and its vocabulary were invented, then the
+discrete, masked case that a dLLM actually runs. They are the most demanding sections of this page
+&mdash; and the most rewarding, because after them the nine papers read like straightforward
+engineering decisions rather than magic.</p>
+<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-intuition-the-editor-fixing-your-own-mistakes.html">&larr; The editor: fixing your own mistakes</a><a class="pn-next" href="2026-08-01-diffusion-language-models-intuition-quiz.html">Quiz: Intuition &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "papers": "2026-08-01-diffusion-language-models-papers.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "sources": "2026-08-01-diffusion-language-models-sources.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>

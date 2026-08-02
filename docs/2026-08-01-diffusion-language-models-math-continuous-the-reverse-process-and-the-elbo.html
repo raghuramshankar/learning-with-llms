@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Sources — From Typewriter to Editor: Diffusion Language Models</title>
+<title>The reverse process and the ELBO — From Typewriter to Editor: Diffusion Language Models</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -271,15 +271,77 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 <nav class="mast-nav"><a href="index.html">All topics</a><a href="2026-08-02-diffusion-review.html">Review deck</a><a href="2026-08-02-dllm-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms">GitHub</a><button id="theme-toggle" class="theme-toggle"
  type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
 </div></div>
-<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a><ul><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ul></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-keep-learning-the-cheat-sheet-consolidation.html">&larr; The cheat sheet (consolidation)</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source &rarr;</a></div><p class="part-eyebrow">Part 8 of 8</p><h1>Sources</h1>
-<p>Everything on this page was built from the sources below. The seed was Inception Labs&rsquo;
-about page; the nine papers it lists were read and are cited in full; the supporting literature
-covers every background claim, historical reference, and &mdash; deliberately &mdash; the real
-papers used as quiz distractors. The math sections follow the notation of DDIM (continuous case)
-and MDLM (discrete case) so you can move from this page into those papers without translation.
-Any errors of interpretation are this page&rsquo;s, not the sources&rsquo;.</p>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a><ul><li><a href="2026-08-01-diffusion-language-models-math-continuous-the-forward-process.html">The forward process</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-math-continuous-the-reverse-process-and-the-elbo.html">The reverse process and the ELBO</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous-ddim-same-training-a-fraction-of-the-steps.html">DDIM: same training, a fraction of the steps</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-math-continuous-the-forward-process.html">&larr; The forward process</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-math-continuous-ddim-same-training-a-fraction-of-the-steps.html">DDIM: same training, a fraction of the steps &rarr;</a></div><p class="part-eyebrow">Part 3 &middot; The Maths I: Continuous Diffusion</p><h1>The reverse process and the ELBO</h1>
+<p>Generation needs <span class='m'>q(x<sub>t&minus;1</sub> | x<sub>t</sub>)</span>, which is
+intractable &mdash; it implicitly marginalizes over the entire data distribution. Two facts rescue
+us. First, for small &beta;<sub>t</sub> the true reversal is itself nearly Gaussian, so a Gaussian
+model <span class='m'>p<sub>&theta;</sub>(x<sub>t&minus;1</sub> | x<sub>t</sub>)</span> is
+well-specified. Second, conditioned <em>additionally on the clean image</em>, the reversal is exactly
+Gaussian with closed form:</p>
+<div class='math'>q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>) = &#119977;( &mu;&#771;<sub>t</sub>, &beta;&#771;<sub>t</sub>&middot;I ),&nbsp;&nbsp;&nbsp;
+&mu;&#771;<sub>t</sub> = <span class='frac'><span class='num'>&radic;&#8113;<sub>t&minus;1</sub>&middot;&beta;<sub>t</sub></span><span class='den'>1&minus;&#8113;<sub>t</sub></span></span>&middot;x<sub>0</sub> &nbsp;+&nbsp; <span class='frac'><span class='num'>&radic;&alpha;<sub>t</sub>&middot;(1&minus;&#8113;<sub>t&minus;1</sub>)</span><span class='den'>1&minus;&#8113;<sub>t</sub></span></span>&middot;x<sub>t</sub>,&nbsp;&nbsp;&nbsp;
+&beta;&#771;<sub>t</sub> = <span class='frac'><span class='num'>1&minus;&#8113;<sub>t&minus;1</sub></span><span class='den'>1&minus;&#8113;<sub>t</sub></span></span>&middot;&beta;<sub>t</sub></div>
+<p>The standard variational argument (the same one behind VAEs) then bounds the negative
+log-likelihood &mdash; the <strong>NELBO</strong> &mdash; and the bound splits cleanly per timestep:</p>
+<div class='math'>&minus;log p<sub>&theta;</sub>(x<sub>0</sub>) &le;
+&#120124;<sub>q</sub>[ &minus;log p<sub>&theta;</sub>(x<sub>0</sub> | x<sub>1</sub>) ]
+&nbsp;+&nbsp; &sum;<sub>t=2</sub><sup>T</sup> &#120124;<sub>q</sub> KL( q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>) &Vert; p<sub>&theta;</sub>(x<sub>t&minus;1</sub> | x<sub>t</sub>) )
+&nbsp;+&nbsp; KL( q(x<sub>T</sub> | x<sub>0</sub>) &Vert; &#119977;(0, I) )</div>
+<p>Read the three terms left to right: a <strong>reconstruction</strong> term for the final tiny
+step; the <strong>denoising-matching</strong> sum &mdash; the workhorse, demanding that at every noise
+level the model's one-step denoiser match the tractable posterior above; and the
+<strong>prior</strong> term, which contains no parameters at all and is &asymp;0 whenever the
+schedule truly destroys the signal. Every KL is between Gaussians, hence closed-form.</p>
+<p>One reparameterization turns this into the loss everyone actually ships. Predict the
+<em>noise</em> &epsilon; rather than the mean:</p>
+<div class='math'>&mu;<sub>&theta;</sub>(x<sub>t</sub>, t) = <span class='frac'><span class='num'>1</span><span class='den'>&radic;&alpha;<sub>t</sub></span></span>&middot;( x<sub>t</sub> &minus; <span class='frac'><span class='num'>&beta;<sub>t</sub></span><span class='den'>&radic;(1&minus;&#8113;<sub>t</sub>)</span></span>&middot;&epsilon;<sub>&theta;</sub>(x<sub>t</sub>, t) )</div>
+<p>after which the KL terms collapse into weighted squared errors on &epsilon;. DDPM famously drops
+the weights (it trains better) and arrives at:</p>
+<div class='math'>L<sub>simple</sub> = &#120124;<sub>t, x<sub>0</sub>, &epsilon;</sub> &Vert; &epsilon; &minus; &epsilon;<sub>&theta;</sub>( &radic;&#8113;<sub>t</sub>&middot;x<sub>0</sub> + &radic;(1&minus;&#8113;<sub>t</sub>)&middot;&epsilon;, &nbsp;t ) &Vert;&sup2;</div>
+<p>&ldquo;Guess the noise I added&rdquo; &mdash; that single regression, averaged over all noise
+levels, trains the entire generative hierarchy.</p>
+<div class='callout'>
+<p><strong>The score view.</strong> A direct computation from the closed form gives
+<span class='m'>&nabla;<sub>x<sub>t</sub></sub> log q(x<sub>t</sub> | x<sub>0</sub>) =
+&minus;&epsilon; / &radic;(1&minus;&#8113;<sub>t</sub>)</span>, so the trained network estimates the
+<em>score</em> (gradient of the log-density) of each noisy marginal:
+<span class='m'>s<sub>&theta;</sub>(x<sub>t</sub>) = &minus;&epsilon;<sub>&theta;</sub>(x<sub>t</sub>, t) / &radic;(1&minus;&#8113;<sub>t</sub>)</span>.
+Denoising is gradient ascent on log-probability; this identification (score-based generative
+modeling, developed extensively in Ermon&rsquo;s group) unifies diffusion with stochastic
+differential equations and is where samplers, guidance, and much else are derived from.</p>
+</div>
 
-<ol class="parts"><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ol><div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-keep-learning-the-cheat-sheet-consolidation.html">&larr; The cheat sheet (consolidation)</a><a class="pn-next" href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
+<div class='deriv'>
+  <div class='deriv-head'>
+    <span class='deriv-title'>Faded derivation: forward kernel &rarr; L<sub>simple</sub></span>
+    <button class='wbtn deriv-practice'>practice (hide all)</button>
+    <button class='wbtn deriv-worked'>worked (show all)</button>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>1</span><span class='dstep-goal'>Compose the per-step Gaussians into a one-jump marginal q(x<sub>t</sub> | x<sub>0</sub>). What are its mean and variance?</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>q(x<sub>t</sub> | x<sub>0</sub>) = &#119977;( &radic;&#8113;<sub>t</sub>&middot;x<sub>0</sub>, (1&minus;&#8113;<sub>t</sub>)&middot;I ),&nbsp;&nbsp;&#8113;<sub>t</sub> = &prod;<sub>s&le;t</sub>(1&minus;&beta;<sub>s</sub>)</div><p>Gaussians compose: means multiply, variances accumulate; variance preservation keeps the total at I.</p></div>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>2</span><span class='dstep-goal'>Use Bayes to get the reverse step conditioned on the clean image, q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>). What form does it take?</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>&#119977;( &mu;&#771;<sub>t</sub>, &beta;&#771;<sub>t</sub>&middot;I ),&nbsp;&nbsp;&mu;&#771;<sub>t</sub> = <span class='frac'><span class='num'>&radic;&#8113;<sub>t&minus;1</sub>&middot;&beta;<sub>t</sub></span><span class='den'>1&minus;&#8113;<sub>t</sub></span></span>&middot;x<sub>0</sub> + <span class='frac'><span class='num'>&radic;&alpha;<sub>t</sub>&middot;(1&minus;&#8113;<sub>t&minus;1</sub>)</span><span class='den'>1&minus;&#8113;<sub>t</sub></span></span>&middot;x<sub>t</sub>,&nbsp;&nbsp;&beta;&#771;<sub>t</sub> = <span class='frac'><span class='num'>1&minus;&#8113;<sub>t&minus;1</sub></span><span class='den'>1&minus;&#8113;<sub>t</sub></span></span>&middot;&beta;<sub>t</sub></div><p>Product of two Gaussians in x<sub>t&minus;1</sub> is Gaussian; complete the square to read off mean and variance.</p></div>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>3</span><span class='dstep-goal'>Write the NELBO and split it per timestep. Which three kinds of term appear?</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>&#120124;<sub>q</sub>[&minus;log p<sub>&theta;</sub>(x<sub>0</sub>|x<sub>1</sub>)] + &sum;<sub>t&ge;2</sub> &#120124;<sub>q</sub> KL( q(x<sub>t&minus;1</sub>|x<sub>t</sub>,x<sub>0</sub>) &Vert; p<sub>&theta;</sub>(x<sub>t&minus;1</sub>|x<sub>t</sub>) ) + KL( q(x<sub>T</sub>|x<sub>0</sub>) &Vert; &#119977;(0,I) )</div><p>Reconstruction + denoising-matching (the workhorse) + parameter-free prior (&asymp;0 by schedule design).</p></div>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>4</span><span class='dstep-goal'>Reparameterize the model mean &mu;<sub>&theta;</sub> in terms of a noise prediction &epsilon;<sub>&theta;</sub>.</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>&mu;<sub>&theta;</sub>(x<sub>t</sub>, t) = <span class='frac'><span class='num'>1</span><span class='den'>&radic;&alpha;<sub>t</sub></span></span>&middot;( x<sub>t</sub> &minus; <span class='frac'><span class='num'>&beta;<sub>t</sub></span><span class='den'>&radic;(1&minus;&#8113;<sub>t</sub>)</span></span>&middot;&epsilon;<sub>&theta;</sub>(x<sub>t</sub>, t) )</div><p>Solve x<sub>t</sub> = &radic;&#8113;<sub>t</sub>x<sub>0</sub> + &radic;(1&minus;&#8113;<sub>t</sub>)&epsilon; for x<sub>0</sub> and substitute into &mu;&#771;<sub>t</sub>.</p></div>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>5</span><span class='dstep-goal'>Collapse the Gaussian KLs and drop the weights. What loss remains?</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>L<sub>simple</sub> = &#120124;<sub>t, x<sub>0</sub>, &epsilon;</sub> &Vert; &epsilon; &minus; &epsilon;<sub>&theta;</sub>( &radic;&#8113;<sub>t</sub>&middot;x<sub>0</sub> + &radic;(1&minus;&#8113;<sub>t</sub>)&middot;&epsilon;, t ) &Vert;&sup2;</div><p>KL between Gaussians with shared variance is a scaled squared distance between means; DDPM found the unweighted version trains better.</p></div>
+  </div>
+  <div class='caption'>Try to produce each step on paper before revealing it. When you can go 1&rarr;5
+  unaided, you own this derivation. (Steps start hidden; &ldquo;worked&rdquo; shows everything.)</div>
+</div>
+
+<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-math-continuous-the-forward-process.html">&larr; The forward process</a><a class="pn-next" href="2026-08-01-diffusion-language-models-math-continuous-ddim-same-training-a-fraction-of-the-steps.html">DDIM: same training, a fraction of the steps &rarr;</a></div><footer class="pagefoot">Generated by explain-diff &middot; 2026-08-01</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "papers": "2026-08-01-diffusion-language-models-papers.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "sources": "2026-08-01-diffusion-language-models-sources.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>

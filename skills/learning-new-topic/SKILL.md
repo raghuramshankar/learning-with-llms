@@ -224,18 +224,25 @@ The user's explainers live in a git repo (github.com/raghuramshankar/learning-wi
   widget chrome (`.widget`/`.wctl`/`.wbtn`/`.wstat`/`.wchips`), and a `scripts` field for raw JS.
   Run `python render.py --help` for the exact schema.
 - **Multipage is the default for full explainers** (`"multipage": true` in the spec, plus an
-  `"intro"` html block for the overview page and a `"nav"` list for the masthead). Each section
-  becomes its own digestible page with: a sticky sidebar TOC (current part highlighted, its h3
-  subsections + quiz nested under it), Part-N-of-M eyebrow, prev/next links, and an overview page
-  at the un-suffixed filename (so older links to the single-page name keep working). The renderer
-  rewrites cross-section `href="#<sid>"` anchors into page links automatically and defines
-  `window.__PAGES__` = {sectionId: href} on every page — widget JS that links to sections (e.g.
-  the concept map) must resolve targets through it. Single-page mode remains for the cheat sheet.
+  `"intro"` html block for the overview page and a `"nav"` list for the masthead). The renderer
+  splits every section at its `<h3>` subtopics: overview page (un-suffixed filename, so older
+  links keep working) → part landing pages (section intro + subtopic list) → ONE PAGE PER h3
+  SUBTOPIC → a quiz page per part. Every page gets a top nav row (← previous · ⌂ topic overview ·
+  next →), bottom prev/next, and a sticky sidebar listing all parts with the current part's
+  subtopic pages nested and highlighted. Reading order is linear across all pages. Cross-section
+  `href="#<sid>"` anchors are rewritten to part-landing links, and `window.__PAGES__` =
+  {sectionId: href} is defined on every page — widget JS that links to sections (e.g. the concept
+  map) must resolve targets through it. Because sections split at `<h3>`, keep h3s top-level in
+  section html (never inside an unclosed div) and keep each widget + its predict panel within one
+  h3 chunk. Single-page mode remains for the cheat sheet.
 - **Theme**: academic style modeled on adaptive-bayesian.ai at the user's request — Merriweather
   serif (Google Fonts link with Georgia fallback), deep-blue `#063c92` section headings over a
-  thin blue rule, green `#168551` h3s/eyebrows, navy underlined links, light-gray masthead bar,
-  plus a dark-scheme variant preserving those hues. The review deck and site homepage generators
-  carry the same palette — keep all three in sync when restyling.
+  thin blue rule, green `#168551` h3s/eyebrows, navy underlined links, light-gray masthead bar.
+  Light theme is PURE `#ffffff` background with `#000000` text (user requirement). Every page has
+  a masthead light/dark toggle: persists to localStorage('theme') via a `data-theme` attribute on
+  <html> (set in <head> before paint to avoid flashing), overrides the `prefers-color-scheme`
+  default, and dispatches a 'themechange' event that widgets_lib listens to so canvases repaint.
+  The review deck and site homepage carry the same palette + toggle — keep all three in sync.
 - Write a `build_spec.py` that constructs the JSON spec in Python (triple-quoted HTML strings stay
   readable; splice repeated snippets like token rows and fractions via placeholder substitution)
   and reads the widget JS from a sibling `widgets.js`.
