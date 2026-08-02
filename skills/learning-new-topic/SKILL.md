@@ -66,7 +66,7 @@ Sections, in this order (adapt names to the topic):
    widgets JS (`.cmap-*` classes in the renderer); the self-test framing: "every edge is one
    sentence you should be able to produce."
 6. **Keep Learning** — closes the loop past reading (see "Beyond the page" below): links to the
-   review deck, Anki deck, and cheat sheet; the copyable teach-back prompt; the lab instructions.
+   review deck, Anki deck, and cheat sheet; the copyable teach-back prompt; the tutorial instructions.
 7. **Sources** — a full bibliography, last section on the page: the primary source(s) with
    access dates and a note on which claims are theirs; every paper discussed, with complete
    author lists, year, venue (only when confident — else "arXiv preprint"), and verified links;
@@ -105,7 +105,7 @@ Add interactive widgets wherever they genuinely teach. Proven widget types:
   cost for both, visible pass counters.
 - **Monte-Carlo demos** for statistical claims — draw-1 / draw-50 buttons, chips for outcomes,
   running tally that converges to the theoretical number stated in prose.
-- **Real algorithm labs** — where the math permits, implement the *actual* algorithm on a toy
+- **Real algorithm demos** — where the math permits, implement the *actual* algorithm on a toy
   problem (e.g. a real DDIM sampler on a 2-D Gaussian mixture whose exact score is closed-form,
   standing in for a perfectly-trained network). Prefer honest simulations; when a visualization is
   NOT the real algorithm (e.g. scrubbing a blend backwards instead of denoising), say so in the
@@ -130,7 +130,7 @@ Choose the right tool per visual:
   Theme-neutral styling: transparent paper/plot backgrounds, mid-gray font (#8b95a5), translucent
   gridlines, `displayModeBar: False`, `responsive: True`.
 - **Hand-written canvas/DOM JS (for simulations tightly coupled to page state).** Live races,
-  Monte-Carlo tally demos, scrubbing a seeded corruption process over DOM token boxes, labs whose
+  Monte-Carlo tally demos, scrubbing a seeded corruption process over DOM token boxes, demos whose
   controls change an algorithm that then animates step by step. Container HTML lives in the
   section `html` with unique ids; ALL JS goes in one self-contained IIFE passed via the spec's
   `scripts` field. No external libraries — the page must work offline.
@@ -169,7 +169,7 @@ A page teaches once; these artifacts make it stick. Build ALL of them for a full
   completes. Committing to a prediction before seeing the outcome is what makes a demo stick.
 
 **Transfer**
-- **Build-it-yourself lab** (`labs/<topic>/` in the project): a small skeleton module (numpy or
+- **Build-it-yourself tutorial** (`tutorials/<topic>/` in the project): a small skeleton module (numpy or
   the domain's tool) implementing the page's core formulas, with every body replaced by
   `raise NotImplementedError` + a docstring hint referencing the section that derives it; a pytest
   suite that encodes the right answers (exact values from the quiz, statistical checks for
@@ -203,12 +203,12 @@ The user's explainers live in a git repo (github.com/raghuramshankar/learning-wi
   spec's `head_script_srcs: ["plotly.min.js"]` (default, ~100KB pages). `--inline` on build_spec
   embeds it instead for a portable single-file export. Pin the spec's `date` so filenames and
   cross-links stay stable across rebuilds.
-- `labs/<topic>/` — the build-it-yourself labs.
+- `tutorials/<topic>/` — the build-it-yourself tutorials.
 - `skills/` — versioned copies of the skills; after editing the live skill in `~/.claude/skills/`,
   re-copy it here so the repo tracks it.
 - `site/` — the project website: `topics.json` (catalog manifest) + `build_site.py` →
   `docs/index.html`. After finishing a topic, ADD ITS ENTRY to topics.json (slug, title, blurb,
-  date, tags, links to explainer/review/cheatsheet/anki/lab) and run `python3 site/build_site.py`
+  date, tags, links to explainer/review/cheatsheet/anki/tutorial) and run `python3 site/build_site.py`
   so it appears on the homepage.
 - The site is live via GitHub Pages (main branch, /docs folder) at
   https://raghuramshankar.github.io/learning-with-llms/ — a push deploys it.

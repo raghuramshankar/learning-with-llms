@@ -102,7 +102,7 @@ spec = {
     "site_title": "\u2190 Diffusion Language Models",
     "nav": [["Explainer", "2026-08-01-diffusion-language-models.html"],
             ["Review deck", "2026-08-02-diffusion-review.html"],
-            ["Lab", "https://github.com/raghuramshankar/learning-with-llms/tree/main/labs/masked-diffusion"]],
+            ["Tutorials", "https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/masked-diffusion"]],
     "generator": {
         "skill": "learning-new-topic",
         "skill_url": "https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md",

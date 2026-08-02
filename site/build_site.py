@@ -19,7 +19,7 @@ TEMPLATE = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Interactive deep dives into technical topics: intuition, full mathematics, live simulations, spaced repetition, and build-it-yourself labs.">
+<meta name="description" content="Interactive deep dives into technical topics: intuition, full mathematics, live simulations, spaced repetition, and build-it-yourself tutorials.">
 <title>Learning with LLMs</title>
 <script>(function(){try{var t=localStorage.getItem('theme');
 if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
@@ -160,7 +160,7 @@ CARD = """  <div class="topic">
     <div class="tlinks">
       <a href="{review}">Review deck</a>
       <a href="{cheatsheet}">Cheat sheet</a>
-      <a href="{lab}">The lab</a>
+      <a href="{lab}">Tutorials</a>
     </div>
   </div>
 """

@@ -6,7 +6,7 @@ Interactive HTML explainers for learning new topics deeply — built with Claude
 `learning-new-topic` skill. Each topic produces a full learning system: an explainer page
 (intuition → math deep dives → source walkthrough, with interactive widgets, Plotly figures,
 faded derivations, per-section quizzes, and a concept map), a spaced-repetition review deck,
-an Anki export, a one-page cheat sheet, and a build-it-yourself lab with tests.
+an Anki export, a one-page cheat sheet, and a build-it-yourself tutorial with tests.
 
 ## Layout
 
@@ -25,7 +25,7 @@ topics/     one folder per topic: the SOURCES that generate the pages
               <slug>/build.sh         rebuild everything into docs/
 docs/       rendered OUTPUTS (open in a browser; GitHub Pages-ready)
               plotly.min.js   committed once, referenced by every page
-labs/       build-it-yourself labs (stubs + pytest suites + solutions/)
+tutorials/  build-it-yourself tutorials (stubs + pytest suites + solutions/)
 skills/     versioned copies of the Claude Code skills driving this workflow
 ```
 

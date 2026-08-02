@@ -1,4 +1,4 @@
-# Lab: masked diffusion, from scratch
+# Tutorial: masked diffusion, from scratch
 
 You read the explainer. Now write it. Six small numpy functions — the forward
 masking process, the reveal-probability sampler, the NELBO weight, the weighted
@@ -8,7 +8,7 @@ including statistical checks that your sampler actually preserves the marginals.
 ## How to work
 
 ```bash
-cd labs/masked-diffusion
+cd tutorials/masked-diffusion
 python3 -m pytest -q          # red: 12 failing tests
 ```
 

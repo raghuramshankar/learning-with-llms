@@ -9,6 +9,6 @@
     "review": "2026-08-02-diffusion-review.html",
     "cheatsheet": "2026-08-02-dllm-cheatsheet.html",
     "anki": "diffusion-dllm.apkg",
-    "lab": "https://github.com/raghuramshankar/learning-with-llms/tree/main/labs/masked-diffusion"
+    "lab": "https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/masked-diffusion"
   }
 ]

@@ -592,7 +592,7 @@ deterministic maps tolerate coarse discretization. You can sample on a sparse su
 timesteps &tau;<sub>1</sub> &lt; &ctdot; &lt; &tau;<sub>S</sub> with S &asymp; 20&ndash;50 instead of
 1,000, with the very same network and no retraining.</p>
 
-<p>You can run this yourself. The lab below is a <em>genuine</em> DDIM sampler (&sigma; = 0) on a
+<p>You can run this yourself. The widget below is a <em>genuine</em> DDIM sampler (&sigma; = 0) on a
 toy two-dimensional data distribution &mdash; a Gaussian mixture arranged as a face, chosen because
 its exact score is computable in closed form, so it plays the role of a perfectly-trained
 &epsilon;<sub>&theta;</sub>. Pick a step count and watch the same &ldquo;model&rdquo;, from the same
@@ -626,7 +626,7 @@ starting noise, land differently:</p>
   identical picture.</div>
 </div>
 
-<p>The lab above runs live in your browser; the two figures below were <em>precomputed in
+<p>The widget above runs live in your browser; the two figures below were <em>precomputed in
 Python</em> (numpy running the identical sampler, 600 particles, S swept from 1 to 64). Drag the
 slider to scrub the dial itself, or press play to sweep it:</p>
 
@@ -1231,12 +1231,12 @@ and write three new quiz questions targeting exactly my weak spots.</p>
 <button class='wbtn' data-copy='teachback-prompt'>copy the teach-back prompt</button>
 
 <h3>Build it yourself (transfer)</h3>
-<p>The repo now contains a lab at <code>labs/masked-diffusion/</code>: a numpy skeleton of
+<p>The repo now contains a tutorial at <code>tutorials/masked-diffusion/</code>: a numpy skeleton of
 everything Maths II derived &mdash; the forward masking process, the reveal-probability sampler
 step, the NELBO weight, the weighted MLM loss, and a DDIM step &mdash; with the implementations
 replaced by TODOs and a test suite that knows the right answers (including statistical checks
 that your sampler preserves the marginals):</p>
-<pre>cd labs/masked-diffusion
+<pre>cd tutorials/masked-diffusion
 python3 -m pytest -q        # red until your implementations are right</pre>
 <p>When the suite is green, you have not read masked diffusion &mdash; you have written it. Stuck
 on one function? <code>solutions/</code> has a reference implementation; the honest move is to
@@ -1364,7 +1364,7 @@ spec = {
     "site_title": "\u2190 Diffusion Language Models",
     "nav": [["Review deck", "2026-08-02-diffusion-review.html"],
             ["Cheat sheet", "2026-08-02-dllm-cheatsheet.html"],
-            ["Lab", "https://github.com/raghuramshankar/learning-with-llms/tree/main/labs/masked-diffusion"]],
+            ["Tutorials", "https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/masked-diffusion"]],
     "intro": """
 <p>This is a deep dive into diffusion language models, grounded in the nine papers listed on
 Inception Labs&rsquo; about page. It is built to be worked through, not skimmed: each part ends
