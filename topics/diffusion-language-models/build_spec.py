@@ -1247,6 +1247,109 @@ peek at one function, not the file.</p>
 sheet</a> &mdash; every formula on this page with its one-sentence punchline, printable.</p>
 """
 
+SOURCES = """
+<p>Everything on this page was built from the sources below. The seed was Inception Labs&rsquo;
+about page; the nine papers it lists were read and are cited in full; the supporting literature
+covers every background claim, historical reference, and &mdash; deliberately &mdash; the real
+papers used as quiz distractors. The math sections follow the notation of DDIM (continuous case)
+and MDLM (discrete case) so you can move from this page into those papers without translation.
+Any errors of interpretation are this page&rsquo;s, not the sources&rsquo;.</p>
+
+<h3>Primary source</h3>
+<ul>
+<li>Inception Labs, <a href='https://www.inceptionlabs.ai/about'>&ldquo;About&rdquo;</a> &mdash;
+inceptionlabs.ai/about (accessed 2026-08-01). Source of the nine-paper
+&ldquo;Some of the technologies we&rsquo;ve developed&rdquo; list, the
+&ldquo;typewriter&rdquo;/&ldquo;editor&rdquo; framing, and the Mercury claims (first commercially
+available dLLM family; ~5&times; speed), which are reported here as the company&rsquo;s own.</li>
+</ul>
+
+<h3>The nine papers</h3>
+<ol>
+<li>Jiaming Song, Chenlin Meng, Stefano Ermon (2020).
+<a href='https://arxiv.org/abs/2010.02502'>Denoising Diffusion Implicit Models</a>. ICLR 2021.</li>
+<li>Lili Chen, Kevin Lu, Aravind Rajeswaran, Kimin Lee, Aditya Grover, Michael Laskin,
+Pieter Abbeel, Aravind Srinivas, Igor Mordatch (2021).
+<a href='https://arxiv.org/abs/2106.01345'>Decision Transformer: Reinforcement Learning via
+Sequence Modeling</a>. NeurIPS 2021.</li>
+<li>Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher R&eacute; (2022).
+<a href='https://arxiv.org/abs/2205.14135'>FlashAttention: Fast and Memory-Efficient Exact
+Attention with IO-Awareness</a>. NeurIPS 2022.</li>
+<li>Rafael Rafailov, Archit Sharma, Eric Mitchell, Stefano Ermon, Christopher D. Manning,
+Chelsea Finn (2023). <a href='https://arxiv.org/abs/2305.18290'>Direct Preference Optimization:
+Your Language Model is Secretly a Reward Model</a>. NeurIPS 2023.</li>
+<li>Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin,
+Justin T. Chiu, Alexander Rush, Volodymyr Kuleshov (2024).
+<a href='https://arxiv.org/abs/2406.07524'>Simple and Effective Masked Diffusion Language
+Models</a>. NeurIPS 2024.</li>
+<li>Yair Schiff, Subham Sekhar Sahoo, Hao Phung, Guanghan Wang, Sam Boshar, Hugo Dalla-torre,
+Bernardo P. de Almeida, Alexander Rush, Thomas Pierrot, Volodymyr Kuleshov (2024).
+<a href='https://arxiv.org/abs/2412.10193'>Simple Guidance Mechanisms for Discrete Diffusion
+Models</a>. ICLR 2025.</li>
+<li>Marianne Arriola, Aaron Gokaslan, Justin T. Chiu, Zhihan Yang, Zhixuan Qi, Jiaqi Han,
+Subham Sekhar Sahoo, Volodymyr Kuleshov (2025).
+<a href='https://arxiv.org/abs/2503.09573'>Block Diffusion: Interpolating Between Autoregressive
+and Diffusion Language Models</a>. ICLR 2025.</li>
+<li>Guanghan Wang, Yair Schiff, Subham Sekhar Sahoo, Volodymyr Kuleshov (2025).
+<a href='https://remdm.github.io/'>Remasking Discrete Diffusion Models</a> (project page, as
+linked by the primary source). arXiv preprint, 2025.</li>
+<li>Siyan Zhao, Devaansh Gupta, Qinqing Zheng, Aditya Grover (2025).
+<a href='https://arxiv.org/abs/2504.12216'>d1: Scaling Reasoning in Diffusion Large Language
+Models via Reinforcement Learning</a>. arXiv preprint, 2025.</li>
+</ol>
+
+<h3>Supporting literature</h3>
+<p>Works this page leans on for background, history, or specific claims &mdash; including the
+adjacent papers that appear as quiz distractors, which are real and worth knowing:</p>
+<ul>
+<li>Jascha Sohl-Dickstein, Eric Weiss, Niru Maheswaranathan, Surya Ganguli (2015).
+<a href='https://arxiv.org/abs/1503.03585'>Deep Unsupervised Learning using Nonequilibrium
+Thermodynamics</a>. ICML 2015. <em>The origin of the diffusion idea.</em></li>
+<li>Jonathan Ho, Ajay Jain, Pieter Abbeel (2020).
+<a href='https://arxiv.org/abs/2006.11239'>Denoising Diffusion Probabilistic Models</a>.
+NeurIPS 2020. <em>The DDPM forward process, posterior, and L<sub>simple</sub> derived in
+Maths&nbsp;I.</em></li>
+<li>Yang Song, Stefano Ermon (2019).
+<a href='https://arxiv.org/abs/1907.05600'>Generative Modeling by Estimating Gradients of the
+Data Distribution</a>. NeurIPS 2019. <em>The score-based view.</em></li>
+<li>Yang Song, Jascha Sohl-Dickstein, Diederik P. Kingma, Abhishek Kumar, Stefano Ermon,
+Ben Poole (2020). <a href='https://arxiv.org/abs/2011.13456'>Score-Based Generative Modeling
+through Stochastic Differential Equations</a>. ICLR 2021. <em>The SDE unification mentioned in
+the score callout.</em></li>
+<li>Jacob Austin, Daniel D. Johnson, Jonathan Ho, Daniel Tarlow, Rianne van den Berg (2021).
+<a href='https://arxiv.org/abs/2107.03006'>Structured Denoising Diffusion Models in Discrete
+State-Spaces</a> (D3PM). NeurIPS 2021. <em>The general discrete-diffusion framework of which
+masking is the absorbing-state special case.</em></li>
+<li>Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova (2018).
+<a href='https://arxiv.org/abs/1810.04805'>BERT: Pre-training of Deep Bidirectional Transformers
+for Language Understanding</a>. NAACL 2019. <em>The masked-language-modeling loss that MDLM
+integrates.</em></li>
+<li>Jonathan Ho, Tim Salimans (2022).
+<a href='https://arxiv.org/abs/2207.12598'>Classifier-Free Diffusion Guidance</a>.
+<em>The guidance mechanism ported to discrete diffusion; referenced in a quiz explanation.</em></li>
+<li>Tim Salimans, Jonathan Ho (2022).
+<a href='https://arxiv.org/abs/2202.00512'>Progressive Distillation for Fast Sampling of
+Diffusion Models</a>. ICLR 2022. <em>The other route to fewer steps; a quiz distractor.</em></li>
+<li>Alex Nichol, Prafulla Dhariwal (2021).
+<a href='https://arxiv.org/abs/2102.09672'>Improved Denoising Diffusion Probabilistic
+Models</a>. ICML 2021. <em>Schedule learning; a quiz distractor.</em></li>
+<li>Diederik P. Kingma, Tim Salimans, Ben Poole, Jonathan Ho (2021).
+<a href='https://arxiv.org/abs/2107.00630'>Variational Diffusion Models</a>. NeurIPS 2021.
+<em>Schedule learning and likelihood-focused training; a quiz distractor.</em></li>
+<li>William Peebles, Saining Xie (2022).
+<a href='https://arxiv.org/abs/2212.09748'>Scalable Diffusion Models with Transformers</a>
+(DiT). ICCV 2023. <em>Architecture swaps as the other axis of speed; a quiz distractor.</em></li>
+<li>Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Mingchuan Zhang, Y.K. Li,
+Y. Wu, Daya Guo (2024). <a href='https://arxiv.org/abs/2402.03300'>DeepSeekMath: Pushing the
+Limits of Mathematical Reasoning in Open Language Models</a>. <em>The GRPO algorithm that
+diffu-GRPO adapts.</em></li>
+<li>Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin,
+Ji-Rong Wen, Chongxuan Li (2025). <a href='https://arxiv.org/abs/2502.09992'>Large Language
+Diffusion Models</a> (LLaDA). <em>The pretrained dLLM that d1 builds its reasoning recipe
+on.</em></li>
+</ul>
+"""
+
 spec = {
     "title": "From Typewriter to Editor: Diffusion Language Models",
     "subtitle": "What diffusion models are, the mathematics underneath, and the nine papers behind Inception Labs' Mercury",
@@ -1261,6 +1364,7 @@ spec = {
         {"id": "papers", "title": "The Nine Papers", "html": PAPERS, "quiz": QUIZ_PAPERS},
         {"id": "concept-map", "title": "The Concept Map", "html": CONCEPT_MAP},
         {"id": "keep-learning", "title": "Keep Learning", "html": KEEP_LEARNING},
+        {"id": "sources", "title": "Sources", "html": SOURCES},
     ],
     "scripts": [(TOOLS / "widgets_lib.js").read_text(),
                 (HERE / "widgets.js").read_text()],

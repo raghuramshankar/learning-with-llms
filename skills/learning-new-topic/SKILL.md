@@ -67,8 +67,14 @@ Sections, in this order (adapt names to the topic):
    sentence you should be able to produce."
 6. **Keep Learning** — closes the loop past reading (see "Beyond the page" below): links to the
    review deck, Anki deck, and cheat sheet; the copyable teach-back prompt; the lab instructions.
-7. **Quiz after every section** — 5 questions each (rules below). The concept-map and
-   keep-learning sections don't need quizzes.
+7. **Sources** — a full bibliography, last section on the page: the primary source(s) with
+   access dates and a note on which claims are theirs; every paper discussed, with complete
+   author lists, year, venue (only when confident — else "arXiv preprint"), and verified links;
+   and the supporting literature behind background claims INCLUDING the real papers used as quiz
+   distractors (one italic line each on what the page uses it for). State which papers' notation
+   the math sections follow, and own your errors ("errors of interpretation are this page's").
+8. **Quiz after every section** — 5 questions each (rules below). The concept-map,
+   keep-learning, and sources sections don't need quizzes.
 
 ## Quiz rules (learned from user feedback — do not regress)
 
