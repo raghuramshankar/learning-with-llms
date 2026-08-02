@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>The nine papers — From Typewriter to Editor: Diffusion Language Models</title>
+<title>Block Diffusion: the block-factorized bound — From Typewriter to Editor: Diffusion Language Models</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -271,42 +271,24 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 <nav class="mast-nav"><a href="2026-08-02-diffusion-review.html">Review deck</a><a href="2026-08-02-dllm-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/masked-diffusion">Tutorials</a><button id="theme-toggle" class="theme-toggle"
  type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
 </div></div>
-<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Nine Papers</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-sources.html">Sources</a><ul><li><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">Primary source</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-sources-the-nine-papers.html">The nine papers</a></li><li><a href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature</a></li></ul></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-sources-primary-source.html">&larr; Primary source</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature &rarr;</a></div><p class="part-eyebrow">Part 8 &middot; Sources</p><h1>The nine papers</h1>
-<ol>
-<li>Jiaming Song, Chenlin Meng, Stefano Ermon (2020).
-<a href='https://arxiv.org/abs/2010.02502'>Denoising Diffusion Implicit Models</a>. ICLR 2021.</li>
-<li>Lili Chen, Kevin Lu, Aravind Rajeswaran, Kimin Lee, Aditya Grover, Michael Laskin,
-Pieter Abbeel, Aravind Srinivas, Igor Mordatch (2021).
-<a href='https://arxiv.org/abs/2106.01345'>Decision Transformer: Reinforcement Learning via
-Sequence Modeling</a>. NeurIPS 2021.</li>
-<li>Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher R&eacute; (2022).
-<a href='https://arxiv.org/abs/2205.14135'>FlashAttention: Fast and Memory-Efficient Exact
-Attention with IO-Awareness</a>. NeurIPS 2022.</li>
-<li>Rafael Rafailov, Archit Sharma, Eric Mitchell, Stefano Ermon, Christopher D. Manning,
-Chelsea Finn (2023). <a href='https://arxiv.org/abs/2305.18290'>Direct Preference Optimization:
-Your Language Model is Secretly a Reward Model</a>. NeurIPS 2023.</li>
-<li>Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin,
-Justin T. Chiu, Alexander Rush, Volodymyr Kuleshov (2024).
-<a href='https://arxiv.org/abs/2406.07524'>Simple and Effective Masked Diffusion Language
-Models</a>. NeurIPS 2024.</li>
-<li>Yair Schiff, Subham Sekhar Sahoo, Hao Phung, Guanghan Wang, Sam Boshar, Hugo Dalla-torre,
-Bernardo P. de Almeida, Alexander Rush, Thomas Pierrot, Volodymyr Kuleshov (2024).
-<a href='https://arxiv.org/abs/2412.10193'>Simple Guidance Mechanisms for Discrete Diffusion
-Models</a>. ICLR 2025.</li>
-<li>Marianne Arriola, Aaron Gokaslan, Justin T. Chiu, Zhihan Yang, Zhixuan Qi, Jiaqi Han,
-Subham Sekhar Sahoo, Volodymyr Kuleshov (2025).
-<a href='https://arxiv.org/abs/2503.09573'>Block Diffusion: Interpolating Between Autoregressive
-and Diffusion Language Models</a>. ICLR 2025.</li>
-<li>Guanghan Wang, Yair Schiff, Subham Sekhar Sahoo, Volodymyr Kuleshov (2025).
-<a href='https://remdm.github.io/'>Remasking Discrete Diffusion Models</a> (project page, as
-linked by the primary source). arXiv preprint, 2025.</li>
-<li>Siyan Zhao, Devaansh Gupta, Qinqing Zheng, Aditya Grover (2025).
-<a href='https://arxiv.org/abs/2504.12216'>d1: Scaling Reasoning in Diffusion Large Language
-Models via Reinforcement Learning</a>. arXiv preprint, 2025.</li>
-</ol>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-math-sota.html">The Maths III: Inside the SOTA Methods</a><ul><li class="cur"><a href="2026-08-01-diffusion-language-models-math-sota-block-diffusion-the-block-factorized-bound.html">Block Diffusion: the block-factorized bound</a></li><li><a href="2026-08-01-diffusion-language-models-math-sota-remdm-the-remasking-kernel-with-its-feasibility-bound.html">ReMDM: the remasking kernel, with its feasibility bound</a></li><li><a href="2026-08-01-diffusion-language-models-math-sota-discrete-guidance-sharpening-by-ratio.html">Discrete guidance: sharpening by ratio</a></li><li><a href="2026-08-01-diffusion-language-models-math-sota-diffu-grpo-policy-gradients-without-left-to-right-log-probs.html">diffu-GRPO: policy gradients without left-to-right log-probs</a></li><li><a href="2026-08-01-diffusion-language-models-math-sota-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Papers &amp; Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-math-sota.html">&larr; The Maths III: Inside the SOTA Methods</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-math-sota-remdm-the-remasking-kernel-with-its-feasibility-bound.html">ReMDM: the remasking kernel, with its feasibility bound &rarr;</a></div><p class="part-eyebrow">Part 5 &middot; The Maths III: Inside the SOTA Methods</p><h1>Block Diffusion: the block-factorized bound</h1>
+<p>Chop the sequence into blocks x<sup>(1)</sup>, x<sup>(2)</sup>, &hellip; of length
+L&prime; and put the autoregressive chain rule at block granularity only:</p>
+<div class='math'>&minus;log p<sub>&theta;</sub>(x) &nbsp;&le;&nbsp; &sum;<sub>b</sub> L<sub>MDLM</sub>( x<sup>(b)</sup> | x<sup>(&lt;b)</sup> )</div>
+<p>Each summand is the Maths II NELBO for one block, conditioned on all previous blocks through
+attention to their (frozen, cacheable) keys and values. The block length is a genuine dial
+between the two worlds: <strong>at L&prime; = 1 each &ldquo;block&rdquo; is a single token whose
+only possible reveal is next-token prediction &mdash; the bound collapses exactly to the
+autoregressive cross-entropy</strong>; at L&prime; = n you recover vanilla MDLM. In between:
+variable-length generation, KV caching across blocks, parallel diffusion within them. Why the
+cache is legal here and not in vanilla MDLM is worth stating precisely: cached K/V are valid
+only if the tokens that produced them never change. Vanilla masked diffusion re-edits the whole
+canvas every pass; BD3-LM&rsquo;s committed blocks are frozen by construction. (The paper adds
+engineering: a vectorized two-forward-pass training scheme, and data-driven noise schedules
+tuned per block length to cut gradient variance.)</p>
 
-<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-sources-primary-source.html">&larr; Primary source</a><a class="pn-next" href="2026-08-01-diffusion-language-models-sources-supporting-literature.html">Supporting literature &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-02 10:25:43 UTC</footer></main></div>
-<script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "papers": "2026-08-01-diffusion-language-models-papers.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "sources": "2026-08-01-diffusion-language-models-sources.html"};</script>
+<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-math-sota.html">&larr; The Maths III: Inside the SOTA Methods</a><a class="pn-next" href="2026-08-01-diffusion-language-models-math-sota-remdm-the-remasking-kernel-with-its-feasibility-bound.html">ReMDM: the remasking kernel, with its feasibility bound &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-02 18:59:41 UTC</footer></main></div>
+<script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "math-sota": "2026-08-01-diffusion-language-models-math-sota.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "papers": "2026-08-01-diffusion-language-models-papers.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>
 window.copyTextFallback = function (text) {
@@ -916,10 +898,10 @@ window.WLib = (function () {
       { id: 'mdlm', x: 530, y: 310, label: 'MDLM objective', sec: '#math-discrete', desc: 'NELBO = ∫ w(t)·(BERT loss) dt with w = −α′/(1−α); schedule-invariant. Fill-in-the-blank is secretly an ELBO.' },
       { id: 'mf', x: 530, y: 420, label: 'mean-field error', sec: '#math-discrete', desc: 'Parallel commits sample independent marginals (“hot cream”). Fewer steps → more simultaneous commits → more error.' },
       { id: 'dial', x: 420, y: 530, label: 'step dial S', sec: '#intuition', desc: 'The shared currency of both worlds: steps buy quality (continuous: discretization; discrete: coordination).' },
-      { id: 'block', x: 760, y: 110, label: 'Block Diffusion', sec: '#papers', desc: 'AR across blocks, diffusion within: variable length + KV caching restored.' },
-      { id: 'remdm', x: 760, y: 210, label: 'ReMDM', sec: '#papers', desc: 'Marginal-preserving remasking sampler: committed tokens can be revised. The editor, no retraining.' },
-      { id: 'guide', x: 760, y: 310, label: 'guidance', sec: '#papers', desc: 'γ-sharpened conditional/unconditional ratio per position: steer sentiment, style, molecules at sampling time.' },
-      { id: 'd1', x: 760, y: 410, label: 'd1 reasoning', sec: '#papers', desc: 'SFT + diffu-GRPO (one-step masked log-prob estimates): the reasoning playbook running on diffusion.' },
+      { id: 'block', x: 760, y: 110, label: 'Block Diffusion', sec: '#math-sota', desc: 'AR across blocks, diffusion within: variable length + KV caching restored.' },
+      { id: 'remdm', x: 760, y: 210, label: 'ReMDM', sec: '#math-sota', desc: 'Marginal-preserving remasking sampler: committed tokens can be revised. The editor, no retraining.' },
+      { id: 'guide', x: 760, y: 310, label: 'guidance', sec: '#math-sota', desc: 'γ-sharpened conditional/unconditional ratio per position: steer sentiment, style, molecules at sampling time.' },
+      { id: 'd1', x: 760, y: 410, label: 'd1 reasoning', sec: '#math-sota', desc: 'SFT + diffu-GRPO (one-step masked log-prob estimates): the reasoning playbook running on diffusion.' },
       { id: 'mercury', x: 760, y: 520, label: 'Mercury', sec: '#papers', desc: 'Inception\\u2019s commercial dLLM family: all of the above stacked, claiming ~5\\u00d7 AR speed.' }
     ];
     var EDGES = [

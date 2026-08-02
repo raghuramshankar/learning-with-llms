@@ -419,10 +419,10 @@
       { id: 'mdlm', x: 530, y: 310, label: 'MDLM objective', sec: '#math-discrete', desc: 'NELBO = ∫ w(t)·(BERT loss) dt with w = −α′/(1−α); schedule-invariant. Fill-in-the-blank is secretly an ELBO.' },
       { id: 'mf', x: 530, y: 420, label: 'mean-field error', sec: '#math-discrete', desc: 'Parallel commits sample independent marginals (“hot cream”). Fewer steps → more simultaneous commits → more error.' },
       { id: 'dial', x: 420, y: 530, label: 'step dial S', sec: '#intuition', desc: 'The shared currency of both worlds: steps buy quality (continuous: discretization; discrete: coordination).' },
-      { id: 'block', x: 760, y: 110, label: 'Block Diffusion', sec: '#papers', desc: 'AR across blocks, diffusion within: variable length + KV caching restored.' },
-      { id: 'remdm', x: 760, y: 210, label: 'ReMDM', sec: '#papers', desc: 'Marginal-preserving remasking sampler: committed tokens can be revised. The editor, no retraining.' },
-      { id: 'guide', x: 760, y: 310, label: 'guidance', sec: '#papers', desc: 'γ-sharpened conditional/unconditional ratio per position: steer sentiment, style, molecules at sampling time.' },
-      { id: 'd1', x: 760, y: 410, label: 'd1 reasoning', sec: '#papers', desc: 'SFT + diffu-GRPO (one-step masked log-prob estimates): the reasoning playbook running on diffusion.' },
+      { id: 'block', x: 760, y: 110, label: 'Block Diffusion', sec: '#math-sota', desc: 'AR across blocks, diffusion within: variable length + KV caching restored.' },
+      { id: 'remdm', x: 760, y: 210, label: 'ReMDM', sec: '#math-sota', desc: 'Marginal-preserving remasking sampler: committed tokens can be revised. The editor, no retraining.' },
+      { id: 'guide', x: 760, y: 310, label: 'guidance', sec: '#math-sota', desc: 'γ-sharpened conditional/unconditional ratio per position: steer sentiment, style, molecules at sampling time.' },
+      { id: 'd1', x: 760, y: 410, label: 'd1 reasoning', sec: '#math-sota', desc: 'SFT + diffu-GRPO (one-step masked log-prob estimates): the reasoning playbook running on diffusion.' },
       { id: 'mercury', x: 760, y: 520, label: 'Mercury', sec: '#papers', desc: 'Inception\\u2019s commercial dLLM family: all of the above stacked, claiming ~5\\u00d7 AR speed.' }
     ];
     var EDGES = [

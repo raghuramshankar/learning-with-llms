@@ -235,7 +235,7 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 </div></div>
 <div class="wrap">
 <h1>Review deck: diffusion language models</h1>
-<p class="sub">Spaced repetition over the explainer's 25 questions (Leitner boxes:
+<p class="sub">Spaced repetition over the explainer's 30 questions (Leitner boxes:
 1 → 3 → 7 → 14 → 30 days). Progress is stored in this browser. Companion to
 <a href="2026-08-01-diffusion-language-models.html">the full explainer</a>.</p>
 
