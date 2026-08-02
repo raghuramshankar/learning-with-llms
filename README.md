@@ -1,5 +1,7 @@
 # learning-with-llms
 
+**Live site: https://raghuramshankar.github.io/learning-with-llms/**
+
 Interactive HTML explainers for learning new topics deeply — built with Claude Code and the
 `learning-new-topic` skill. Each topic produces a full learning system: an explainer page
 (intuition → math deep dives → source walkthrough, with interactive widgets, Plotly figures,
