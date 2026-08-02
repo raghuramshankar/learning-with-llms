@@ -1,4 +1,19 @@
-<!doctype html>
+#!/usr/bin/env python3
+"""Generate the project website (docs/index.html) from site/topics.json.
+
+Add a topic: append an entry to topics.json, run this script, commit docs/.
+"""
+import html
+import json
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+DOCS = HERE.parent / "docs"
+REPO_URL = "https://github.com/raghuramshankar/learning-with-llms"
+
+topics = json.loads((HERE / "topics.json").read_text())
+
+TEMPLATE = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -93,8 +108,8 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
   <p class="lede">Interactive deep dives into technical topics &mdash; the intuition, the full
   mathematics, live simulations you can poke, quizzes that bite back, spaced repetition, and a
   lab where you build the thing yourself. Written with Claude Code, grounded in the literature.</p>
-  <a class="cta primary" href="2026-08-01-diffusion-language-models.html">Start with Diffusion Language Models &rarr;</a>
-  <a class="cta ghost" href="https://github.com/raghuramshankar/learning-with-llms">GitHub</a>
+  <a class="cta primary" href="__FIRST_EXPLAINER__">Start with __FIRST_TITLE__ &rarr;</a>
+  <a class="cta ghost" href="__REPO_URL__">GitHub</a>
 </div></header>
 
 <main class="wrap">
@@ -125,22 +140,7 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
 <section id="topics">
   <h2>Topics</h2>
   <p class="secsub">Newest first. Each one is self-contained.</p>
-  <div class="topic">
-    <div class="topic-head">
-      <h3><a href="2026-08-01-diffusion-language-models.html">Diffusion Language Models</a></h3>
-      <span class="tdate">2026-08-01</span>
-    </div>
-    <div class="tags"><span class='tag'>generative models</span><span class='tag'>NLP</span><span class='tag'>9 papers</span></div>
-    <p>Why frontier LLMs type one token at a time, and how diffusion lets them paint the whole answer instead — from Gaussian noise to masked tokens to Mercury, grounded in the nine papers on Inception Labs&#x27; about page.</p>
-    <div class="tlinks">
-      <a class="go" href="2026-08-01-diffusion-language-models.html">Read the explainer &rarr;</a>
-      <a href="2026-08-02-diffusion-review.html">Review deck</a>
-      <a href="2026-08-02-dllm-cheatsheet.html">Cheat sheet</a>
-      <a href="diffusion-dllm.apkg">Anki deck</a>
-      <a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/labs/masked-diffusion">The lab</a>
-    </div>
-  </div>
-
+__TOPIC_CARDS__
 </section>
 
 <section id="hood">
@@ -150,7 +150,7 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
     and JavaScript (<code>topics/&lt;slug&gt;/</code>) rendered by a shared engine &mdash; content
     spec &rarr; HTML with quizzes and math typesetting, numpy-computed Plotly figures, and
     hand-built canvas simulations. The whole pipeline, including the Claude Code skill that
-    drives it, lives in <a href="https://github.com/raghuramshankar/learning-with-llms">the repository</a>.</p>
+    drives it, lives in <a href="__REPO_URL__">the repository</a>.</p>
     <p style="margin-bottom:0">Quiz scores and review progress stay in your browser
     (localStorage) &mdash; nothing is tracked, nothing leaves your device.</p>
   </div>
@@ -160,8 +160,45 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
 
 <footer><div class="wrap">
   Built with <a href="https://claude.com/claude-code">Claude Code</a> &middot;
-  <a href="https://github.com/raghuramshankar/learning-with-llms">github.com/raghuramshankar/learning-with-llms</a>
+  <a href="__REPO_URL__">github.com/raghuramshankar/learning-with-llms</a>
 </div></footer>
 
 </body>
 </html>
+"""
+
+CARD = """  <div class="topic">
+    <div class="topic-head">
+      <h3><a href="{explainer}">{title}</a></h3>
+      <span class="tdate">{date}</span>
+    </div>
+    <div class="tags">{tags}</div>
+    <p>{blurb}</p>
+    <div class="tlinks">
+      <a class="go" href="{explainer}">Read the explainer &rarr;</a>
+      <a href="{review}">Review deck</a>
+      <a href="{cheatsheet}">Cheat sheet</a>
+      <a href="{anki}">Anki deck</a>
+      <a href="{lab}">The lab</a>
+    </div>
+  </div>
+"""
+
+cards = ""
+for t in sorted(topics, key=lambda x: x["date"], reverse=True):
+    cards += CARD.format(
+        title=html.escape(t["title"]), date=t["date"],
+        blurb=html.escape(t["blurb"]),
+        tags="".join(f"<span class='tag'>{html.escape(tag)}</span>" for tag in t.get("tags", [])),
+        explainer=t["explainer"], review=t["review"],
+        cheatsheet=t["cheatsheet"], anki=t["anki"], lab=t["lab"],
+    )
+
+newest = sorted(topics, key=lambda x: x["date"], reverse=True)[0]
+out = (TEMPLATE
+       .replace("__TOPIC_CARDS__", cards)
+       .replace("__FIRST_EXPLAINER__", newest["explainer"])
+       .replace("__FIRST_TITLE__", html.escape(newest["title"]))
+       .replace("__REPO_URL__", REPO_URL))
+(DOCS / "index.html").write_text(out)
+print(DOCS / "index.html", "—", len(topics), "topic(s)")

@@ -200,6 +200,12 @@ The user's explainers live in a git repo (github.com/raghuramshankar/learning-wi
 - `labs/<topic>/` — the build-it-yourself labs.
 - `skills/` — versioned copies of the skills; after editing the live skill in `~/.claude/skills/`,
   re-copy it here so the repo tracks it.
+- `site/` — the project website: `topics.json` (catalog manifest) + `build_site.py` →
+  `docs/index.html`. After finishing a topic, ADD ITS ENTRY to topics.json (slug, title, blurb,
+  date, tags, links to explainer/review/cheatsheet/anki/lab) and run `python3 site/build_site.py`
+  so it appears on the homepage.
+- The site is live via GitHub Pages (main branch, /docs folder) at
+  https://raghuramshankar.github.io/learning-with-llms/ — a push deploys it.
 - Commit when a topic build is done (the user has authorized commits to this repo); outputs in
   docs/ are committed alongside sources.
 

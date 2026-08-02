@@ -1,0 +1,14 @@
+[
+  {
+    "slug": "diffusion-language-models",
+    "title": "Diffusion Language Models",
+    "blurb": "Why frontier LLMs type one token at a time, and how diffusion lets them paint the whole answer instead — from Gaussian noise to masked tokens to Mercury, grounded in the nine papers on Inception Labs' about page.",
+    "date": "2026-08-01",
+    "tags": ["generative models", "NLP", "9 papers"],
+    "explainer": "2026-08-01-diffusion-language-models.html",
+    "review": "2026-08-02-diffusion-review.html",
+    "cheatsheet": "2026-08-02-dllm-cheatsheet.html",
+    "anki": "diffusion-dllm.apkg",
+    "lab": "https://github.com/raghuramshankar/learning-with-llms/tree/main/labs/masked-diffusion"
+  }
+]
