@@ -238,7 +238,7 @@ The user's explainers live in a git repo (github.com/raghuramshankar/learning-wi
 - **Theme**: academic style modeled on adaptive-bayesian.ai at the user's request — Merriweather
   serif (Google Fonts link with Georgia fallback), deep-blue `#063c92` section headings over a
   thin blue rule, green `#168551` h3s/eyebrows, navy underlined links, light-gray masthead bar.
-  Light theme is PURE `#ffffff` background with `#000000` text (user requirement). Every page has
+  Light theme is PURE `#ffffff` background with `#000000` text; dark theme background is PURE `#000000` (user requirements). Every page has
   a masthead light/dark toggle: persists to localStorage('theme') via a `data-theme` attribute on
   <html> (set in <head> before paint to avoid flashing), overrides the `prefers-color-scheme`
   default, and dispatches a 'themechange' event that widgets_lib listens to so canvases repaint.

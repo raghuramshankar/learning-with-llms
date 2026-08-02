@@ -14,11 +14,11 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 :root { --bg:#ffffff; --fg:#000000; --muted:#555e66; --line:#e1e5ea;
   --accent:#063c92; --accent-soft:#eef2fb; --ok:#168551; --ok-soft:#e9f5ee;
   --fail:#b03434; --fail-soft:#faeceb; --box-bg:#f8f9fb; }
-:root[data-theme="dark"] { --bg:#13161b; --fg:#e5e8ee;
+:root[data-theme="dark"] { --bg:#000000; --fg:#e5e8ee;
   --muted:#9aa3b0; --line:#2a313b; --accent:#7d9fdd; --accent-soft:#1b2540;
   --ok:#57b98a; --ok-soft:#16301f; --fail:#e08585; --fail-soft:#3a2020;
   --box-bg:#181c23; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#13161b; --fg:#e5e8ee;
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#000000; --fg:#e5e8ee;
   --muted:#9aa3b0; --line:#2a313b; --accent:#7d9fdd; --accent-soft:#1b2540;
   --ok:#57b98a; --ok-soft:#16301f; --fail:#e08585; --fail-soft:#3a2020;
   --box-bg:#181c23; } }

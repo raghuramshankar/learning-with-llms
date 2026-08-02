@@ -83,7 +83,7 @@ LIGHT_VARS = """  --bg: #ffffff; --fg: #000000; --muted: #555e66; --line: #e1e5e
   --warn-soft: #fdf6e3; --warn-line: #c9a227;
   --code-bg: #f6f8fa; --box-bg: #f8f9fb; --mast: #f5f5f5;"""
 
-DARK_VARS = """  --bg: #13161b; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+DARK_VARS = """  --bg: #000000; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
   --accent: #7d9fdd; --link: #8fb0e8; --accent-soft: #1b2540;
   --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
   --warn-soft: #33290f; --warn-line: #a8842e;

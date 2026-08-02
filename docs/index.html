@@ -18,12 +18,12 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
   --card:#f8f9fb; --hero-glow:rgba(6,60,146,0.07);
 }
 :root[data-theme="dark"] {
-  --bg:#13161b; --fg:#e5e8ee; --muted:#9aa3b0; --line:#2a313b;
+  --bg:#000000; --fg:#e5e8ee; --muted:#9aa3b0; --line:#2a313b;
   --accent:#7d9fdd; --accent-soft:#1b2540; --ok:#57b98a; --ok-soft:#16301f;
   --card:#181c23; --hero-glow:rgba(125,159,221,0.08);
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg:#13161b; --fg:#e5e8ee; --muted:#9aa3b0; --line:#2a313b;
+  --bg:#000000; --fg:#e5e8ee; --muted:#9aa3b0; --line:#2a313b;
   --accent:#7d9fdd; --accent-soft:#1b2540; --ok:#57b98a; --ok-soft:#16301f;
   --card:#181c23; --hero-glow:rgba(125,159,221,0.08);
 } }
