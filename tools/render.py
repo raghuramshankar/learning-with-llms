@@ -107,6 +107,10 @@ body {
 .mast-inner { max-width: 1160px; margin: 0 auto; padding: .85rem 1.4rem;
   display: flex; align-items: baseline; gap: 1.35rem; flex-wrap: wrap;
   justify-content: flex-end; }
+.mast-brand { margin-right: auto; color: var(--fg); text-decoration: none;
+  font-size: 1rem; font-weight: 300; }
+.mast-brand strong { font-weight: 700; }
+.mast-brand:hover { color: var(--accent); }
 .gnav-link { color: var(--accent); text-decoration: none; font-size: 1rem; }
 .gnav-link:hover { text-decoration: underline; }
 .theme-toggle { border: none; background: none; color: var(--accent);
@@ -523,8 +527,7 @@ def _strip_tags(s: str) -> str:
 
 
 GLOBAL_NAV = [["about", "https://raghuramshankar.github.io/"],
-              ["blog", "https://raghuramshankar.github.io/blog/"],
-              ["learning", "index.html"]]
+              ["blog", "https://raghuramshankar.github.io/blog/"]]
 
 
 def _shell(spec, *, title, body, quizzes, pages_map) -> str:
@@ -561,6 +564,7 @@ def _shell(spec, *, title, body, quizzes, pages_map) -> str:
 </head>
 <body>
 <div class="masthead"><div class="mast-inner">
+<a class="mast-brand" href="https://raghuramshankar.github.io/"><strong>Raghuram</strong> Shankar</a>
 {gnav}<button id="theme-toggle" class="theme-toggle"
  type="button" title="Toggle light/dark theme">&#9789;</button>
 </div></div>
