@@ -117,58 +117,12 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
 </head>
 <body>
 <button id="theme-toggle" class="theme-toggle" type="button">&#9789; dark</button>
-<header><div class="wrap hero">
-  <div class="eyebrow">learning-with-llms</div>
-  <h1>Explainers that don&rsquo;t stop at reading.</h1>
-  <p class="lede">Interactive deep dives into technical topics &mdash; the intuition, the full
-  mathematics, live simulations you can poke, quizzes that bite back, spaced repetition, and a
-  lab where you build the thing yourself. Written with Claude Code, grounded in the literature.</p>
-  <a class="cta primary" href="__FIRST_EXPLAINER__">Start with __FIRST_TITLE__ &rarr;</a>
-  <a class="cta ghost" href="__REPO_URL__">GitHub</a>
-</div></header>
-
 <main class="wrap">
 
-<section id="system">
-  <h2>One topic, five artifacts</h2>
-  <p class="secsub">Reading feels like learning but doesn&rsquo;t survive a week. Each topic here
-  ships as a system, with each piece aimed at a different failure mode of &ldquo;I read it and it
-  made sense&rdquo;:</p>
-  <div class="sys">
-    <div class="sys-card"><div class="ico">&#128214;</div><h3>The explainer</h3>
-      <p>Background &rarr; intuition &rarr; the real math &rarr; the key papers. With live
-      simulations, interactive figures, faded derivations, and a concept map.</p></div>
-    <div class="sys-card"><div class="ico">&#10067;</div><h3>Hard quizzes</h3>
-      <p>Five per section: computations, formula recognition, distractors that are real adjacent
-      concepts. Every option explained, right or wrong.</p></div>
-    <div class="sys-card"><div class="ico">&#128257;</div><h3>Spaced review</h3>
-      <p>A Leitner-box deck in your browser (1&rarr;30 day intervals), plus an Anki export.
-      Misses come back sooner.</p></div>
-    <div class="sys-card"><div class="ico">&#128196;</div><h3>The cheat sheet</h3>
-      <p>Every formula with its one-sentence punchline, on one printable page.</p></div>
-    <div class="sys-card"><div class="ico">&#129514;</div><h3>The lab</h3>
-      <p>Implement the core algorithms in numpy against a test suite that knows the right
-      answers. Green tests = you wrote it, not read it.</p></div>
-  </div>
-</section>
-
-<section id="topics">
+<section id="topics" style="padding-top:2.2rem">
   <h2>Topics</h2>
   <p class="secsub">Newest first. Each one is self-contained.</p>
 __TOPIC_CARDS__
-</section>
-
-<section id="hood">
-  <h2>Under the hood</h2>
-  <div class="hood">
-    <p>Every page here is a static build from versioned sources: a topic is a folder of Python
-    and JavaScript (<code>topics/&lt;slug&gt;/</code>) rendered by a shared engine &mdash; content
-    spec &rarr; HTML with quizzes and math typesetting, numpy-computed Plotly figures, and
-    hand-built canvas simulations. The whole pipeline, including the Claude Code skill that
-    drives it, lives in <a href="__REPO_URL__">the repository</a>.</p>
-    <p style="margin-bottom:0">Quiz scores and review progress stay in your browser
-    (localStorage) &mdash; nothing is tracked, nothing leaves your device.</p>
-  </div>
 </section>
 
 </main>
@@ -204,10 +158,8 @@ CARD = """  <div class="topic">
     <div class="tags">{tags}</div>
     <p>{blurb}</p>
     <div class="tlinks">
-      <a class="go" href="{explainer}">Read the explainer &rarr;</a>
       <a href="{review}">Review deck</a>
       <a href="{cheatsheet}">Cheat sheet</a>
-      <a href="{anki}">Anki deck</a>
       <a href="{lab}">The lab</a>
     </div>
   </div>
