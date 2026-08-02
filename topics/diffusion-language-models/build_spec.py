@@ -1356,6 +1356,11 @@ spec = {
     "slug": "diffusion-language-models",
     "date": "2026-08-01",
     "multipage": True,
+    "generator": {
+        "skill": "learning-new-topic",
+        "skill_url": "https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md",
+        "model": "Claude Fable 5",
+    },
     "nav": [["All topics", "index.html"],
             ["Review deck", "2026-08-02-diffusion-review.html"],
             ["Cheat sheet", "2026-08-02-dllm-cheatsheet.html"],

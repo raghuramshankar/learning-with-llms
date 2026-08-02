@@ -99,6 +99,11 @@ spec = {
     "date": "2026-08-02",
     "repo": "companion to the Inception Labs papers explainer",
     "sections": [{"id": "sheet", "title": "The One-Pager", "html": CARDS}],
+    "generator": {
+        "skill": "learning-new-topic",
+        "skill_url": "https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md",
+        "model": "Claude Fable 5",
+    },
 }
 
 here = Path(__file__).parent
