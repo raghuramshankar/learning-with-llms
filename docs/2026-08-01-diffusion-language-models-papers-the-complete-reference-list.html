@@ -38,20 +38,35 @@ body {
   font: 16px/1.75 Merriweather, Georgia, 'Palatino Linotype', serif;
   -webkit-font-smoothing: antialiased;
 }
-/* masthead */
-.masthead { background: var(--mast); border-bottom: 1px solid var(--line); }
-.mast-inner { max-width: 1160px; margin: 0 auto; padding: .55rem 1.4rem;
-  display: flex; align-items: baseline; gap: 1.4rem; flex-wrap: wrap; }
-.mast-title { font-weight: 700; font-size: .98rem; }
-.mast-title a { color: var(--fg); text-decoration: none; }
-.mast-nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap;
-  align-items: baseline; }
-.mast-nav a { color: var(--muted); text-decoration: none; font-size: .85rem; }
-.mast-nav a:hover { color: var(--link); text-decoration: underline; }
-.theme-toggle { border: 1px solid var(--line); background: var(--bg);
-  color: var(--fg); border-radius: 8px; cursor: pointer;
-  padding: .05rem .5rem; font-size: .85rem; line-height: 1.5; }
-.theme-toggle:hover { border-color: var(--accent); }
+/* global band: replica of the personal site's header */
+.masthead { position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: var(--bg); border-bottom: 1px solid var(--line); }
+.mast-inner { max-width: 1160px; margin: 0 auto; padding: .85rem 1.4rem;
+  display: flex; align-items: baseline; gap: 1.35rem; flex-wrap: wrap;
+  justify-content: flex-end; }
+.gnav-link { color: var(--accent); text-decoration: none; font-size: 1rem; }
+.gnav-link:hover { text-decoration: underline; }
+.theme-toggle { border: none; background: none; color: var(--accent);
+  cursor: pointer; font-size: 1rem; padding: 0; line-height: inherit;
+  font-family: inherit; }
+.theme-toggle:hover { text-decoration: underline; }
+body { padding-top: 56px; }
+/* topic band */
+.topicbar { background: var(--mast); border-bottom: 1px solid var(--line); }
+.topicbar-inner { max-width: 1160px; margin: 0 auto; padding: .5rem 1.4rem;
+  display: flex; align-items: baseline; gap: 1.1rem; flex-wrap: wrap; }
+.topic-title a { color: var(--fg); font-weight: 700; font-size: .95rem;
+  text-decoration: none; }
+.topic-title a:hover { color: var(--accent); }
+.topicbar-nav { margin-left: auto; display: flex; gap: 1.1rem;
+  flex-wrap: wrap; }
+.topicbar-nav a { color: var(--muted); text-decoration: none;
+  font-size: .85rem; }
+.topicbar-nav a:hover { color: var(--accent); text-decoration: underline; }
+@media (max-width: 920px) {
+  .masthead { position: static; }
+  body { padding-top: 0; }
+}
 /* layout */
 .wrap { max-width: 950px; margin: 0 auto; padding: 2.2rem 1.4rem 5rem; }
 .layout { max-width: 1160px; margin: 0 auto; padding: 0 1.4rem 4rem;
@@ -65,8 +80,8 @@ main.content { min-width: 0; padding-top: 1.6rem; }
 .topnav a:hover { color: var(--link); text-decoration: underline; }
 .topnav .tn-next { margin-left: auto; }
 /* sidebar */
-aside.sidebar { position: sticky; top: 0; align-self: start;
-  max-height: 100vh; overflow-y: auto; padding: 1.8rem 0 2rem;
+aside.sidebar { position: sticky; top: 56px; align-self: start;
+  max-height: calc(100vh - 56px); overflow-y: auto; padding: 1.8rem 0 2rem;
   font-size: .84rem; line-height: 1.55; }
 .side-topic { font-weight: 700; margin-bottom: .7rem; font-size: .9rem; }
 .side-topic a { color: var(--accent); text-decoration: none; }
@@ -267,10 +282,10 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 </head>
 <body>
 <div class="masthead"><div class="mast-inner">
-<span class="mast-title"><a href="index.html">← Diffusion Language Models</a></span>
-<nav class="mast-nav"><a href="2026-08-02-diffusion-review.html">Review deck</a><a href="2026-08-02-dllm-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/masked-diffusion">Tutorials</a><button id="theme-toggle" class="theme-toggle"
- type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
+<a class="gnav-link" href="https://raghuramshankar.github.io/">about</a><a class="gnav-link" href="https://raghuramshankar.github.io/blog/">blog</a><a class="gnav-link" href="index.html">learning</a><button id="theme-toggle" class="theme-toggle"
+ type="button" title="Toggle light/dark theme">&#9789;</button>
 </div></div>
+<div class="topicbar"><div class="topicbar-inner"><span class="topic-title"><a href="2026-08-01-diffusion-language-models.html">Diffusion Language Models</a></span><nav class="topicbar-nav"><a href="2026-08-02-diffusion-review.html">review deck</a><a href="2026-08-02-dllm-cheatsheet.html">cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/masked-diffusion">tutorials</a></nav></div></div>
 <div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-sota.html">The Maths III: Inside the SOTA Methods</a></li><li><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-papers.html">The Papers &amp; Sources</a><ul><li><a href="2026-08-01-diffusion-language-models-papers-group-1-the-foundations.html">Group 1: the foundations</a></li><li><a href="2026-08-01-diffusion-language-models-papers-group-2-the-diffusion-llm-line.html">Group 2: the diffusion-LLM line</a></li><li><a href="2026-08-01-diffusion-language-models-papers-how-it-adds-up.html">How it adds up</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-papers-the-complete-reference-list.html">The complete reference list</a></li><li><a href="2026-08-01-diffusion-language-models-papers-quiz.html">Quiz</a></li></ul></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-papers-how-it-adds-up.html">&larr; How it adds up</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-papers-quiz.html">Quiz: The Papers &amp; Sources &rarr;</a></div><p class="part-eyebrow">Part 8 &middot; The Papers &amp; Sources</p><h1>The complete reference list</h1>
 <ol>
 <li>Inception Labs, <a href='https://www.inceptionlabs.ai/about'>&ldquo;About&rdquo;</a> &mdash;
@@ -356,7 +371,7 @@ Diffusion Models</a> (LLaDA). <em>The pretrained dLLM d1 builds on.</em></li>
 notation), then <strong>Block Diffusion</strong> and <strong>ReMDM</strong> for the two big
 fixes (Maths III has their equations), <strong>d1</strong> for where this is headed, and keep
 <strong>DDIM</strong> for when you want the image-diffusion roots in full mathematical dress.</p>
-<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-papers-how-it-adds-up.html">&larr; How it adds up</a><a class="pn-next" href="2026-08-01-diffusion-language-models-papers-quiz.html">Quiz: The Papers &amp; Sources &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-02 20:17:59 UTC</footer></main></div>
+<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-papers-how-it-adds-up.html">&larr; How it adds up</a><a class="pn-next" href="2026-08-01-diffusion-language-models-papers-quiz.html">Quiz: The Papers &amp; Sources &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-02 20:36:30 UTC</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "math-sota": "2026-08-01-diffusion-language-models-math-sota.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "papers": "2026-08-01-diffusion-language-models-papers.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>
@@ -503,7 +518,7 @@ window.copyTextFallback = function (text) {
       if (a) return a;
       return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
     };
-    const paint = () => { btn.textContent = mode() === 'dark' ? '\u2600 light' : '\u263E dark'; };
+    const paint = () => { btn.textContent = mode() === 'dark' ? '\u2600' : '\u263E'; };
     btn.addEventListener('click', () => {
       const next = mode() === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);

@@ -1442,10 +1442,11 @@ spec = {
         "skill_url": "https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md",
         "model": "Claude Fable 5",
     },
-    "site_title": "\u2190 Diffusion Language Models",
-    "nav": [["Review deck", "2026-08-02-diffusion-review.html"],
-            ["Cheat sheet", "2026-08-02-dllm-cheatsheet.html"],
-            ["Tutorials", "https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/masked-diffusion"]],
+    "topic_title": "Diffusion Language Models",
+    "topic_href": "2026-08-01-diffusion-language-models.html",
+    "nav": [["review deck", "2026-08-02-diffusion-review.html"],
+            ["cheat sheet", "2026-08-02-dllm-cheatsheet.html"],
+            ["tutorials", "https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/masked-diffusion"]],
     "intro": """
 <p>This is a deep dive into diffusion language models, grounded in the nine papers listed on
 Inception Labs&rsquo; about page. It is built to be worked through, not skimmed: each part ends

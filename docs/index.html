@@ -27,10 +27,27 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
   --accent:#2698ba; --accent-soft:#0d2e38; --ok:#57b98a; --ok-soft:#16301f;
   --card:#181c23; --hero-glow:rgba(38,152,186,0.08);
 } }
-.theme-toggle { position:fixed; top:.9rem; right:1rem; z-index:50;
-  border:1px solid var(--line); background:var(--bg); color:var(--fg);
-  border-radius:8px; cursor:pointer; padding:.1rem .55rem; font:inherit; font-size:.8rem; }
-.theme-toggle:hover { border-color:var(--accent); }
+.masthead { position:fixed; top:0; left:0; right:0; z-index:100;
+  background:var(--bg); border-bottom:1px solid var(--line); }
+.mast-inner { max-width:1160px; margin:0 auto; padding:.85rem 1.4rem;
+  display:flex; align-items:baseline; gap:1.35rem; flex-wrap:wrap;
+  justify-content:flex-end; }
+.gnav-link { color:var(--accent); text-decoration:none; font-size:1rem; }
+.gnav-link:hover { text-decoration:underline; }
+.theme-toggle { border:none; background:none; color:var(--accent);
+  cursor:pointer; font-size:1rem; padding:0; font-family:inherit; }
+.theme-toggle:hover { text-decoration:underline; }
+body { padding-top:56px; }
+.topicbar { background:var(--mast); border-bottom:1px solid var(--line); }
+.topicbar-inner { max-width:1160px; margin:0 auto; padding:.5rem 1.4rem;
+  display:flex; align-items:baseline; gap:1.1rem; flex-wrap:wrap; }
+.topic-title a { color:var(--fg); font-weight:700; font-size:.95rem;
+  text-decoration:none; }
+.topic-title a:hover { color:var(--accent); }
+.topicbar-nav { margin-left:auto; display:flex; gap:1.1rem; flex-wrap:wrap; }
+.topicbar-nav a { color:var(--muted); text-decoration:none; font-size:.85rem; }
+.topicbar-nav a:hover { color:var(--accent); text-decoration:underline; }
+@media (max-width:920px) { .masthead { position:static; } body { padding-top:0; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg);
   font:16px/1.7 Merriweather, Georgia, serif;
@@ -101,7 +118,12 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
 </style>
 </head>
 <body>
-<button id="theme-toggle" class="theme-toggle" type="button">&#9789; dark</button>
+<div class="masthead"><div class="mast-inner">
+<a class="gnav-link" href="https://raghuramshankar.github.io/">about</a>
+<a class="gnav-link" href="https://raghuramshankar.github.io/blog/">blog</a>
+<a class="gnav-link" href="index.html">learning</a>
+<button id="theme-toggle" class="theme-toggle" type="button" title="Toggle light/dark theme">&#9789;</button>
+</div></div>
 <main class="wrap">
 
 <section id="intro" style="padding:2.4rem 0 0">
@@ -154,7 +176,7 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
   function mode(){var a=document.documentElement.getAttribute('data-theme');
     if(a) return a;
     return (window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}
-  function paint(){btn.textContent = mode()==='dark' ? '\u2600 light' : '\u263E dark';}
+  function paint(){btn.textContent = mode()==='dark' ? '\u2600' : '\u263E';}
   btn.addEventListener('click',function(){
     var next=mode()==='dark'?'light':'dark';
     document.documentElement.setAttribute('data-theme',next);

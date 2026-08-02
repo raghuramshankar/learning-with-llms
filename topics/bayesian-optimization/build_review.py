@@ -26,17 +26,27 @@ CSS = """
   --muted:#9aa3b0; --line:#2a313b; --accent:#2698ba; --accent-soft:#0d2e38;
   --ok:#57b98a; --ok-soft:#16301f; --fail:#e08585; --fail-soft:#3a2020;
   --box-bg:#181c23; --mast:#1a1e25; } }
-.masthead { background:var(--mast); border-bottom:1px solid var(--line); }
-.mast-inner { max-width:1160px; margin:0 auto; padding:.55rem 1.4rem;
-  display:flex; align-items:baseline; gap:1.4rem; flex-wrap:wrap; }
-.mast-title { font-weight:700; font-size:.98rem; }
-.mast-title a { color:var(--fg); text-decoration:none; }
-.mast-nav { margin-left:auto; display:flex; gap:1.1rem; flex-wrap:wrap; align-items:baseline; }
-.mast-nav a { color:var(--muted); text-decoration:none; font-size:.85rem; }
-.mast-nav a:hover { color:var(--accent); text-decoration:underline; }
-.theme-toggle { border:1px solid var(--line); background:var(--bg); color:var(--fg);
-  border-radius:8px; cursor:pointer; padding:.05rem .5rem; font:inherit; font-size:.8rem; }
-.theme-toggle:hover { border-color:var(--accent); }
+.masthead { position:fixed; top:0; left:0; right:0; z-index:100;
+  background:var(--bg); border-bottom:1px solid var(--line); }
+.mast-inner { max-width:1160px; margin:0 auto; padding:.85rem 1.4rem;
+  display:flex; align-items:baseline; gap:1.35rem; flex-wrap:wrap;
+  justify-content:flex-end; }
+.gnav-link { color:var(--accent); text-decoration:none; font-size:1rem; }
+.gnav-link:hover { text-decoration:underline; }
+.theme-toggle { border:none; background:none; color:var(--accent);
+  cursor:pointer; font-size:1rem; padding:0; font-family:inherit; }
+.theme-toggle:hover { text-decoration:underline; }
+body { padding-top:56px; }
+.topicbar { background:var(--mast); border-bottom:1px solid var(--line); }
+.topicbar-inner { max-width:1160px; margin:0 auto; padding:.5rem 1.4rem;
+  display:flex; align-items:baseline; gap:1.1rem; flex-wrap:wrap; }
+.topic-title a { color:var(--fg); font-weight:700; font-size:.95rem;
+  text-decoration:none; }
+.topic-title a:hover { color:var(--accent); }
+.topicbar-nav { margin-left:auto; display:flex; gap:1.1rem; flex-wrap:wrap; }
+.topicbar-nav a { color:var(--muted); text-decoration:none; font-size:.85rem; }
+.topicbar-nav a:hover { color:var(--accent); text-decoration:underline; }
+@media (max-width:920px) { .masthead { position:static; } body { padding-top:0; } }
 footer.pagefoot { color:var(--muted); font-size:.8rem; border-top:1px solid var(--line);
   padding-top:1rem; margin-top:3rem; }
 * { box-sizing: border-box; }
@@ -204,7 +214,7 @@ refreshStats();
   function mode(){var a=document.documentElement.getAttribute('data-theme');
     if(a) return a;
     return (window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}
-  function paint(){btn.textContent = mode()==='dark' ? '\\u2600 light' : '\\u263E dark';}
+  function paint(){btn.textContent = mode()==='dark' ? '\\u2600' : '\\u263E';}
   btn.addEventListener('click',function(){
     var next=mode()==='dark'?'light':'dark';
     document.documentElement.setAttribute('data-theme',next);
@@ -230,8 +240,16 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 </head>
 <body>
 <div class="masthead"><div class="mast-inner">
-<span class="mast-title"><a href="index.html">&#8592; Bayesian Optimization</a></span>
-<nav class="mast-nav"><a href="2026-08-02-bayesian-optimization.html">Explainer</a><a href="2026-08-02-bo-cheatsheet.html">Cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/bayesian-optimization">Tutorials</a><button id="theme-toggle" class="theme-toggle" type="button">&#9789; dark</button></nav>
+<a class="gnav-link" href="https://raghuramshankar.github.io/">about</a>
+<a class="gnav-link" href="https://raghuramshankar.github.io/blog/">blog</a>
+<a class="gnav-link" href="index.html">learning</a>
+<button id="theme-toggle" class="theme-toggle" type="button" title="Toggle light/dark theme">&#9789;</button>
+</div></div>
+<div class="topicbar"><div class="topicbar-inner">
+<span class="topic-title"><a href="2026-08-02-bayesian-optimization.html">Bayesian Optimization</a></span>
+<nav class="topicbar-nav"><a href="2026-08-02-bayesian-optimization.html">explainer</a>
+<a href="2026-08-02-bo-cheatsheet.html">cheat sheet</a>
+<a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/bayesian-optimization">tutorials</a></nav>
 </div></div>
 <div class="wrap">
 <h1>Review deck: Bayesian optimization</h1>

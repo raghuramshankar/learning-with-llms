@@ -101,20 +101,35 @@ body {
   font: 16px/1.75 Merriweather, Georgia, 'Palatino Linotype', serif;
   -webkit-font-smoothing: antialiased;
 }
-/* masthead */
-.masthead { background: var(--mast); border-bottom: 1px solid var(--line); }
-.mast-inner { max-width: 1160px; margin: 0 auto; padding: .55rem 1.4rem;
-  display: flex; align-items: baseline; gap: 1.4rem; flex-wrap: wrap; }
-.mast-title { font-weight: 700; font-size: .98rem; }
-.mast-title a { color: var(--fg); text-decoration: none; }
-.mast-nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap;
-  align-items: baseline; }
-.mast-nav a { color: var(--muted); text-decoration: none; font-size: .85rem; }
-.mast-nav a:hover { color: var(--link); text-decoration: underline; }
-.theme-toggle { border: 1px solid var(--line); background: var(--bg);
-  color: var(--fg); border-radius: 8px; cursor: pointer;
-  padding: .05rem .5rem; font-size: .85rem; line-height: 1.5; }
-.theme-toggle:hover { border-color: var(--accent); }
+/* global band: replica of the personal site's header */
+.masthead { position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: var(--bg); border-bottom: 1px solid var(--line); }
+.mast-inner { max-width: 1160px; margin: 0 auto; padding: .85rem 1.4rem;
+  display: flex; align-items: baseline; gap: 1.35rem; flex-wrap: wrap;
+  justify-content: flex-end; }
+.gnav-link { color: var(--accent); text-decoration: none; font-size: 1rem; }
+.gnav-link:hover { text-decoration: underline; }
+.theme-toggle { border: none; background: none; color: var(--accent);
+  cursor: pointer; font-size: 1rem; padding: 0; line-height: inherit;
+  font-family: inherit; }
+.theme-toggle:hover { text-decoration: underline; }
+body { padding-top: 56px; }
+/* topic band */
+.topicbar { background: var(--mast); border-bottom: 1px solid var(--line); }
+.topicbar-inner { max-width: 1160px; margin: 0 auto; padding: .5rem 1.4rem;
+  display: flex; align-items: baseline; gap: 1.1rem; flex-wrap: wrap; }
+.topic-title a { color: var(--fg); font-weight: 700; font-size: .95rem;
+  text-decoration: none; }
+.topic-title a:hover { color: var(--accent); }
+.topicbar-nav { margin-left: auto; display: flex; gap: 1.1rem;
+  flex-wrap: wrap; }
+.topicbar-nav a { color: var(--muted); text-decoration: none;
+  font-size: .85rem; }
+.topicbar-nav a:hover { color: var(--accent); text-decoration: underline; }
+@media (max-width: 920px) {
+  .masthead { position: static; }
+  body { padding-top: 0; }
+}
 /* layout */
 .wrap { max-width: 950px; margin: 0 auto; padding: 2.2rem 1.4rem 5rem; }
 .layout { max-width: 1160px; margin: 0 auto; padding: 0 1.4rem 4rem;
@@ -128,8 +143,8 @@ main.content { min-width: 0; padding-top: 1.6rem; }
 .topnav a:hover { color: var(--link); text-decoration: underline; }
 .topnav .tn-next { margin-left: auto; }
 /* sidebar */
-aside.sidebar { position: sticky; top: 0; align-self: start;
-  max-height: 100vh; overflow-y: auto; padding: 1.8rem 0 2rem;
+aside.sidebar { position: sticky; top: 56px; align-self: start;
+  max-height: calc(100vh - 56px); overflow-y: auto; padding: 1.8rem 0 2rem;
   font-size: .84rem; line-height: 1.55; }
 .side-topic { font-weight: 700; margin-bottom: .7rem; font-size: .9rem; }
 .side-topic a { color: var(--accent); text-decoration: none; }
@@ -472,7 +487,7 @@ PAGE_JS = """
       if (a) return a;
       return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
     };
-    const paint = () => { btn.textContent = mode() === 'dark' ? '\\u2600 light' : '\\u263E dark'; };
+    const paint = () => { btn.textContent = mode() === 'dark' ? '\\u2600' : '\\u263E'; };
     btn.addEventListener('click', () => {
       const next = mode() === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
@@ -507,11 +522,26 @@ def _strip_tags(s: str) -> str:
     return _html.unescape(re.sub(r"<[^>]+>", "", s)).strip()
 
 
+GLOBAL_NAV = [["about", "https://raghuramshankar.github.io/"],
+              ["blog", "https://raghuramshankar.github.io/blog/"],
+              ["learning", "index.html"]]
+
+
 def _shell(spec, *, title, body, quizzes, pages_map) -> str:
-    site_title = spec.get("site_title", "Learning with LLMs")
-    nav = spec.get("nav", [["All topics", "index.html"]])
-    nav_html = "".join(
-        f'<a href="{_html.escape(h)}">{_html.escape(l)}</a>' for l, h in nav)
+    gnav = "".join(
+        f'<a class="gnav-link" href="{_html.escape(h)}">{_html.escape(l)}</a>'
+        for l, h in spec.get("global_nav", GLOBAL_NAV))
+    topicbar = ""
+    if spec.get("topic_title"):
+        tnav = "".join(
+            f'<a href="{_html.escape(h)}">{_html.escape(l)}</a>'
+            for l, h in spec.get("nav", []))
+        topicbar = (
+            '<div class="topicbar"><div class="topicbar-inner">'
+            f'<span class="topic-title"><a href="{_html.escape(spec.get("topic_href", "#"))}">'
+            f'{_html.escape(spec["topic_title"])}</a></span>'
+            f'<nav class="topicbar-nav">{tnav}</nav>'
+            "</div></div>")
     head_srcs = "".join(
         f'<script src="{_html.escape(s)}"></script>' for s in spec.get("head_script_srcs", []))
     head_inline = "".join(f"<script>{s}</script>" for s in spec.get("head_scripts", []))
@@ -531,10 +561,10 @@ def _shell(spec, *, title, body, quizzes, pages_map) -> str:
 </head>
 <body>
 <div class="masthead"><div class="mast-inner">
-<span class="mast-title"><a href="index.html">{_html.escape(site_title)}</a></span>
-<nav class="mast-nav">{nav_html}<button id="theme-toggle" class="theme-toggle"
- type="button" title="Toggle light/dark theme">&#9789; dark</button></nav>
+{gnav}<button id="theme-toggle" class="theme-toggle"
+ type="button" title="Toggle light/dark theme">&#9789;</button>
 </div></div>
+{topicbar}
 {body}
 <script>window.__PAGES__ = {json.dumps(pages_map)};</script>
 <script>window.__QUIZZES__ = {json.dumps(quizzes)};</script>
