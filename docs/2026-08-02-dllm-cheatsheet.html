@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>dLLM Cheat Sheet</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1a1f27; --muted: #5b6472; --line: #e3e7ee;
+  --accent: #2458c5; --accent-soft: #eaf0fc;
+  --ok: #1e7e46; --ok-soft: #e8f5ec; --fail: #b33a3a; --fail-soft: #faecec;
+  --warn-soft: #fdf4e3; --warn-line: #e2b458;
+  --code-bg: #f6f8fa; --box-bg: #f9fafc;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b0; --line: #2b313b;
+    --accent: #7aa5f0; --accent-soft: #1d2942;
+    --ok: #62c088; --ok-soft: #17301f; --fail: #e08585; --fail-soft: #3a2020;
+    --warn-soft: #33290f; --warn-line: #a8842e;
+    --code-bg: #1c2129; --box-bg: #1a1f27;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 880px; margin: 0 auto; padding: 2.5rem 1.4rem 5rem; }
+header.masthead { border-bottom: 1px solid var(--line); padding-bottom: 1.4rem;
+  margin-bottom: 1.6rem; }
+h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 .4rem; }
+.subtitle { color: var(--muted); font-size: 1.08rem; margin: 0; }
+.repo { color: var(--muted); font-size: .85rem; margin-top: .6rem; }
+nav.toc { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1rem 1.3rem; margin-bottom: 2.2rem; }
+nav.toc .toc-title { font-weight: 600; font-size: .8rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: .4rem; }
+nav.toc ol { margin: 0; padding-left: 1.2rem; }
+nav.toc a { color: var(--accent); text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
+section { margin-bottom: 3rem; }
+h2 { font-size: 1.45rem; border-bottom: 1px solid var(--line);
+  padding-bottom: .35rem; margin: 2.4rem 0 1rem; }
+h3 { font-size: 1.12rem; margin: 1.8rem 0 .5rem; }
+h4 { font-size: 1rem; margin: 1.4rem 0 .4rem; }
+p, ul, ol { margin: 0 0 1rem; }
+li { margin-bottom: .35rem; }
+a { color: var(--accent); }
+code { background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 4px; padding: .08em .35em; font-size: .86em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+pre { background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: .9rem 1.1rem; overflow-x: auto;
+  white-space: pre-wrap; font-size: .84rem; line-height: 1.5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+pre code { background: none; border: none; padding: 0; font-size: inherit; }
+table { border-collapse: collapse; margin: 1rem 0; width: 100%;
+  font-size: .92rem; display: block; overflow-x: auto; }
+th, td { border: 1px solid var(--line); padding: .45rem .7rem;
+  text-align: left; vertical-align: top; }
+th { background: var(--box-bg); font-weight: 600; }
+.callout { background: var(--accent-soft); border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0; padding: .8rem 1.1rem; margin: 1.2rem 0; }
+.callout.warn { background: var(--warn-soft); border-left-color: var(--warn-line); }
+.callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+.diagram { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1.3rem 1.1rem; margin: 1.4rem 0;
+  overflow-x: auto; }
+.flow { display: flex; align-items: center; justify-content: center;
+  gap: .55rem; flex-wrap: wrap; margin: .4rem 0; }
+.flow.vertical { flex-direction: column; }
+.flow.left { justify-content: flex-start; }
+.box { background: var(--bg); border: 1.5px solid var(--fg); border-radius: 8px;
+  padding: .45rem .85rem; font-size: .88rem; text-align: center;
+  line-height: 1.4; }
+.box small { display: block; color: var(--muted); font-size: .78rem; }
+.box.ok { border-color: var(--ok); background: var(--ok-soft); }
+.box.fail { border-color: var(--fail); background: var(--fail-soft); }
+.box.dim { border-color: var(--line); color: var(--muted); }
+.box.accent { border-color: var(--accent); background: var(--accent-soft); }
+.arr { color: var(--muted); font-size: 1.1rem; flex-shrink: 0; }
+.caption { text-align: center; color: var(--muted); font-size: .84rem;
+  margin-top: .8rem; }
+.tag { display: inline-block; background: var(--accent-soft);
+  color: var(--accent); border-radius: 999px; padding: .05em .6em;
+  font-size: .78em; font-weight: 600; }
+.formbox { display: flex; align-items: baseline; gap: .8rem;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--bg);
+  padding: .5rem .8rem; margin: .4rem 0; font-size: .92rem; }
+.formbox .boxno { background: var(--fg); color: var(--bg); border-radius: 4px;
+  padding: .05em .5em; font-size: .8em; font-weight: 700; flex-shrink: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.formbox .val { margin-left: auto; font-family: ui-monospace, Menlo, monospace;
+  font-weight: 600; white-space: nowrap; }
+/* math */
+.math { font-family: Georgia, 'Times New Roman', serif; text-align: center;
+  margin: 1.2rem 0; padding: .2rem 0; overflow-x: auto; font-size: 1.05rem;
+  line-height: 2.1; }
+.m { font-family: Georgia, 'Times New Roman', serif; white-space: nowrap; }
+.frac { display: inline-block; vertical-align: middle; text-align: center;
+  margin: 0 .15em; line-height: 1.25; }
+.frac .num, .frac .den { display: block; padding: 0 .3em; }
+.frac .den { border-top: 1px solid currentColor; }
+/* interactive widgets */
+.widget { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1.1rem; margin: 1.4rem 0; }
+.widget canvas { display: block; margin: .6rem auto; max-width: 100%;
+  border-radius: 8px; }
+.wctl { display: flex; align-items: center; justify-content: center;
+  gap: .7rem; flex-wrap: wrap; margin: .5rem 0; }
+.wctl label { font-size: .88rem; color: var(--muted); }
+.wctl input[type=range] { width: min(240px, 55vw); accent-color: var(--accent); }
+.wbtn { font: inherit; font-size: .88rem; padding: .35rem .9rem;
+  border-radius: 8px; border: 1px solid var(--accent);
+  background: var(--accent-soft); color: var(--accent); cursor: pointer;
+  font-weight: 600; }
+.wbtn:hover { filter: brightness(1.08); }
+.wbtn.active { background: var(--accent); color: var(--bg); }
+.wstat { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .85rem; color: var(--muted); text-align: center; margin-top: .5rem; }
+.wchips { display: flex; flex-wrap: wrap; gap: .3rem; justify-content: center;
+  margin-top: .5rem; max-height: 130px; overflow-y: auto; }
+.wchip { font-size: .78rem; border: 1px solid var(--line); border-radius: 999px;
+  padding: .05em .55em; }
+.wchip.good { border-color: var(--ok); background: var(--ok-soft); }
+.wchip.bad { border-color: var(--fail); background: var(--fail-soft); }
+/* faded derivations */
+.deriv { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); padding: 1rem 1.2rem; margin: 1.4rem 0; }
+.deriv-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+  margin-bottom: .5rem; }
+.deriv-title { font-weight: 600; margin-right: auto; }
+.dstep { border-top: 1px solid var(--line); padding: .55rem 0; }
+.dstep-label { display: flex; align-items: baseline; gap: .6rem; }
+.dstep-goal { flex: 1; font-size: .95rem; }
+.dstep-toggle { flex-shrink: 0; font-size: .78rem; padding: .2rem .6rem; }
+.dstep-body { display: none; margin-top: .55rem; }
+.dstep.open .dstep-body { display: block; }
+.dstep.open .dstep-toggle { opacity: .55; }
+/* concept map */
+.cmap-edge { stroke: var(--muted); stroke-width: 1.2; opacity: .4; fill: none; }
+.cmap-edge.hl { stroke: var(--accent); opacity: 1; stroke-width: 2.4; }
+.cmap-node { cursor: pointer; }
+.cmap-node rect { fill: var(--bg); stroke: var(--line); stroke-width: 1.4; }
+.cmap-node text { fill: var(--fg); font-size: 13px; }
+.cmap-node.hub rect { stroke: var(--accent); stroke-width: 2; }
+.cmap-node.hl rect { stroke: var(--accent); stroke-width: 2.2; }
+.cmap-node.dim, .cmap-edge.dim { opacity: .15; }
+/* cheat-sheet grid */
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem; margin: 1.2rem 0; }
+.cheat-card { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); padding: .8rem 1rem; }
+.cheat-card h4 { margin: 0 0 .4rem; }
+.cheat-card .math { margin: .6rem 0; font-size: .98rem; }
+.cheat-card p { font-size: .9rem; margin-bottom: .4rem; }
+/* quiz */
+.quiz-note { color: var(--muted); font-size: .88rem; }
+.quiz-q { border: 1px solid var(--line); border-radius: 10px;
+  padding: 1.1rem 1.3rem; margin-bottom: 1.4rem; background: var(--box-bg); }
+.quiz-q .qtext { font-weight: 600; margin-bottom: .8rem; }
+.quiz-opt { display: block; width: 100%; text-align: left; margin: .4rem 0;
+  padding: .6rem .9rem; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: var(--fg); font: inherit; font-size: .95rem;
+  cursor: pointer; transition: border-color .12s; }
+.quiz-opt:hover:not(:disabled) { border-color: var(--accent); }
+.quiz-opt:disabled { cursor: default; opacity: .75; }
+.quiz-opt.chosen-right { border-color: var(--ok); background: var(--ok-soft);
+  opacity: 1; }
+.quiz-opt.chosen-wrong { border-color: var(--fail); background: var(--fail-soft);
+  opacity: 1; }
+.quiz-opt.reveal-right { border-color: var(--ok); opacity: 1; }
+.quiz-expl { font-size: .85rem; line-height: 1.5; margin: -.15rem 0 .55rem;
+  padding: .35rem .9rem; border-left: 3px solid var(--line);
+  color: var(--muted); }
+.quiz-expl.right { border-left-color: var(--ok); color: var(--fg);
+  background: var(--ok-soft); border-radius: 0 8px 8px 0; }
+.quiz-expl.wrong { border-left-color: var(--fail); }
+.quiz-fb { margin-top: .7rem; padding: .6rem .9rem; border-radius: 8px;
+  font-size: .92rem; display: none; }
+.quiz-fb.right { display: block; background: var(--ok-soft); color: var(--fg); }
+.quiz-fb.wrong { display: block; background: var(--fail-soft); color: var(--fg); }
+.quiz-score { font-weight: 600; margin-top: 1rem; display: none; }
+footer { color: var(--muted); font-size: .82rem; border-top: 1px solid var(--line);
+  padding-top: 1rem; margin-top: 3rem; }
+</style>
+
+
+</head>
+<body>
+<div class="wrap">
+<header class="masthead">
+<h1>dLLM Cheat Sheet</h1>
+<p class="subtitle">Every formula from the diffusion-language-models explainer, with its punchline</p>
+<div class="repo">companion to the Inception Labs papers explainer · 2026-08-02</div>
+</header>
+<nav class="toc"><div class="toc-title">Contents</div><ol><li><a href="#sheet">The One-Pager</a></li></ol></nav>
+<section id="sheet"><h2>The One-Pager</h2>
+<div class='grid2'>
+
+<div class='cheat-card'><h4>The two regimes</h4>
+<p><strong>Typewriter (AR):</strong> N tokens = N sequential passes, left&rarr;right, write-once,
+memory-bandwidth-bound.</p>
+<p><strong>Editor (dLLM):</strong> k parallel refinement passes, k &Lt; N, bidirectional context,
+revisable. <em>Fewer passes than tokens is the entire speed story.</em></p></div>
+
+<div class='cheat-card'><h4>Continuous forward process</h4>
+<div class='math'>q(x<sub>t</sub> | x<sub>0</sub>) = &#119977;( &radic;&#8113;<sub>t</sub>&middot;x<sub>0</sub>, (1&minus;&#8113;<sub>t</sub>)&middot;I )</div>
+<p>One-jump corruption to any noise level; variance-preserving. Training never simulates the
+chain.</p></div>
+
+<div class='cheat-card'><h4>Training loss (DDPM)</h4>
+<div class='math'>L<sub>simple</sub> = &#120124; &Vert; &epsilon; &minus; &epsilon;<sub>&theta;</sub>(x<sub>t</sub>, t) &Vert;&sup2;</div>
+<p>&ldquo;Guess the noise I added.&rdquo; The ELBO's Gaussian KLs, collapsed and unweighted.</p></div>
+
+<div class='cheat-card'><h4>Score link</h4>
+<div class='math'>s<sub>&theta;</sub>(x<sub>t</sub>) = &minus;&epsilon;<sub>&theta;</sub>(x<sub>t</sub>, t) / &radic;(1&minus;&#8113;<sub>t</sub>)</div>
+<p>Denoising = gradient ascent on log-density. Bridge to the SDE view.</p></div>
+
+<div class='cheat-card'><h4>DDIM update (&sigma; = 0)</h4>
+<div class='math'>x&#770;<sub>0</sub> = <span class='frac'><span class='num'>x<sub>t</sub> &minus; &radic;(1&minus;&#8113;<sub>t</sub>)&middot;&epsilon;<sub>&theta;</sub></span><span class='den'>&radic;&#8113;<sub>t</sub></span></span>;&nbsp;
+x<sub>t&minus;1</sub> = &radic;&#8113;<sub>t&minus;1</sub>&middot;x&#770;<sub>0</sub> + &radic;(1&minus;&#8113;<sub>t&minus;1</sub>)&middot;&epsilon;<sub>&theta;</sub></div>
+<p>Deterministic, same marginals, same network &mdash; so you can skip steps. <em>Step count is a
+dial, not architecture.</em></p></div>
+
+<div class='cheat-card'><h4>Discrete forward process</h4>
+<div class='math'>q(z<sub>t</sub> | x) = Cat( &alpha;<sub>t</sub>&middot;x + (1&minus;&alpha;<sub>t</sub>)&middot;m )</div>
+<p>Noise for text = masking. Absorbing mask state; independent per position.</p></div>
+
+<div class='cheat-card'><h4>Reveal posterior</h4>
+<div class='math'>P(reveal) = <span class='frac'><span class='num'>&alpha;<sub>s</sub> &minus; &alpha;<sub>t</sub></span><span class='den'>1 &minus; &alpha;<sub>t</sub></span></span></div>
+<p>Masked tokens reveal (to the true token) with this probability; visible tokens carry over with
+probability 1 &mdash; the frozen-token theorem ReMDM later breaks.</p></div>
+
+<div class='cheat-card'><h4>MDLM objective</h4>
+<div class='math'>L<sub>&infin;</sub> = &int;<sub>0</sub><sup>1</sup> <span class='frac'><span class='num'>&minus;&alpha;&prime;<sub>t</sub></span><span class='den'>1&minus;&alpha;<sub>t</sub></span></span> &middot; (BERT loss at level t) dt</div>
+<p>Fill-in-the-blank, integrated over all masking ratios, is a bound on log-likelihood. Linear
+schedule &rArr; weight 1/t. Value is schedule-invariant.</p></div>
+
+<div class='cheat-card'><h4>Mean-field error</h4>
+<p>Tokens committed in one pass are sampled <em>independently</em> from per-position marginals
+(&ldquo;hot cream&rdquo;). Fewer steps &rArr; more simultaneous commits &rArr; more error.
+<em>The step dial trades coordination for speed; T&rarr;&infin; is exact.</em></p></div>
+
+<div class='cheat-card'><h4>The five dLLM fixes</h4>
+<p><strong>MDLM</strong>: clean objective, likelihoods competitive.<br>
+<strong>Block Diffusion</strong>: AR across blocks &mdash; variable length + KV cache.<br>
+<strong>ReMDM</strong>: marginal-preserving remasking &mdash; revision, no retraining.<br>
+<strong>Guidance</strong>: (p<sub>cond</sub>/p<sub>uncond</sub>)<sup>&gamma;</sup> per position &mdash; steering.<br>
+<strong>d1</strong>: SFT + diffu-GRPO (one-step masked log-probs) &mdash; reasoning.</p></div>
+
+<div class='cheat-card'><h4>The foundations</h4>
+<p><strong>DDIM</strong> (2020): few-step sampling.
+<strong>Decision Transformer</strong> (2021): RL as sequence modeling.
+<strong>FlashAttention</strong> (2022): exact attention, IO-aware tiling.
+<strong>DPO</strong> (2023): r = &beta;&middot;log(&pi;/&pi;<sub>ref</sub>) &mdash; alignment without
+a reward model.</p></div>
+
+<div class='cheat-card'><h4>Mercury, in one breath</h4>
+<p>Inception Labs' commercial dLLM family: MDLM training + Block Diffusion caching + ReMDM
+revision + guidance + d1-style reasoning, on FlashAttention-class kernels &mdash; claiming ~5&times;
+AR speed. Frontier quality remains the open bet.</p></div>
+
+</div>
+
+<p>Papers: <a href='https://arxiv.org/abs/2010.02502'>DDIM</a> &middot;
+<a href='https://arxiv.org/abs/2106.01345'>Decision Transformer</a> &middot;
+<a href='https://arxiv.org/abs/2205.14135'>FlashAttention</a> &middot;
+<a href='https://arxiv.org/abs/2305.18290'>DPO</a> &middot;
+<a href='https://arxiv.org/abs/2406.07524'>MDLM</a> &middot;
+<a href='https://arxiv.org/abs/2412.10193'>Guidance</a> &middot;
+<a href='https://arxiv.org/abs/2503.09573'>Block Diffusion</a> &middot;
+<a href='https://remdm.github.io/'>ReMDM</a> &middot;
+<a href='https://arxiv.org/abs/2504.12216'>d1</a>
+&nbsp;&mdash;&nbsp; full story: <a href='2026-08-01-diffusion-language-models.html'>the explainer</a>
+&middot; drills: <a href='2026-08-02-diffusion-review.html'>review deck</a></p>
+</section>
+<footer>Generated by explain-diff · 2026-08-02</footer>
+</div>
+<script>window.__QUIZZES__ = [];</script>
+<script>
+window.copyTextFallback = function (text) {
+  function legacy() {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(legacy);
+  } else legacy();
+};
+(function () {
+  const groups = window.__QUIZZES__ || [];
+  const LOGKEY = 'quizlog:' + location.pathname.split('/').pop();
+  const loadLog = () => { try { return JSON.parse(localStorage.getItem(LOGKEY)) || {}; } catch (e) { return {}; } };
+  const saveLog = (l) => { try { localStorage.setItem(LOGKEY, JSON.stringify(l)); } catch (e) {} };
+  const sectionTitle = (host) => {
+    const sec = document.getElementById(host.replace(/^qh-/, ''));
+    const h = sec && sec.querySelector('h2');
+    return h ? h.textContent : host;
+  };
+  const buildSummary = () => {
+    const log = loadLog();
+    const lines = ['Quiz results — ' + document.title + ' — ' + new Date().toISOString().slice(0, 10)];
+    let tot = 0, got = 0;
+    groups.forEach(g => {
+      const e = log[g.host];
+      if (!e) { lines.push(sectionTitle(g.host) + ': not attempted'); return; }
+      tot += e.total; got += e.score;
+      lines.push(sectionTitle(g.host) + ': ' + e.score + '/' + e.total +
+        (e.wrong.length ? '. Missed: ' + e.wrong.map(w => '"' + w + '"').join('; ') : ''));
+    });
+    lines.push('Total: ' + got + '/' + tot);
+    const miss = (loadLog().__miss) || {};
+    const rep = Object.entries(miss).filter(([, n]) => n > 1).map(([q, n]) => '"' + q + '" (x' + n + ')');
+    if (rep.length) lines.push('Repeat offenders: ' + rep.join('; '));
+    lines.push('Please quiz me again on my weak areas, harder.');
+    return lines.join('\n');
+  };
+  groups.forEach(function (group) {
+    const host = document.getElementById(group.host);
+    const data = group.questions || [];
+    if (!host || !data.length) return;
+    let answered = 0, right = 0;
+    const results = [];
+    const score = document.createElement('div');
+    score.className = 'quiz-score';
+    data.forEach((q, qi) => {
+      const card = document.createElement('div');
+      card.className = 'quiz-q';
+      const qt = document.createElement('div');
+      qt.className = 'qtext';
+      qt.innerHTML = (qi + 1) + '. ' + q.question;
+      card.appendChild(qt);
+      const fb = document.createElement('div');
+      fb.className = 'quiz-fb';
+      const opts = q.options.map((o, i) => ({ o, i }));
+      for (let i = opts.length - 1; i > 0; i--) {          // shuffle
+        const j = Math.floor(Math.random() * (i + 1));
+        [opts[i], opts[j]] = [opts[j], opts[i]];
+      }
+      const buttons = [];
+      opts.forEach(({ o }) => {
+        const b = document.createElement('button');
+        b.className = 'quiz-opt';
+        b.innerHTML = o.text;
+        b.addEventListener('click', () => {
+          answered++;
+          // reveal every option's explanation, marked right/wrong
+          buttons.forEach(x => {
+            x.disabled = true;
+            if (x.__correct) x.classList.add('reveal-right');
+            const ex = document.createElement('div');
+            ex.className = 'quiz-expl ' + (x.__correct ? 'right' : 'wrong');
+            ex.innerHTML = (x.__correct ? '<strong>✓ Correct answer.</strong> '
+                                        : '<strong>✗</strong> ') +
+                           (x.__opt.explanation || '');
+            x.insertAdjacentElement('afterend', ex);
+          });
+          if (o.correct) {
+            right++;
+            b.classList.add('chosen-right');
+            fb.className = 'quiz-fb right';
+            fb.innerHTML = '<strong>Correct.</strong> Explanations for every option are shown above.';
+          } else {
+            b.classList.add('chosen-wrong');
+            fb.className = 'quiz-fb wrong';
+            fb.innerHTML = '<strong>Not quite.</strong> The correct answer is outlined above, with explanations for every option.';
+          }
+          results.push({ q: q.question.replace(/<[^>]*>/g, ''), ok: !!o.correct });
+          if (answered === data.length) {
+            score.textContent = 'Section score: ' + right + ' / ' + data.length;
+            score.style.display = 'block';
+            const log = loadLog();
+            log[group.host] = { ts: Date.now(), score: right, total: data.length,
+              wrong: results.filter(r => !r.ok).map(r => r.q) };
+            log.__miss = log.__miss || {};
+            results.filter(r => !r.ok).forEach(r => { log.__miss[r.q] = (log.__miss[r.q] || 0) + 1; });
+            saveLog(log);
+            const cp = document.createElement('button');
+            cp.className = 'wbtn'; cp.style.marginTop = '.6rem';
+            cp.textContent = 'copy results for Claude';
+            cp.addEventListener('click', () => {
+              window.copyTextFallback(buildSummary());
+              cp.textContent = 'copied \u2713';
+              setTimeout(() => { cp.textContent = 'copy results for Claude'; }, 1500);
+            });
+            score.insertAdjacentElement('afterend', cp);
+          }
+        });
+        b.__correct = !!o.correct;
+        b.__opt = o;
+        buttons.push(b);
+        card.appendChild(b);
+      });
+      card.appendChild(fb);
+      host.appendChild(card);
+    });
+    host.appendChild(score);
+  });
+})();
+</script>
+<script>
+(function () {
+  document.querySelectorAll('.dstep-toggle').forEach(b =>
+    b.addEventListener('click', () => b.closest('.dstep').classList.toggle('open')));
+  document.querySelectorAll('.deriv').forEach(d => {
+    const setAll = open => d.querySelectorAll('.dstep').forEach(s => s.classList.toggle('open', open));
+    const w = d.querySelector('.deriv-worked'), p = d.querySelector('.deriv-practice');
+    if (w) w.addEventListener('click', () => setAll(true));
+    if (p) p.addEventListener('click', () => setAll(false));
+  });
+  document.querySelectorAll('[data-copy]').forEach(b =>
+    b.addEventListener('click', () => {
+      const el = document.getElementById(b.getAttribute('data-copy'));
+      if (!el) return;
+      window.copyTextFallback(el.innerText);
+      const old = b.textContent;
+      b.textContent = 'copied \u2713';
+      setTimeout(() => { b.textContent = old; }, 1500);
+    }));
+})();
+</script>
+
+</body>
+</html>

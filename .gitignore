@@ -1,0 +1,11 @@
+__pycache__/
+.pytest_cache/
+.DS_Store
+*.pyc
+
+# generated intermediates (rebuilt by build.sh)
+topics/*/spec.json
+topics/*/cheatsheet_spec.json
+
+# claude.ai skill upload artifact (source is in skills/)
+learning-new-topic-skill.zip
