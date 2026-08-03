@@ -71,7 +71,7 @@ body { padding-top:58px; }
 body { margin:0; background:var(--bg); color:var(--fg);
   font:16px/1.7 Merriweather, Georgia, serif;
   -webkit-font-smoothing:antialiased; }
-.wrap { max-width:960px; margin:0 auto; padding:0 1.4rem; }
+.wrap { max-width:1160px; margin:0 auto; padding:0 1.4rem; }
 a { color:var(--accent); }
 
 /* hero */
@@ -140,7 +140,6 @@ footer { border-top:1px solid var(--line); margin-top:3rem;
 <div class="masthead"><div class="mast-inner">
 <a class="mast-brand" href="https://raghuramshankar.github.io/"><strong>Raghuram</strong> Shankar</a>
 <a class="gnav-link" href="https://raghuramshankar.github.io/">about</a>
-<a class="gnav-link" href="https://raghuramshankar.github.io/blog/">blog</a>
 <button id="theme-toggle" class="theme-toggle" type="button" title="Toggle light/dark theme">&#9789;</button>
 </div></div>
 <main class="wrap">

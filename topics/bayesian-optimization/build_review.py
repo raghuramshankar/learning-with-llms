@@ -56,7 +56,7 @@ footer.pagefoot { color:var(--muted); font-size:.8rem; border-top:1px solid var(
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--fg);
   font:16px/1.7 Merriweather, Georgia, serif; }
-.wrap { max-width:950px; margin:0 auto; padding:2.2rem 1.3rem 4rem; }
+.wrap { max-width:1160px; margin:0 auto; padding:2.2rem 1.3rem 4rem; }
 h1 { font-size:1.5rem; margin:0 0 .3rem; color:var(--accent); }
 .sub { color:var(--muted); margin:0 0 1.4rem; font-size:.95rem; }
 .stats { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.2rem; }
@@ -246,7 +246,6 @@ if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)
 <div class="masthead"><div class="mast-inner">
 <a class="mast-brand" href="https://raghuramshankar.github.io/"><strong>Raghuram</strong> Shankar</a>
 <a class="gnav-link" href="https://raghuramshankar.github.io/">about</a>
-<a class="gnav-link" href="https://raghuramshankar.github.io/blog/">blog</a>
 <button id="theme-toggle" class="theme-toggle" type="button" title="Toggle light/dark theme">&#9789;</button>
 </div></div>
 <div class="topicbar"><div class="topicbar-inner">

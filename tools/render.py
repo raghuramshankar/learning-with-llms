@@ -135,7 +135,7 @@ body { padding-top: 58px; }
   body { padding-top: 0; }
 }
 /* layout */
-.wrap { max-width: 950px; margin: 0 auto; padding: 2.2rem 1.4rem 5rem; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 2.2rem 1.4rem 5rem; }
 .layout { max-width: 1160px; margin: 0 auto; padding: 0 1.4rem 4rem;
   display: grid; grid-template-columns: 235px minmax(0, 1fr); gap: 2.6rem; }
 main.content { min-width: 0; padding-top: 1.6rem; }
@@ -526,8 +526,7 @@ def _strip_tags(s: str) -> str:
     return _html.unescape(re.sub(r"<[^>]+>", "", s)).strip()
 
 
-GLOBAL_NAV = [["about", "https://raghuramshankar.github.io/"],
-              ["blog", "https://raghuramshankar.github.io/blog/"]]
+GLOBAL_NAV = [["about", "https://raghuramshankar.github.io/"]]
 
 
 def _shell(spec, *, title, body, quizzes, pages_map) -> str:
