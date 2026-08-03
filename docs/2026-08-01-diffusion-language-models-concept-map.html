@@ -54,6 +54,11 @@ body {
   cursor: pointer; font-size: 1rem; padding: 0; line-height: inherit;
   font-family: inherit; }
 .theme-toggle:hover { text-decoration: underline; }
+.theme-toggle svg { width:1em; height:1em; vertical-align:-.125em; }
+.theme-toggle .tt-sun { display:none; }
+html[data-theme="light"] .theme-toggle .tt-moon { display:none; }
+html[data-theme="light"] .theme-toggle .tt-sun { display:inline-block; }
+
 body { padding-top: 58px; }
 /* topic band */
 .topicbar { background: var(--mast); border-bottom: 1px solid var(--line); }
@@ -279,16 +284,17 @@ th { background: var(--box-bg); font-weight: 700; }
 footer.pagefoot { color: var(--muted); font-size: .8rem;
   border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 3rem; }
 </style>
-<script>(function(){try{var t=localStorage.getItem('theme');
-if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){var t;try{t=localStorage.getItem('theme');}catch(e){}
+if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+document.documentElement.setAttribute('data-theme',t);})();</script>
 <script src="plotly.min.js"></script>
 
 </head>
 <body>
 <div class="masthead"><div class="mast-inner">
 <a class="mast-brand" href="https://raghuramshankar.github.io/"><strong>Raghuram</strong> Shankar</a>
-<a class="gnav-link" href="https://raghuramshankar.github.io/">about</a><button id="theme-toggle" class="theme-toggle"
- type="button" title="Toggle light/dark theme">&#9789;</button>
+<button id="theme-toggle" class="theme-toggle"
+ type="button" title="Toggle light/dark theme"><svg class="tt-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 0C114.6 0 0 114.6 0 256S114.6 512 256 512c68.8 0 131.3-27.2 177.3-71.4 7.3-7 9.4-17.9 5.3-27.1s-13.7-14.9-23.8-14.1c-4.9 .4-9.8 .6-14.8 .6-101.6 0-184-82.4-184-184 0-72.1 41.5-134.6 102.1-164.8 9.1-4.5 14.3-14.3 13.1-24.4S322.6 8.5 312.7 6.3C294.4 2.2 275.4 0 256 0z"/></svg><svg class="tt-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M288-32c8.4 0 16.3 4.4 20.6 11.7L364.1 72.3 468.9 46c8.2-2 16.9 .4 22.8 6.3S500 67 498 75.1l-26.3 104.7 92.7 55.5c7.2 4.3 11.7 12.2 11.7 20.6s-4.4 16.3-11.7 20.6L471.7 332.1 498 436.8c2 8.2-.4 16.9-6.3 22.8S477 468 468.9 466l-104.7-26.3-55.5 92.7c-4.3 7.2-12.2 11.7-20.6 11.7s-16.3-4.4-20.6-11.7L211.9 439.7 107.2 466c-8.2 2-16.8-.4-22.8-6.3S76 445 78 436.8l26.2-104.7-92.6-55.5C4.4 272.2 0 264.4 0 256s4.4-16.3 11.7-20.6L104.3 179.9 78 75.1c-2-8.2 .3-16.8 6.3-22.8S99 44 107.2 46l104.7 26.2 55.5-92.6 1.8-2.6c4.5-5.7 11.4-9.1 18.8-9.1zm0 144a144 144 0 1 0 0 288 144 144 0 1 0 0-288zm0 240a96 96 0 1 1 0-192 96 96 0 1 1 0 192z"/></svg></button>
 </div></div>
 <div class="topicbar"><div class="topicbar-inner"><span class="topic-title"><a href="2026-08-01-diffusion-language-models.html">Diffusion Language Models</a></span><nav class="topicbar-nav"><a href="2026-08-02-diffusion-review.html">review deck</a><a href="2026-08-02-dllm-cheatsheet.html">cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/masked-diffusion">tutorials</a></nav></div></div>
 <div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-01-diffusion-language-models.html">From Typewriter to Editor: Diffusion Language Models</a></div><ol><li><a href="2026-08-01-diffusion-language-models-background.html">Background</a></li><li><a href="2026-08-01-diffusion-language-models-intuition.html">Intuition</a></li><li><a href="2026-08-01-diffusion-language-models-math-continuous.html">The Maths I: Continuous Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-discrete.html">The Maths II: Masked Discrete Diffusion</a></li><li><a href="2026-08-01-diffusion-language-models-math-sota.html">The Maths III: Inside the SOTA Methods</a></li><li class="cur"><a href="2026-08-01-diffusion-language-models-concept-map.html">The Concept Map</a></li><li><a href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-01-diffusion-language-models-papers.html">The Papers &amp; Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-01-diffusion-language-models-math-sota-quiz.html">&larr; Quiz: The Maths III: Inside the SOTA Methods</a><a href="2026-08-01-diffusion-language-models.html">&#8962; From Typewriter to Editor: Diffusion Language Models</a><a class="tn-next" href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning &rarr;</a></div><p class="part-eyebrow">Part 6 of 8</p><h1>The Concept Map</h1>
@@ -303,7 +309,7 @@ the load-bearing ones &mdash; if you can explain those three from memory, the re
 
 <p>A good self-test: pick any edge and say out loud <em>why</em> those two nodes are connected.
 Every edge on this map is one sentence you should be able to produce.</p>
-<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-math-sota-quiz.html">&larr; Quiz: The Maths III: Inside the SOTA Methods</a><a class="pn-next" href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-03 07:18:49 UTC</footer></main></div>
+<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-math-sota-quiz.html">&larr; Quiz: The Maths III: Inside the SOTA Methods</a><a class="pn-next" href="2026-08-01-diffusion-language-models-keep-learning.html">Keep Learning &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-03 09:16:24 UTC</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "math-sota": "2026-08-01-diffusion-language-models-math-sota.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "papers": "2026-08-01-diffusion-language-models-papers.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>
@@ -450,7 +456,7 @@ window.copyTextFallback = function (text) {
       if (a) return a;
       return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
     };
-    const paint = () => { btn.textContent = mode() === 'dark' ? '\u2600' : '\u263E'; };
+    const paint = () => { document.documentElement.setAttribute('data-theme', mode()); };
     btn.addEventListener('click', () => {
       const next = mode() === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
