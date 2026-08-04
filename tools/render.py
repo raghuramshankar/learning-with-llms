@@ -130,6 +130,9 @@ body { padding-top: 58px; }
 .topic-title a { color: var(--fg); font-weight: 700; font-size: .95rem;
   text-decoration: none; }
 .topic-title a:hover { color: var(--accent); }
+.topic-back { display: inline-block; margin-right: .15rem;
+  transition: transform .12s ease; }
+.topic-title a:hover .topic-back { transform: translateX(-2px); }
 .topicbar-nav { margin-left: auto; display: flex; gap: 1.1rem;
   flex-wrap: wrap; }
 .topicbar-nav a { color: var(--muted); text-decoration: none;
@@ -558,10 +561,13 @@ def _shell(spec, *, title, body, quizzes, pages_map) -> str:
         tnav = "".join(
             f'<a href="{_html.escape(h)}">{_html.escape(l)}</a>'
             for l, h in spec.get("nav", []))
+        # The topic title doubles as the way out: "← <Topic>" goes back to the
+        # site landing page. Reaching this topic's own overview is already
+        # covered by the "⌂ <topic>" link in the per-page nav row.
         topicbar = (
             '<div class="topicbar"><div class="topicbar-inner">'
-            f'<span class="topic-title"><a href="{_html.escape(spec.get("topic_href", "#"))}">'
-            f'{_html.escape(spec["topic_title"])}</a></span>'
+            f'<span class="topic-title"><a href="{_html.escape(spec.get("site_href", "index.html"))}">'
+            f'<span class="topic-back">&larr;</span> {_html.escape(spec["topic_title"])}</a></span>'
             f'<nav class="topicbar-nav">{tnav}</nav>'
             "</div></div>")
     head_srcs = "".join(

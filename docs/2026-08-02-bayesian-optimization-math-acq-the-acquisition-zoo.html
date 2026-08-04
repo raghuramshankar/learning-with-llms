@@ -67,6 +67,9 @@ body { padding-top: 58px; }
 .topic-title a { color: var(--fg); font-weight: 700; font-size: .95rem;
   text-decoration: none; }
 .topic-title a:hover { color: var(--accent); }
+.topic-back { display: inline-block; margin-right: .15rem;
+  transition: transform .12s ease; }
+.topic-title a:hover .topic-back { transform: translateX(-2px); }
 .topicbar-nav { margin-left: auto; display: flex; gap: 1.1rem;
   flex-wrap: wrap; }
 .topicbar-nav a { color: var(--muted); text-decoration: none;
@@ -208,6 +211,20 @@ th { background: var(--box-bg); font-weight: 700; }
   padding: .05em .55em; }
 .wchip.good { border-color: var(--ok); background: var(--ok-soft); }
 .wchip.bad { border-color: var(--fail); background: var(--fail-soft); }
+/* Labeled horizontal bars for distribution widgets: .bar-fill is the
+   theoretical mass, .bar-emp overlays the empirical (sampled) frequency so a
+   Monte-Carlo tally can be watched converging onto the true distribution. */
+.bar-row { display: grid; grid-template-columns: 5.5rem 1fr 3.2rem;
+  align-items: center; gap: .5rem; margin: .18rem 0; font-size: .8rem; }
+.bar-lab { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.bar-track { position: relative; height: 1rem; background: var(--box-bg);
+  border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.bar-fill { position: absolute; inset: 0 auto 0 0; background: var(--accent-soft);
+  border-right: 2px solid var(--accent); }
+.bar-emp { position: absolute; left: 0; top: 50%; height: 3px;
+  transform: translateY(-50%); background: var(--fg); opacity: .75; }
+.bar-val { text-align: right; color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .deriv { border: 1px solid var(--line); border-radius: 10px;
   background: var(--box-bg); padding: 1rem 1.2rem; margin: 1.4rem 0; }
 .deriv-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
@@ -296,7 +313,7 @@ document.documentElement.setAttribute('data-theme',t);})();</script>
 <button id="theme-toggle" class="theme-toggle"
  type="button" title="Toggle light/dark theme"><svg class="tt-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 0C114.6 0 0 114.6 0 256S114.6 512 256 512c68.8 0 131.3-27.2 177.3-71.4 7.3-7 9.4-17.9 5.3-27.1s-13.7-14.9-23.8-14.1c-4.9 .4-9.8 .6-14.8 .6-101.6 0-184-82.4-184-184 0-72.1 41.5-134.6 102.1-164.8 9.1-4.5 14.3-14.3 13.1-24.4S322.6 8.5 312.7 6.3C294.4 2.2 275.4 0 256 0z"/></svg><svg class="tt-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M288-32c8.4 0 16.3 4.4 20.6 11.7L364.1 72.3 468.9 46c8.2-2 16.9 .4 22.8 6.3S500 67 498 75.1l-26.3 104.7 92.7 55.5c7.2 4.3 11.7 12.2 11.7 20.6s-4.4 16.3-11.7 20.6L471.7 332.1 498 436.8c2 8.2-.4 16.9-6.3 22.8S477 468 468.9 466l-104.7-26.3-55.5 92.7c-4.3 7.2-12.2 11.7-20.6 11.7s-16.3-4.4-20.6-11.7L211.9 439.7 107.2 466c-8.2 2-16.8-.4-22.8-6.3S76 445 78 436.8l26.2-104.7-92.6-55.5C4.4 272.2 0 264.4 0 256s4.4-16.3 11.7-20.6L104.3 179.9 78 75.1c-2-8.2 .3-16.8 6.3-22.8S99 44 107.2 46l104.7 26.2 55.5-92.6 1.8-2.6c4.5-5.7 11.4-9.1 18.8-9.1zm0 144a144 144 0 1 0 0 288 144 144 0 1 0 0-288zm0 240a96 96 0 1 1 0-192 96 96 0 1 1 0 192z"/></svg></button>
 </div></div>
-<div class="topicbar"><div class="topicbar-inner"><span class="topic-title"><a href="2026-08-02-bayesian-optimization.html">Bayesian Optimization</a></span><nav class="topicbar-nav"><a href="2026-08-02-bayesian-optimization-review.html">review deck</a><a href="2026-08-02-bo-cheatsheet.html">cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/bayesian-optimization">tutorials</a></nav></div></div>
+<div class="topicbar"><div class="topicbar-inner"><span class="topic-title"><a href="index.html"><span class="topic-back">&larr;</span> Bayesian Optimization</a></span><nav class="topicbar-nav"><a href="2026-08-02-bayesian-optimization-review.html">review deck</a><a href="2026-08-02-bo-cheatsheet.html">cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/bayesian-optimization">tutorials</a></nav></div></div>
 <div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-02-bayesian-optimization.html">Fifty Evaluations to Find the Best: Bayesian Optimization</a></div><ol><li><a href="2026-08-02-bayesian-optimization-background.html">Background</a></li><li><a href="2026-08-02-bayesian-optimization-intuition.html">Intuition</a></li><li><a href="2026-08-02-bayesian-optimization-math-gp.html">The Maths I: Gaussian Process Surrogates</a></li><li class="cur"><a href="2026-08-02-bayesian-optimization-math-acq.html">The Maths II: Acquisition Functions</a><ul><li><a href="2026-08-02-bayesian-optimization-math-acq-improvement-and-its-expectation.html">Improvement, and its expectation</a></li><li class="cur"><a href="2026-08-02-bayesian-optimization-math-acq-the-acquisition-zoo.html">The acquisition zoo</a></li><li><a href="2026-08-02-bayesian-optimization-math-acq-numerics-and-batches-logei-and-qei.html">Numerics and batches: LogEI and qEI</a></li><li><a href="2026-08-02-bayesian-optimization-math-acq-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-02-bayesian-optimization-math-sota.html">The Maths III: Inside the SOTA Methods</a></li><li><a href="2026-08-02-bayesian-optimization-concept-map.html">The Concept Map</a></li><li><a href="2026-08-02-bayesian-optimization-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-02-bayesian-optimization-papers.html">The Papers &amp; Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-02-bayesian-optimization-math-acq-improvement-and-its-expectation.html">&larr; Improvement, and its expectation</a><a href="2026-08-02-bayesian-optimization.html">&#8962; Fifty Evaluations to Find the Best: Bayesian Optimization</a><a class="tn-next" href="2026-08-02-bayesian-optimization-math-acq-numerics-and-batches-logei-and-qei.html">Numerics and batches: LogEI and qEI &rarr;</a></div><p class="part-eyebrow">Part 4 &middot; The Maths II: Acquisition Functions</p><h1>The acquisition zoo</h1>
 <p><strong>Probability of improvement</strong> (Kushner, 1964) keeps only the probability and
 discards the magnitude: PI<sub>n</sub>(x) = &Phi;(z). Its pathology is instructive: a point
@@ -352,7 +369,7 @@ few settings (in particular &Delta; = 0):</p>
   disagree most exactly where decisions are hardest: promising-but-uncertain territory.</div>
 </div>
 
-<div class="pn"><a class="pn-prev" href="2026-08-02-bayesian-optimization-math-acq-improvement-and-its-expectation.html">&larr; Improvement, and its expectation</a><a class="pn-next" href="2026-08-02-bayesian-optimization-math-acq-numerics-and-batches-logei-and-qei.html">Numerics and batches: LogEI and qEI &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-03 09:16:24 UTC</footer></main></div>
+<div class="pn"><a class="pn-prev" href="2026-08-02-bayesian-optimization-math-acq-improvement-and-its-expectation.html">&larr; Improvement, and its expectation</a><a class="pn-next" href="2026-08-02-bayesian-optimization-math-acq-numerics-and-batches-logei-and-qei.html">Numerics and batches: LogEI and qEI &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-04 08:17:15 UTC</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-02-bayesian-optimization-background.html", "intuition": "2026-08-02-bayesian-optimization-intuition.html", "math-gp": "2026-08-02-bayesian-optimization-math-gp.html", "math-acq": "2026-08-02-bayesian-optimization-math-acq.html", "math-sota": "2026-08-02-bayesian-optimization-math-sota.html", "concept-map": "2026-08-02-bayesian-optimization-concept-map.html", "keep-learning": "2026-08-02-bayesian-optimization-keep-learning.html", "papers": "2026-08-02-bayesian-optimization-papers.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>
