@@ -1,100 +1,37 @@
-#!/usr/bin/env python3
-"""Render interactive explainer HTML from a JSON content spec.
-
-Usage:
-    python render.py <spec.json> [-o OUTDIR]
-
-Single-page mode (default): writes <OUTDIR>/<date>-<slug>.html.
-
-Multipage mode ("multipage": true): splits EVERY section at its <h3>
-subtopics and writes one page per subtopic:
-  <date>-<slug>.html                       topic overview (parts list)
-  <date>-<slug>-<section-id>.html          part landing (intro + subtopic list)
-  <date>-<slug>-<section-id>-<sub>.html    one page per h3 subtopic
-  <date>-<slug>-<section-id>-quiz.html     the part's quiz page
-Every page gets: a masthead (site home + nav + theme toggle), a top nav row
-(previous page / topic overview / next page), a sticky sidebar listing all
-parts with the current part's subtopic pages nested under it, and prev/next
-links at the bottom. Reading order is linear across all pages. Cross-section
-anchors (href="#<section-id>") are rewritten to part-landing links, and every
-page defines window.__PAGES__ = {sectionId: href} for widget JS.
-
-Theme: academic style modeled on adaptive-bayesian.ai — Merriweather serif,
-deep-blue headings over a thin rule, green sub-headings, navy links, gray
-masthead. Light theme is pure #ffffff background with #000000 text. A
-masthead toggle switches light/dark, persists in localStorage, and fires a
-'themechange' event so canvas widgets repaint; with no explicit choice the
-system preference applies.
-
-JSON spec schema
-----------------
-{
-  "title":    "Page title",                  (required)
-  "subtitle": "One-line subtitle",           (optional)
-  "slug":     "kebab-case-name",             (required; used in the filename)
-  "date":     "YYYY-MM-DD",                  (optional; defaults to today —
-                                              PIN THIS on rebuilds)
-  "repo":     "project name / branch note",  (optional; shown under subtitle)
-  "multipage": true,                         (optional; see above)
-  "intro":    "<p>overview html...</p>",     (optional; overview body)
-  "site_title": "Learning with LLMs",        (optional; masthead brand ->
-                                              index.html)
-  "nav": [["All topics", "index.html"]],     (optional; masthead links)
-  "sections": [
-    { "id": "background", "title": "Background",
-      "html": "<p>...</p>", "quiz": [...] }
-  ],
-  "quiz": [ ... ],                           (single-page mode only)
-  "scripts": [ "raw JS ..." ],               (end of <body>, every page)
-  "head_scripts": [ "raw JS ..." ],          (inlined in <head>)
-  "head_script_srcs": [ "plotly.min.js" ],   (<script src> in <head>)
-  "generator": { "skill": "learning-new-topic",
-                 "skill_url": "https://.../SKILL.md",
-                 "model": "Claude Fable 5" }
-}                                            (footer attribution; the render
-                                              timestamp is added automatically
-                                              as YYYY-MM-DD HH:MM:SS UTC)
-
-HTML vocabulary in section bodies: <pre>, .diagram/.flow/.box(ok|fail|dim|
-accent)/.arr/.caption, .callout(.warn), .math/.m/.frac(.num/.den), <table>,
-.tag, .widget/.wctl/.wbtn/.wstat/.wchips, .deriv/.dstep faded derivations,
-.grid2/.cheat-card. Quizzes shuffle options, reveal every option's
-explanation on answer, persist results to localStorage, and offer a
-"copy results for Claude" button.
-"""
-
-from __future__ import annotations
-
-import argparse
-import datetime as _dt
-import html as _html
-import json
-import re
-import sys
-from pathlib import Path
-
-FONTS = """<link rel="preconnect" href="https://fonts.googleapis.com">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Language Modelling Cheat Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">"""
-
-LIGHT_VARS = """  --bg: #ffffff; --fg: #000000; --muted: #555e66; --line: #e1e5ea;
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>:root {
+  --bg: #ffffff; --fg: #000000; --muted: #555e66; --line: #e1e5ea;
   --accent: #b509ac; --link: #b509ac; --accent-soft: #f9e9f8;
   --ok: #168551; --ok-soft: #e9f5ee; --fail: #b03434; --fail-soft: #faeceb;
   --warn-soft: #fdf6e3; --warn-line: #c9a227;
-  --code-bg: #f6f8fa; --box-bg: #f8f9fb; --mast: #f5f5f5;"""
-
-DARK_VARS = """  --bg: #000000; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --code-bg: #f6f8fa; --box-bg: #f8f9fb; --mast: #f5f5f5;
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
   --accent: #2698ba; --link: #2698ba; --accent-soft: #0d2e38;
   --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
   --warn-soft: #33290f; --warn-line: #a8842e;
-  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;"""
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --bg: #000000; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --accent: #2698ba; --link: #2698ba; --accent-soft: #0d2e38;
+  --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
+  --warn-soft: #33290f; --warn-line: #a8842e;
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
+  }
+}
 
-CSS = (
-    ":root {\n" + LIGHT_VARS + "\n}\n"
-    ':root[data-theme="dark"] {\n' + DARK_VARS + "\n}\n"
-    "@media (prefers-color-scheme: dark) {\n"
-    '  :root:not([data-theme="light"]) {\n' + DARK_VARS + "\n  }\n}\n"
-) + """
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--bg); color: var(--fg);
@@ -360,13 +297,130 @@ th { background: var(--box-bg); font-weight: 700; }
 .startbtn:hover { filter: brightness(1.1); }
 footer.pagefoot { color: var(--muted); font-size: .8rem;
   border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 3rem; }
-"""
-
-THEME_HEAD_JS = """(function(){var t;try{t=localStorage.getItem('theme');}catch(e){}
+</style>
+<script>(function(){var t;try{t=localStorage.getItem('theme');}catch(e){}
 if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
-document.documentElement.setAttribute('data-theme',t);})();"""
+document.documentElement.setAttribute('data-theme',t);})();</script>
 
-QUIZ_JS = """
+
+</head>
+<body>
+<div class="masthead"><div class="mast-inner">
+<a class="mast-brand" href="https://raghuramshankar.github.io/"><strong>Raghuram</strong> Shankar</a>
+<button id="theme-toggle" class="theme-toggle"
+ type="button" title="Toggle light/dark theme"><svg class="tt-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 0C114.6 0 0 114.6 0 256S114.6 512 256 512c68.8 0 131.3-27.2 177.3-71.4 7.3-7 9.4-17.9 5.3-27.1s-13.7-14.9-23.8-14.1c-4.9 .4-9.8 .6-14.8 .6-101.6 0-184-82.4-184-184 0-72.1 41.5-134.6 102.1-164.8 9.1-4.5 14.3-14.3 13.1-24.4S322.6 8.5 312.7 6.3C294.4 2.2 275.4 0 256 0z"/></svg><svg class="tt-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M288-32c8.4 0 16.3 4.4 20.6 11.7L364.1 72.3 468.9 46c8.2-2 16.9 .4 22.8 6.3S500 67 498 75.1l-26.3 104.7 92.7 55.5c7.2 4.3 11.7 12.2 11.7 20.6s-4.4 16.3-11.7 20.6L471.7 332.1 498 436.8c2 8.2-.4 16.9-6.3 22.8S477 468 468.9 466l-104.7-26.3-55.5 92.7c-4.3 7.2-12.2 11.7-20.6 11.7s-16.3-4.4-20.6-11.7L211.9 439.7 107.2 466c-8.2 2-16.8-.4-22.8-6.3S76 445 78 436.8l26.2-104.7-92.6-55.5C4.4 272.2 0 264.4 0 256s4.4-16.3 11.7-20.6L104.3 179.9 78 75.1c-2-8.2 .3-16.8 6.3-22.8S99 44 107.2 46l104.7 26.2 55.5-92.6 1.8-2.6c4.5-5.7 11.4-9.1 18.8-9.1zm0 144a144 144 0 1 0 0 288 144 144 0 1 0 0-288zm0 240a96 96 0 1 1 0-192 96 96 0 1 1 0 192z"/></svg></button>
+</div></div>
+<div class="topicbar"><div class="topicbar-inner"><span class="topic-title"><a href="2026-08-04-language-modelling.html">Language Modelling</a></span><nav class="topicbar-nav"><a href="2026-08-04-language-modelling.html">explainer</a><a href="2026-08-04-language-modelling-review.html">review deck</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/language-modelling">tutorials</a></nav></div></div>
+<div class="wrap"><header class="pagehead"><h1>Language Modelling Cheat Sheet</h1><p class="subtitle">Every formula from the language modelling explainer, with its punchline</p><div class="repo">companion to the language modelling explainer &middot; 2026-08-04</div></header><nav class="toc"><div class="toc-title">Contents</div><ol><li><a href="#sheet">The One-Pager</a></li></ol></nav><section id="sheet"><h2>The One-Pager</h2>
+<div class='grid2'>
+
+<div class='cheat-card'><h4>The whole object</h4>
+<div class='math'>P(x&#8321;..x<sub>T</sub>) = &prod;<sub>t</sub> P(x<sub>t</sub> | x<sub>&lt;t</sub>)</div>
+<p>An identity, not an approximation. Learn one conditional, apply it T times.
+Labels are free: the target at t is the token at t+1.</p></div>
+
+<div class='cheat-card'><h4>Objective and its units</h4>
+<div class='math'>L = &minus;<span class='frac'><span class='num'>1</span><span class='den'>T</span></span>&sum;<sub>t</sub> log p<sub>t</sub>[x<sub>t</sub>]
+&nbsp;&nbsp;&nbsp; PPL = e<sup>L</sup></div>
+<p>Uniform over V &rArr; PPL = V exactly. Floor is H(data), the E in the scaling law.
+<strong>Compare models in bits/byte, never per-token perplexity across tokenizers.</strong></p></div>
+
+<div class='cheat-card'><h4>BPE</h4>
+<p>Merge the most frequent adjacent pair; repeat. Vocab = 256 + merges.
+More merges &rArr; shorter sequences but a harder per-token prediction and a
+bigger embedding table. Stops when no pair repeats.</p></div>
+
+<div class='cheat-card'><h4>Attention</h4>
+<div class='math'>softmax( <span class='frac'><span class='num'>QK<sup>T</sup></span><span class='den'>&radic;d<sub>k</sub></span></span> + M ) V</div>
+<p>Mask <em>before</em> the softmax. Var(q&middot;k) = d<sub>k</sub>, so without
+the &radic;d<sub>k</sub> the softmax saturates and its Jacobian
+p<sub>i</sub>(&delta;<sub>ij</sub>&minus;p<sub>j</sub>) vanishes &mdash; no gradient.</p></div>
+
+<div class='cheat-card'><h4>RoPE</h4>
+<div class='math'>&theta;<sub>i</sub> = base<sup>&minus;2i/d</sup>;&nbsp;
+&lang;R(m)q, R(n)k&rang; = f(q,k,m&minus;n)</div>
+<p>Rotate pairs by position&times;angle. Norm-preserving, and the score sees only
+relative distance. Position 0 is the identity.</p></div>
+
+<div class='cheat-card'><h4>Block extras</h4>
+<div class='math'>RMSNorm(x) = x / &radic;(mean(x&sup2;)+&epsilon;) &middot; g</div>
+<p>No mean subtraction, no bias; pre-norm keeps a clean residual path.
+SwiGLU = (swish(xW&#8321;) &odot; xW&#8323;)W&#8322;, three matrices, so
+d<sub>ff</sub> = 8/3&middot;d holds parameters fixed.</p></div>
+
+<div class='cheat-card'><h4>Cost accounting</h4>
+<div class='math'>C &asymp; 6ND</div>
+<p>2 forward + 2 grad-wrt-input + 2 grad-wrt-weight, per parameter per token.
+Excludes attention scores (4Ld per layer), which stay a minority until
+<strong>L &gt; 6d</strong>.</p></div>
+
+<div class='cheat-card'><h4>Memory per parameter</h4>
+<div class='math'>2 + 2 + 4 + 4 + 4 = 16 bytes</div>
+<p>bf16 weights + bf16 grads + fp32 master + Adam m + Adam v. A 70B run needs
+~1.1 TB of state. ZeRO shards it: 16&Psi; &rarr; 16&Psi;/N<sub>d</sub>.</p></div>
+
+<div class='cheat-card'><h4>AdamW</h4>
+<div class='math'>&theta; &larr; &theta; &minus; &eta;<span class='frac'><span class='num'>m&#770;</span><span class='den'>&radic;v&#770;+&epsilon;</span></span> &minus; &eta;&lambda;&theta;</div>
+<p>Scale-free: first step is &eta;&middot;sign(g) for any gradient magnitude
+(until |g| approaches &epsilon;). Decay is <em>decoupled</em> &mdash; applied to
+weights, not added to the gradient.</p></div>
+
+<div class='cheat-card'><h4>Chinchilla</h4>
+<div class='math'>L = E + <span class='frac'><span class='num'>A</span><span class='den'>N<sup>&alpha;</sup></span></span> + <span class='frac'><span class='num'>B</span><span class='den'>D<sup>&beta;</sup></span></span> &nbsp; s.t. &nbsp; C = 6ND</div>
+<div class='math'>N* &prop; C<sup>&beta;/(&alpha;+&beta;)</sup>,&nbsp;
+D* &prop; C<sup>&alpha;/(&alpha;+&beta;)</sup></div>
+<p>&alpha;&asymp;&beta; &rArr; both exponents &frac12; &rArr; scale N and D together
+(&asymp;20 tokens/param). <strong>Minimizing the published Approach-3 constants does
+not reproduce the paper&rsquo;s own 70B/1.4T</strong> &mdash; the replication&rsquo;s
+re-estimate does.</p></div>
+
+<div class='cheat-card'><h4>KV cache</h4>
+<div class='math'>2 &middot; n<sub>layers</sub> &middot; n<sub>kv</sub> &middot;
+d<sub>head</sub> &middot; L &middot; 2 bytes</div>
+<p>Linear in context, and it is what decoding is bandwidth-bound on. MQA: one KV
+head. GQA: g groups. MLA: cache a low-rank latent instead.</p></div>
+
+<div class='cheat-card'><h4>FlashAttention</h4>
+<p>Exact attention; only the memory traffic changes. Tile Q/K/V into SRAM and carry
+a running max and sum (online softmax) so the T&times;T matrix never reaches HBM.
+Attention is memory-bound, not compute-bound.</p></div>
+
+<div class='cheat-card'><h4>Mixture of experts</h4>
+<div class='math'>y = &sum;<sub>i&isin;TopK</sub> g<sub>i</sub>(x)&middot;FFN<sub>i</sub>(x)</div>
+<p>Params scale with E, FLOPs with k. Failure mode is routing collapse: fix with an
+auxiliary balance loss, or a per-expert routing bias that leaves the main gradient
+alone.</p></div>
+
+<div class='cheat-card'><h4>DPO</h4>
+<div class='math'>&minus;log &sigma;( &beta; log <span class='frac'><span class='num'>&pi;(y<sub>w</sub>)</span><span class='den'>&pi;<sub>ref</sub>(y<sub>w</sub>)</span></span> &minus; &beta; log <span class='frac'><span class='num'>&pi;(y<sub>l</sub>)</span><span class='den'>&pi;<sub>ref</sub>(y<sub>l</sub>)</span></span> )</div>
+<p>The KL-regularized RLHF optimum inverts to give the reward as a policy log-ratio;
+substituting cancels the reward model. Keep &pi;<sub>ref</sub> frozen.</p></div>
+
+<div class='cheat-card'><h4>GRPO</h4>
+<div class='math'>A&#770;<sub>i</sub> = <span class='frac'><span class='num'>r<sub>i</sub> &minus; mean(r)</span><span class='den'>std(r)</span></span></div>
+<p>The group of sampled completions is its own baseline, so PPO&rsquo;s value network
+disappears. With a verifier as the reward, the reward model goes too.</p></div>
+
+<div class='cheat-card'><h4>Open questions</h4>
+<p>Does RLVR add capability or sharpen sampling? Do byte-level models retire the
+tokenizer? Is aggressive dedup always good (FineWeb says no)? Are emergent abilities
+real transitions or a scoring artifact?</p></div>
+
+</div>
+
+<p style='text-align:center;margin-top:1.4rem;font-size:.85rem'>
+<a href='https://arxiv.org/abs/1706.03762'>Attention</a> &middot;
+<a href='https://arxiv.org/abs/2203.15556'>Chinchilla</a> &middot;
+<a href='https://arxiv.org/abs/2404.10102'>replication</a> &middot;
+<a href='https://arxiv.org/abs/2205.14135'>FlashAttention</a> &middot;
+<a href='https://arxiv.org/abs/2305.18290'>DPO</a> &middot;
+<a href='https://stanford-cs336.github.io/spring2025/'>CS336</a>
+&nbsp;&mdash;&nbsp; full story: <a href='2026-08-04-language-modelling.html'>the explainer</a>
+&middot; drills: <a href='2026-08-04-language-modelling-review.html'>review deck</a></p>
+</section><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-04 08:05:05 UTC</footer></div>
+<script>window.__PAGES__ = {"sheet": "#sheet"};</script>
+<script>window.__QUIZZES__ = [];</script>
+<script>
 window.copyTextFallback = function (text) {
   function legacy() {
     var ta = document.createElement('textarea');
@@ -399,7 +453,7 @@ window.copyTextFallback = function (text) {
     const rep = Object.entries(miss).filter(([, n]) => n > 1).map(([q, n]) => '"' + q + '" (x' + n + ')');
     if (rep.length) lines.push('Repeat offenders: ' + rep.join('; '));
     lines.push('Please quiz me again on my weak areas, harder.');
-    return lines.join('\\n');
+    return lines.join('\n');
   };
   groups.forEach(function (group) {
     const host = document.getElementById(group.host);
@@ -465,7 +519,7 @@ window.copyTextFallback = function (text) {
             cp.textContent = 'copy results for Claude';
             cp.addEventListener('click', () => {
               window.copyTextFallback(buildSummary());
-              cp.textContent = 'copied \\u2713';
+              cp.textContent = 'copied \u2713';
               setTimeout(() => { cp.textContent = 'copy results for Claude'; }, 1500);
             });
             score.insertAdjacentElement('afterend', cp);
@@ -482,9 +536,8 @@ window.copyTextFallback = function (text) {
     host.appendChild(score);
   });
 })();
-"""
-
-PAGE_JS = """
+</script>
+<script>
 (function () {
   document.querySelectorAll('.dstep-toggle').forEach(b =>
     b.addEventListener('click', () => b.closest('.dstep').classList.toggle('open')));
@@ -500,7 +553,7 @@ PAGE_JS = """
       if (!el) return;
       window.copyTextFallback(el.innerText);
       const old = b.textContent;
-      b.textContent = 'copied \\u2713';
+      b.textContent = 'copied \u2713';
       setTimeout(() => { b.textContent = old; }, 1500);
     }));
   // light/dark toggle
@@ -522,309 +575,7 @@ PAGE_JS = """
     paint();
   }
 })();
-"""
+</script>
 
-
-def _slugify(text: str) -> str:
-    out = []
-    for ch in text.lower():
-        if ch.isalnum() and ch.isascii():
-            out.append(ch)
-        elif out and out[-1] != "-":
-            out.append("-")
-    return "".join(out).strip("-")
-
-
-def _check_quiz(quiz: list) -> None:
-    for q in quiz:
-        n_correct = sum(1 for o in q.get("options", []) if o.get("correct"))
-        if n_correct != 1:
-            sys.exit(f"quiz question needs exactly one correct option: {q.get('question')!r}")
-
-
-def _strip_tags(s: str) -> str:
-    return _html.unescape(re.sub(r"<[^>]+>", "", s)).strip()
-
-
-GLOBAL_NAV = []
-
-
-def _shell(spec, *, title, body, quizzes, pages_map) -> str:
-    gnav = "".join(
-        f'<a class="gnav-link" href="{_html.escape(h)}">{_html.escape(l)}</a>'
-        for l, h in spec.get("global_nav", GLOBAL_NAV))
-    topicbar = ""
-    if spec.get("topic_title"):
-        tnav = "".join(
-            f'<a href="{_html.escape(h)}">{_html.escape(l)}</a>'
-            for l, h in spec.get("nav", []))
-        topicbar = (
-            '<div class="topicbar"><div class="topicbar-inner">'
-            f'<span class="topic-title"><a href="{_html.escape(spec.get("topic_href", "#"))}">'
-            f'{_html.escape(spec["topic_title"])}</a></span>'
-            f'<nav class="topicbar-nav">{tnav}</nav>'
-            "</div></div>")
-    head_srcs = "".join(
-        f'<script src="{_html.escape(s)}"></script>' for s in spec.get("head_script_srcs", []))
-    head_inline = "".join(f"<script>{s}</script>" for s in spec.get("head_scripts", []))
-    body_scripts = "".join(f"<script>{s}</script>" for s in spec.get("scripts", []))
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light dark">
-<title>{_html.escape(title)}</title>
-{FONTS}
-<style>{CSS}</style>
-<script>{THEME_HEAD_JS}</script>
-{head_srcs}
-{head_inline}
-</head>
-<body>
-<div class="masthead"><div class="mast-inner">
-<a class="mast-brand" href="https://raghuramshankar.github.io/"><strong>Raghuram</strong> Shankar</a>
-{gnav}<button id="theme-toggle" class="theme-toggle"
- type="button" title="Toggle light/dark theme"><svg class="tt-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 0C114.6 0 0 114.6 0 256S114.6 512 256 512c68.8 0 131.3-27.2 177.3-71.4 7.3-7 9.4-17.9 5.3-27.1s-13.7-14.9-23.8-14.1c-4.9 .4-9.8 .6-14.8 .6-101.6 0-184-82.4-184-184 0-72.1 41.5-134.6 102.1-164.8 9.1-4.5 14.3-14.3 13.1-24.4S322.6 8.5 312.7 6.3C294.4 2.2 275.4 0 256 0z"/></svg><svg class="tt-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M288-32c8.4 0 16.3 4.4 20.6 11.7L364.1 72.3 468.9 46c8.2-2 16.9 .4 22.8 6.3S500 67 498 75.1l-26.3 104.7 92.7 55.5c7.2 4.3 11.7 12.2 11.7 20.6s-4.4 16.3-11.7 20.6L471.7 332.1 498 436.8c2 8.2-.4 16.9-6.3 22.8S477 468 468.9 466l-104.7-26.3-55.5 92.7c-4.3 7.2-12.2 11.7-20.6 11.7s-16.3-4.4-20.6-11.7L211.9 439.7 107.2 466c-8.2 2-16.8-.4-22.8-6.3S76 445 78 436.8l26.2-104.7-92.6-55.5C4.4 272.2 0 264.4 0 256s4.4-16.3 11.7-20.6L104.3 179.9 78 75.1c-2-8.2 .3-16.8 6.3-22.8S99 44 107.2 46l104.7 26.2 55.5-92.6 1.8-2.6c4.5-5.7 11.4-9.1 18.8-9.1zm0 144a144 144 0 1 0 0 288 144 144 0 1 0 0-288zm0 240a96 96 0 1 1 0-192 96 96 0 1 1 0 192z"/></svg></button>
-</div></div>
-{topicbar}
-{body}
-<script>window.__PAGES__ = {json.dumps(pages_map)};</script>
-<script>window.__QUIZZES__ = {json.dumps(quizzes)};</script>
-<script>{QUIZ_JS}</script>
-<script>{PAGE_JS}</script>
-{body_scripts}
 </body>
 </html>
-"""
-
-
-def render(spec: dict) -> list:
-    """Return [(filename, html), ...]."""
-    for key in ("title", "slug", "sections"):
-        if key not in spec:
-            sys.exit(f"spec is missing required key: {key!r}")
-
-    date = spec.get("date") or _dt.date.today().isoformat()
-    prefix = f"{date}-{spec['slug']}"
-    sections = list(spec["sections"])
-    for s in sections:
-        s["_sid"] = s.get("id") or _slugify(s["title"])
-
-    subtitle = spec.get("subtitle", "")
-    repo = spec.get("repo", "")
-    head_block = (
-        '<header class="pagehead">'
-        f'<h1>{_html.escape(spec["title"])}</h1>'
-        + (f'<p class="subtitle">{_html.escape(subtitle)}</p>' if subtitle else "")
-        + (f'<div class="repo">{_html.escape(repo)} &middot; {date}</div>'
-           if repo else f'<div class="repo">{date}</div>')
-        + "</header>"
-    )
-    gen = spec.get("generator") or {}
-    ts = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    if gen:
-        foot = ('<footer class="pagefoot">Generated by the '
-                f'<a href="{_html.escape(gen.get("skill_url", "#"))}">'
-                f'{_html.escape(gen.get("skill", "learning-new-topic"))}</a> skill'
-                + (f' using {_html.escape(gen["model"])}' if gen.get("model") else "")
-                + f' on {ts}</footer>')
-    else:
-        foot = f'<footer class="pagefoot">Generated on {ts}</footer>'
-
-    if not spec.get("multipage"):
-        pages_map = {s["_sid"]: f"#{s['_sid']}" for s in sections}
-        quizzes, toc_items, body_parts = [], [], []
-        for s in sections:
-            toc_items.append((s["_sid"], s["title"]))
-            quiz_html = ""
-            if s.get("quiz"):
-                _check_quiz(s["quiz"])
-                hid = f"qh-{s['_sid']}"
-                quizzes.append({"host": hid, "questions": s["quiz"]})
-                quiz_html = (
-                    f"<h3 class='quiz-heading'>Quiz: {_html.escape(s['title'])}</h3>"
-                    "<p class='quiz-note'>Option order is shuffled on every load; "
-                    "answers lock after one click.</p>"
-                    f"<div id='{hid}'></div>")
-            body_parts.append(
-                f'<section id="{_html.escape(s["_sid"])}">'
-                f'<h2>{_html.escape(s["title"])}</h2>{s["html"]}{quiz_html}</section>')
-        if spec.get("quiz"):
-            _check_quiz(spec["quiz"])
-            quizzes.append({"host": "qh-quiz", "questions": spec["quiz"]})
-            toc_items.append(("quiz", "Quiz"))
-            body_parts.append(
-                '<section id="quiz"><h2>Quiz</h2>'
-                "<p class='quiz-note'>Option order is shuffled on every load; "
-                "answers lock after one click.</p>"
-                '<div id="qh-quiz"></div></section>')
-        toc = "".join(
-            f'<li><a href="#{_html.escape(sid)}">{_html.escape(t)}</a></li>'
-            for sid, t in toc_items)
-        body = (f'<div class="wrap">{head_block}'
-                f'<nav class="toc"><div class="toc-title">Contents</div><ol>{toc}</ol></nav>'
-                f'{"".join(body_parts)}{foot}</div>')
-        return [(f"{prefix}.html",
-                 _shell(spec, title=spec["title"], body=body, quizzes=quizzes,
-                        pages_map=pages_map))]
-
-    # ---- multipage: one page per h3 subtopic -----------------------------
-    if spec.get("quiz"):
-        sys.exit("multipage mode: attach quizzes to sections, not a global quiz")
-
-    overview_file = f"{prefix}.html"
-    landing = {s["_sid"]: f"{prefix}-{s['_sid']}.html" for s in sections}
-    pages_map = dict(landing)
-
-    def rewrite_anchors(html_str: str) -> str:
-        for osid, fname in landing.items():
-            html_str = (html_str
-                        .replace(f"href='#{osid}'", f"href='{fname}'")
-                        .replace(f'href="#{osid}"', f'href="{fname}"'))
-        return html_str
-
-    # split each section into intro + h3 subtopics
-    parts = []
-    for s in sections:
-        chunks = re.split(r"(?=<h3>)", rewrite_anchors(s["html"]))
-        subs = []
-        for c in chunks[1:]:
-            m = re.match(r"<h3>(.*?)</h3>", c, re.S)
-            label = _strip_tags(m.group(1))
-            subs.append({
-                "slug": _slugify(label) or f"sub-{len(subs) + 1}",
-                "title": label,
-                "html": c[m.end():],
-            })
-        parts.append({"sec": s, "intro": chunks[0], "subs": subs})
-
-    # linear sequence of pages: overview, then per part: landing, subs, quiz
-    seq = [{"file": overview_file, "title": "Overview", "kind": "overview"}]
-    for i, part in enumerate(parts):
-        sid = part["sec"]["_sid"]
-        seq.append({"file": landing[sid], "title": part["sec"]["title"],
-                    "kind": "landing", "pi": i})
-        for j, sub in enumerate(part["subs"]):
-            seq.append({"file": f"{prefix}-{sid}-{sub['slug']}.html",
-                        "title": sub["title"], "kind": "sub", "pi": i, "si": j})
-        if part["sec"].get("quiz"):
-            seq.append({"file": f"{prefix}-{sid}-quiz.html",
-                        "title": f"Quiz: {part['sec']['title']}",
-                        "kind": "quiz", "pi": i})
-
-    def sidebar(cur_file, cur_pi):
-        items = [f'<div class="side-topic"><a href="{overview_file}">'
-                 f'{_html.escape(spec["title"])}</a></div><ol>']
-        for j, part in enumerate(parts):
-            sid = part["sec"]["_sid"]
-            cur = (j == cur_pi)
-            cls = ' class="cur"' if cur and cur_file == landing[sid] else (
-                ' class="cur"' if cur else '')
-            items.append(f'<li{cls}><a href="{landing[sid]}">'
-                         f'{_html.escape(part["sec"]["title"])}</a>')
-            if cur:
-                sub_pages = [p for p in seq if p.get("pi") == j and p["kind"] in ("sub", "quiz")]
-                if sub_pages:
-                    items.append("<ul>")
-                    for p in sub_pages:
-                        licls = ' class="cur"' if p["file"] == cur_file else ""
-                        label = "Quiz" if p["kind"] == "quiz" else p["title"]
-                        items.append(f'<li{licls}><a href="{p["file"]}">'
-                                     f'{_html.escape(label)}</a></li>')
-                    items.append("</ul>")
-            items.append("</li>")
-        items.append("</ol>")
-        items.append('<div class="side-foot"><a href="index.html">&larr; all topics</a></div>')
-        return f'<aside class="sidebar"><nav>{"".join(items)}</nav></aside>'
-
-    def navrows(k):
-        prev_a = next_a = ""
-        tn = ['<div class="topnav">']
-        if k > 0:
-            p = seq[k - 1]
-            prev_a = f'<a class="pn-prev" href="{p["file"]}">&larr; {_html.escape(p["title"])}</a>'
-            tn.append(f'<a href="{p["file"]}">&larr; {_html.escape(p["title"])}</a>')
-        tn.append(f'<a href="{overview_file}">&#8962; {_html.escape(spec["title"])}</a>')
-        if k < len(seq) - 1:
-            nx = seq[k + 1]
-            next_a = f'<a class="pn-next" href="{nx["file"]}">{_html.escape(nx["title"])} &rarr;</a>'
-            tn.append(f'<a class="tn-next" href="{nx["file"]}">{_html.escape(nx["title"])} &rarr;</a>')
-        tn.append("</div>")
-        return "".join(tn), f'<div class="pn">{prev_a}{next_a}</div>'
-
-    files = []
-    n = len(parts)
-    for k, page in enumerate(seq):
-        quizzes = []
-        top, bottom = navrows(k)
-        if page["kind"] == "overview":
-            parts_list = "".join(
-                f'<li><a href="{landing[p["sec"]["_sid"]]}">'
-                f'{_html.escape(p["sec"]["title"])}</a></li>' for p in parts)
-            content = (
-                f'<main class="content">{head_block}{spec.get("intro", "")}'
-                f'<ol class="parts">{parts_list}</ol>'
-                f'<p><a class="startbtn" href="{seq[1]["file"]}">Start reading &rarr;</a></p>'
-                f'{foot}</main>')
-            body = f'<div class="layout">{sidebar(page["file"], None)}{content}</div>'
-            files.append((page["file"], _shell(spec, title=spec["title"], body=body,
-                                               quizzes=[], pages_map=pages_map)))
-            continue
-
-        part = parts[page["pi"]]
-        sec = part["sec"]
-        eyebrow = (f'Part {page["pi"] + 1} of {n}' if page["kind"] == "landing"
-                   else f'Part {page["pi"] + 1} &middot; {_html.escape(sec["title"])}')
-        if page["kind"] == "landing":
-            sub_pages = [p for p in seq if p.get("pi") == page["pi"] and p["kind"] in ("sub", "quiz")]
-            sub_list = "".join(
-                f'<li><a href="{p["file"]}">'
-                f'{_html.escape("Quiz: 5 questions" if p["kind"] == "quiz" else p["title"])}'
-                f'</a></li>' for p in sub_pages)
-            inner = part["intro"] + (f'<ol class="parts">{sub_list}</ol>' if sub_list else "")
-            h1 = sec["title"]
-        elif page["kind"] == "sub":
-            inner = part["subs"][page["si"]]["html"]
-            h1 = page["title"]
-        else:  # quiz
-            _check_quiz(sec["quiz"])
-            hid = f"qh-{sec['_sid']}"
-            quizzes.append({"host": hid, "questions": sec["quiz"]})
-            inner = ("<p class='quiz-note'>Five questions on this part. Option order is "
-                     "shuffled on every load; answers lock after one click, and every "
-                     "option's explanation is revealed.</p>"
-                     f"<div id='{hid}'></div>")
-            h1 = f'Quiz: {sec["title"]}'
-        content = (
-            f'<main class="content">{top}'
-            f'<p class="part-eyebrow">{eyebrow}</p>'
-            f'<h1>{_html.escape(h1)}</h1>'
-            f'{inner}{bottom}{foot}</main>')
-        body = f'<div class="layout">{sidebar(page["file"], page["pi"])}{content}</div>'
-        files.append((page["file"],
-                      _shell(spec, title=f'{page["title"]} — {spec["title"]}',
-                             body=body, quizzes=quizzes, pages_map=pages_map)))
-    return files
-
-
-def main() -> None:
-    ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    ap.add_argument("spec", help="path to the JSON content spec")
-    ap.add_argument("-o", "--outdir", default=None,
-                    help="output directory (default: alongside the spec)")
-    args = ap.parse_args()
-
-    spec_path = Path(args.spec)
-    spec = json.loads(spec_path.read_text())
-    outdir = Path(args.outdir) if args.outdir else spec_path.parent
-    outdir.mkdir(parents=True, exist_ok=True)
-    for fname, html in render(spec):
-        (outdir / fname).write_text(html)
-        print(outdir / fname)
-
-
-if __name__ == "__main__":
-    main()

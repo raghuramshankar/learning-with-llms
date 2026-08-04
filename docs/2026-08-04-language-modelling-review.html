@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Review Deck: Language Modelling</title>
+<script>(function(){var t;try{t=localStorage.getItem('theme');}catch(e){}
+if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+document.documentElement.setAttribute('data-theme',t);})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#ffffff; --fg:#000000; --muted:#555e66; --line:#e1e5ea;
+  --accent:#b509ac; --accent-soft:#f9e9f8; --ok:#168551; --ok-soft:#e9f5ee;
+  --fail:#b03434; --fail-soft:#faeceb; --box-bg:#f8f9fb; --mast:#f5f5f5; }
+:root[data-theme="dark"] { --bg:#000000; --fg:#e5e8ee;
+  --muted:#9aa3b0; --line:#2a313b; --accent:#2698ba; --accent-soft:#0d2e38;
+  --ok:#57b98a; --ok-soft:#16301f; --fail:#e08585; --fail-soft:#3a2020;
+  --box-bg:#181c23; --mast:#1a1e25; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#000000; --fg:#e5e8ee;
+  --muted:#9aa3b0; --line:#2a313b; --accent:#2698ba; --accent-soft:#0d2e38;
+  --ok:#57b98a; --ok-soft:#16301f; --fail:#e08585; --fail-soft:#3a2020;
+  --box-bg:#181c23; --mast:#1a1e25; } }
+.masthead { position:fixed; top:0; left:0; right:0; z-index:100;
+  background:var(--bg); border-bottom:1px solid var(--line); }
+.mast-inner { max-width:1160px; margin:0 auto; padding:.8rem 1.4rem;
+  display:flex; align-items:baseline; gap:1.35rem; flex-wrap:wrap;
+  justify-content:flex-end; line-height:1.5; }
+.mast-brand { margin-right:auto; color:var(--fg); text-decoration:none;
+  font-size:1.25rem; font-weight:300; }
+.mast-brand strong { font-weight:700; }
+.mast-brand:hover { color:var(--accent); }
+.gnav-link { color:var(--accent); text-decoration:none; font-size:1rem; }
+.gnav-link:hover { text-decoration:underline; }
+.theme-toggle { border:none; background:none; color:var(--accent);
+  cursor:pointer; font-size:1rem; padding:0; font-family:inherit; }
+.theme-toggle:hover { text-decoration:underline; }
+.theme-toggle svg { width:1em; height:1em; vertical-align:-.125em; }
+.theme-toggle .tt-sun { display:none; }
+html[data-theme="light"] .theme-toggle .tt-moon { display:none; }
+html[data-theme="light"] .theme-toggle .tt-sun { display:inline-block; }
+
+body { padding-top:58px; }
+.topicbar { background:var(--mast); border-bottom:1px solid var(--line); }
+.topicbar-inner { max-width:1160px; margin:0 auto; padding:.5rem 1.4rem;
+  display:flex; align-items:baseline; gap:1.1rem; flex-wrap:wrap; }
+.topic-title a { color:var(--fg); font-weight:700; font-size:.95rem;
+  text-decoration:none; }
+.topic-title a:hover { color:var(--accent); }
+.topicbar-nav { margin-left:auto; display:flex; gap:1.1rem; flex-wrap:wrap; }
+.topicbar-nav a { color:var(--muted); text-decoration:none; font-size:.85rem; }
+.topicbar-nav a:hover { color:var(--accent); text-decoration:underline; }
+@media (max-width:920px) { .masthead { position:static; } body { padding-top:0; } }
+footer.pagefoot { color:var(--muted); font-size:.8rem; border-top:1px solid var(--line);
+  padding-top:1rem; margin-top:3rem; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg);
+  font:16px/1.7 Merriweather, Georgia, serif; }
+.wrap { max-width:1160px; margin:0 auto; padding:2.2rem 1.3rem 4rem; }
+h1 { font-size:1.5rem; margin:0 0 .3rem; color:var(--accent); }
+.sub { color:var(--muted); margin:0 0 1.4rem; font-size:.95rem; }
+.stats { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.2rem; }
+.stat { background:var(--box-bg); border:1px solid var(--line); border-radius:10px;
+  padding:.6rem 1rem; font-size:.9rem; }
+.stat b { display:block; font-size:1.3rem; }
+button.btn { font:inherit; font-size:.92rem; padding:.45rem 1rem; border-radius:8px;
+  border:1px solid var(--accent); background:var(--accent-soft); color:var(--accent);
+  cursor:pointer; font-weight:600; margin:.2rem .3rem .2rem 0; }
+button.btn.subtle { border-color:var(--line); background:var(--box-bg); color:var(--muted); }
+.card { border:1px solid var(--line); border-radius:12px; background:var(--box-bg);
+  padding:1.2rem 1.4rem; margin:1rem 0; }
+.qsec { color:var(--muted); font-size:.8rem; text-transform:uppercase;
+  letter-spacing:.06em; margin-bottom:.5rem; }
+.qtext { font-weight:600; margin-bottom:.9rem; }
+.opt { display:block; width:100%; text-align:left; margin:.4rem 0; padding:.6rem .9rem;
+  border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg);
+  font:inherit; font-size:.95rem; cursor:pointer; }
+.opt:hover:not(:disabled) { border-color:var(--accent); }
+.opt:disabled { cursor:default; opacity:.8; }
+.opt.right { border-color:var(--ok); background:var(--ok-soft); opacity:1; }
+.opt.wrong { border-color:var(--fail); background:var(--fail-soft); opacity:1; }
+.expl { font-size:.85rem; line-height:1.5; margin:-.1rem 0 .55rem; padding:.35rem .9rem;
+  border-left:3px solid var(--line); color:var(--muted); }
+.expl.right { border-left-color:var(--ok); color:var(--fg); background:var(--ok-soft);
+  border-radius:0 8px 8px 0; }
+.expl.wrong { border-left-color:var(--fail); }
+.meta { color:var(--muted); font-size:.82rem; margin-top:.8rem;
+  font-family:ui-monospace, Menlo, monospace; }
+.done { text-align:center; padding:2rem 0; }
+.hidden { display:none; }
+a { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="masthead"><div class="mast-inner">
+<a class="mast-brand" href="https://raghuramshankar.github.io/"><strong>Raghuram</strong> Shankar</a>
+<button id="theme-toggle" class="theme-toggle" type="button" title="Toggle light/dark theme"><svg class="tt-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 0C114.6 0 0 114.6 0 256S114.6 512 256 512c68.8 0 131.3-27.2 177.3-71.4 7.3-7 9.4-17.9 5.3-27.1s-13.7-14.9-23.8-14.1c-4.9 .4-9.8 .6-14.8 .6-101.6 0-184-82.4-184-184 0-72.1 41.5-134.6 102.1-164.8 9.1-4.5 14.3-14.3 13.1-24.4S322.6 8.5 312.7 6.3C294.4 2.2 275.4 0 256 0z"/></svg><svg class="tt-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M288-32c8.4 0 16.3 4.4 20.6 11.7L364.1 72.3 468.9 46c8.2-2 16.9 .4 22.8 6.3S500 67 498 75.1l-26.3 104.7 92.7 55.5c7.2 4.3 11.7 12.2 11.7 20.6s-4.4 16.3-11.7 20.6L471.7 332.1 498 436.8c2 8.2-.4 16.9-6.3 22.8S477 468 468.9 466l-104.7-26.3-55.5 92.7c-4.3 7.2-12.2 11.7-20.6 11.7s-16.3-4.4-20.6-11.7L211.9 439.7 107.2 466c-8.2 2-16.8-.4-22.8-6.3S76 445 78 436.8l26.2-104.7-92.6-55.5C4.4 272.2 0 264.4 0 256s4.4-16.3 11.7-20.6L104.3 179.9 78 75.1c-2-8.2 .3-16.8 6.3-22.8S99 44 107.2 46l104.7 26.2 55.5-92.6 1.8-2.6c4.5-5.7 11.4-9.1 18.8-9.1zm0 144a144 144 0 1 0 0 288 144 144 0 1 0 0-288zm0 240a96 96 0 1 1 0-192 96 96 0 1 1 0 192z"/></svg></button>
+</div></div>
+<div class="topicbar"><div class="topicbar-inner">
+<span class="topic-title"><a href="2026-08-04-language-modelling.html">Language Modelling</a></span>
+<nav class="topicbar-nav"><a href="2026-08-04-language-modelling.html">explainer</a>
+<a href="2026-08-04-lm-cheatsheet.html">cheat sheet</a>
+<a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/language-modelling">tutorials</a></nav>
+</div></div>
+<div class="wrap">
+<h1>Review deck: Language modelling</h1>
+<p class="sub">Spaced repetition over the explainer's 30 questions (Leitner boxes:
+1 → 3 → 7 → 14 → 30 days). Progress is stored in this browser. Companion to
+<a href="2026-08-04-language-modelling.html">the full explainer</a>.</p>
+
+<div id="home">
+  <div class="stats">
+    <div class="stat"><b id="st-due">–</b>due now</div>
+    <div class="stat"><b id="st-new">–</b>new</div>
+    <div class="stat"><b id="st-learned">–</b>in long boxes</div>
+    <div class="stat"><b id="st-total">–</b>total</div>
+  </div>
+  <button class="btn" id="start">start review</button>
+  <button class="btn subtle" id="reset">reset progress</button>
+</div>
+
+<div id="play" class="hidden"><div class="card" id="card"></div></div>
+
+<div id="doneBox" class="hidden done">
+  <h2>Session complete</h2>
+  <p id="doneStats"></p>
+  <button class="btn" id="copyRes">copy results for Claude</button>
+  <button class="btn subtle" id="again">back to deck</button>
+</div>
+<footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-04 08:05:05 UTC</footer>
+</div>
+<script>window.__BANK__ = [{"id": "background-0", "section": "Background", "question": "Why does the chain-rule factorization make language modelling tractable at all?", "options": [{"text": "It replaces one astronomically large table with a single reusable conditional.", "correct": true, "explanation": "The joint over sequences has combinatorially many entries; the factorization means you only ever learn P(next | prefix) and apply it T times. It is an exact identity, so nothing is lost."}, {"text": "It approximates the joint distribution well when tokens are nearly independent.", "explanation": "No approximation is involved and no independence is assumed \u2014 the chain rule is an identity that holds for any joint distribution."}, {"text": "It lets the model condition on the future as well as the past.", "explanation": "That describes a bidirectional (masked) model like BERT. The autoregressive factorization deliberately conditions only on the prefix."}, {"text": "It removes the need for a normalized probability distribution.", "explanation": "Each factor is still a normalized distribution over the vocabulary \u2014 the softmax exists precisely to guarantee that."}]}, {"id": "background-1", "section": "Background", "question": "What makes next-token prediction 'self-supervised' rather than supervised?", "options": [{"text": "The label at each position is the next token, already present in the text.", "correct": true, "explanation": "No annotator is involved: the supervision signal is extracted from the data's own ordering, which is why raw web text works as training data."}, {"text": "The model generates its own labels from an auxiliary reward model.", "explanation": "That is RLHF, a post-training stage covered in Part 6 \u2014 it needs human preference data and comes long after pretraining."}, {"text": "Gradients are estimated without backpropagation.", "explanation": "Backpropagation is used throughout; 'self-supervised' refers to where labels come from, not how gradients are computed."}, {"text": "The loss requires no normalization over the vocabulary.", "explanation": "Cross entropy is computed against a normalized softmax over the whole vocabulary \u2014 that normalization is the expensive part."}]}, {"id": "background-2", "section": "Background", "question": "Which of these is NOT one of the three scaling walls the page identifies?", "options": [{"text": "Gradient descent cannot optimize a non-convex objective.", "correct": true, "explanation": "Non-convexity is real but is not a barrier in practice \u2014 SGD variants find useful minima routinely. The three walls named are tokenization, sequential architectures, and budget allocation."}, {"text": "Text arrives as bytes that must be grouped into units.", "explanation": "This is the first wall: the grouping choice sets sequence length and per-token difficulty. Part 3 derives it."}, {"text": "Recurrent processing cannot saturate a modern accelerator.", "explanation": "This is the second wall, and the reason attention replaced recurrence in 2017."}, {"text": "A fixed compute budget must be split between parameters and tokens.", "explanation": "This is the third wall, and exactly what the Chinchilla analysis in Part 5 answers."}]}, {"id": "background-3", "section": "Background", "question": "A model assigns probability 0.5 to the actual next token at every position of a 10-token sequence. What probability does it assign to the whole sequence?", "options": [{"text": "0.5^10 \u2248 0.00098", "correct": true, "explanation": "By the chain rule the joint is the product of the per-token conditionals: 0.5 multiplied ten times. Sequence probabilities shrink geometrically, which is exactly why the field works in log space."}, {"text": "0.5, since the per-token probability is constant.", "explanation": "That would be true only for a single token \u2014 the joint multiplies across all ten positions."}, {"text": "10 \u00d7 0.5 = 5", "explanation": "Probabilities multiply rather than add under the chain rule, and a probability can never exceed 1."}, {"text": "It cannot be determined without the vocabulary size.", "explanation": "The joint depends only on the assigned conditionals, which are given. Vocabulary size would matter for a uniform baseline, not here."}]}, {"id": "background-4", "section": "Background", "question": "Why did the free availability of the training objective shift the field's bottleneck?", "options": [{"text": "It moved the constraint onto compute and data curation instead of annotation.", "correct": true, "explanation": "With labels free, the limits became how much text you can gather and clean and how many FLOPs you can spend \u2014 which is why Parts 5 and 7 exist at all."}, {"text": "It made supervised fine-tuning unnecessary.", "explanation": "Instruction tuning and preference optimization remain essential to make a raw predictor usable; Part 6 covers them."}, {"text": "It eliminated the need for held-out evaluation.", "explanation": "Evaluation became harder, not easier \u2014 contamination and benchmark saturation are active problems."}, {"text": "It removed overfitting as a concern at any scale.", "explanation": "Overfitting is milder at web scale but data repetition still degrades models, which is the subject of data-constrained scaling work."}]}, {"id": "intuition-0", "section": "Intuition", "question": "What is the essential difference between top-k and top-p (nucleus) sampling?", "options": [{"text": "top-k keeps a fixed count; top-p keeps a count that varies with model confidence.", "correct": true, "explanation": "top-p keeps the smallest set covering probability mass p, so a confident step keeps one or two candidates and an uncertain step keeps many. top-k is blind to the shape of the distribution."}, {"text": "top-k renormalizes the distribution; top-p does not.", "explanation": "Both renormalize after truncation \u2014 otherwise the surviving probabilities would not sum to one."}, {"text": "top-p applies before the temperature; top-k applies after.", "explanation": "Temperature is applied first in both cases; it changes the distribution that the truncation then acts on."}, {"text": "top-k is stochastic; top-p is deterministic.", "explanation": "Both are stochastic \u2014 they restrict the candidate set and then sample from it."}]}, {"id": "intuition-1", "section": "Intuition", "question": "Which limitation of recurrence does attention NOT fix?", "options": [{"text": "Memory cost grows with the square of the sequence length.", "correct": true, "explanation": "This is a cost attention *introduces*, not one it fixes: every query-key pair is compared. Recurrence has O(1) memory per step. Everything else listed is a genuine recurrence problem attention removes."}, {"text": "Distant information must survive many sequential overwrites.", "explanation": "Attention fixes exactly this \u2014 position t reads position 1 directly, in one hop, with no intervening state updates."}, {"text": "Positions cannot be computed in parallel during training.", "explanation": "Attention fixes this: all positions are computed in one pass, which is what lets it saturate an accelerator."}, {"text": "The path length between two positions grows with their distance.", "explanation": "Attention makes every path length 1, which is the property that motivated it."}]}, {"id": "intuition-2", "section": "Intuition", "question": "The loss follows a smooth power law in scale. Why does that matter practically?", "options": [{"text": "It lets you predict a large run's loss from a ladder of small ones.", "correct": true, "explanation": "Smoothness is what makes extrapolation legitimate: you fit on cheap runs and forecast the expensive one, which is the entire methodology behind budget allocation."}, {"text": "It proves the model has learned the true data distribution.", "explanation": "The loss is bounded below by the data's own entropy, and a power law approaching that floor says nothing about having reached it."}, {"text": "It guarantees that specific capabilities improve smoothly too.", "explanation": "This is precisely what is contested \u2014 aggregate loss is smooth while individual benchmark scores can look discontinuous."}, {"text": "It means larger models need fewer training tokens.", "explanation": "The opposite: compute-optimal training scales tokens up along with parameters, as Part 5 derives."}]}, {"id": "intuition-3", "section": "Intuition", "question": "Attention is described as trading memory for parallelism. What exactly is traded?", "options": [{"text": "A sequential dependency is removed at the cost of an all-pairs comparison.", "correct": true, "explanation": "Recurrence is O(T) sequential steps with small state; attention is one parallel step with a T\u00d7T score matrix. That matrix is the price, and FlashAttention in Part 5 is about never writing it to slow memory."}, {"text": "Parameters are traded for activations at fixed total memory.", "explanation": "Attention's parameter count is independent of sequence length; the trade is about the dependency structure of the computation, not parameter placement."}, {"text": "Precision is reduced to allow larger batches.", "explanation": "That describes mixed-precision training, an unrelated systems technique."}, {"text": "Depth is traded for width at constant FLOPs.", "explanation": "Depth/width balance is an architecture hyperparameter question, not what attention changes relative to recurrence."}]}, {"id": "intuition-4", "section": "Intuition", "question": "According to the honesty box, which statement is best supported?", "options": [{"text": "We can describe what attention computes but not derive why it suits language.", "correct": true, "explanation": "The mechanism is fully specified and the empirical result is overwhelming; the inductive-bias justification is post hoc. That gap is stated plainly rather than papered over."}, {"text": "Scaling-law constants are derived from information theory.", "explanation": "They are fitted to observed runs, and they shift with data quality and architecture \u2014 which is why a replication can disagree."}, {"text": "Alignment training makes models truthful.", "explanation": "It optimizes a proxy for human approval; reward hacking is the well-documented failure mode."}, {"text": "Emergent abilities have been shown to be measurement artifacts.", "explanation": "That is one side of a live argument, not a settled finding \u2014 the page presents both."}]}, {"id": "math-token-0", "section": "The Maths I: Tokens and the Objective", "question": "A model is uniform over a 50,257-token vocabulary. What is its perplexity?", "options": [{"text": "50,257", "correct": true, "explanation": "Uniform gives L = log V, so PPL = exp(log V) = V exactly. This identity is the sanity check the tutorial's test suite encodes."}, {"text": "log(50,257) \u2248 10.82", "explanation": "That is the cross entropy in nats. Perplexity is its exponential."}, {"text": "1, because every token is equally likely.", "explanation": "Perplexity 1 means total certainty \u2014 a model that always assigns probability 1 to the correct token."}, {"text": "It depends on the sequence length.", "explanation": "Per-token perplexity is an average, so it is independent of how many tokens are averaged over."}]}, {"id": "math-token-1", "section": "The Maths I: Tokens and the Objective", "question": "Team A reports perplexity 12.0 with a 32k vocabulary; Team B reports 15.0 with a 128k vocabulary, same test text. What can you conclude?", "options": [{"text": "Nothing yet \u2014 per-token perplexity is not comparable across tokenizers.", "correct": true, "explanation": "A coarser tokenizer produces fewer, harder tokens, raising per-token loss without the model being worse. Convert both to bits per byte before comparing."}, {"text": "Team A's model is better by 3.0 perplexity.", "explanation": "This is exactly the invalid comparison step 4 of the derivation warns about \u2014 the denominators differ."}, {"text": "Team B's model is better because it handles a larger vocabulary.", "explanation": "Vocabulary size alone says nothing about model quality; it changes the units the loss is measured in."}, {"text": "They are equivalent, since perplexity is normalized.", "explanation": "It is normalized per token, and 'per token' means something different for each tokenizer."}]}, {"id": "math-token-2", "section": "The Maths I: Tokens and the Objective", "question": "Why must you subtract the maximum logit before exponentiating in a softmax?", "options": [{"text": "exp overflows for large logits, and softmax is invariant to a constant shift.", "correct": true, "explanation": "exp(1000) is inf in float32, giving inf/inf = NaN. Since softmax(z) = softmax(z \u2212 c) exactly, subtracting the max costs nothing and bounds the largest exponent at exp(0) = 1."}, {"text": "It makes the resulting probabilities sum to one.", "explanation": "The denominator guarantees normalization regardless of any shift \u2014 that is not what the subtraction is for."}, {"text": "It centers the gradients, which speeds up convergence.", "explanation": "The output is mathematically identical after the shift, so gradients are unchanged. The motivation is purely numerical range."}, {"text": "It prevents the loss from becoming negative.", "explanation": "Cross entropy of a normalized distribution is non-negative anyway, since probabilities are at most 1."}]}, {"id": "math-token-3", "section": "The Maths I: Tokens and the Objective", "question": "In L = H(data) + KL(data \u2016 model), which part can training reduce?", "options": [{"text": "Only the KL term; H is a property of the data.", "correct": true, "explanation": "The entropy of the text itself is a floor no model can go below \u2014 it reappears as the irreducible constant E in the Chinchilla loss form."}, {"text": "Only H, since KL is fixed by the architecture.", "explanation": "Backwards: H is fixed by the data, KL is what the parameters control."}, {"text": "Both, in proportion to model size.", "explanation": "No amount of capacity reduces the data's own entropy \u2014 that would mean predicting genuinely random continuations."}, {"text": "Neither; cross entropy is minimized by the tokenizer.", "explanation": "The tokenizer changes the units of the loss, not the model's ability to reduce divergence."}]}, {"id": "math-token-4", "section": "The Maths I: Tokens and the Objective", "question": "What does a BPE trainer do when no adjacent pair occurs more than once?", "options": [{"text": "It stops, because no merge would compress anything.", "correct": true, "explanation": "A pair appearing once yields no net saving, so training halts \u2014 which is why a small corpus cannot fill a large vocabulary. The tutorial has a test for exactly this."}, {"text": "It merges an arbitrary pair to reach the target vocabulary size.", "explanation": "That would add symbols that never appear again, wasting embedding parameters."}, {"text": "It falls back to character-level splitting.", "explanation": "The base vocabulary is already bytes; there is nothing finer to fall back to."}, {"text": "It restarts with a different merge ordering.", "explanation": "Standard BPE is greedy and deterministic \u2014 it has no backtracking."}]}, {"id": "math-arch-0", "section": "The Maths II: Inside the Transformer", "question": "Two random query/key vectors have iid unit-variance components. What is the standard deviation of their dot product before scaling?", "options": [{"text": "\u221ad_k", "correct": true, "explanation": "Variance of a sum of d_k independent unit-variance products is d_k, so the standard deviation is \u221ad_k. This is step 2 of the derivation and the entire reason for the scaling factor."}, {"text": "d_k", "explanation": "That is the variance, not the standard deviation \u2014 you need its square root."}, {"text": "1, since each component has unit variance.", "explanation": "Each *term* has unit variance, but d_k of them are summed, and variances add."}, {"text": "1/\u221ad_k", "explanation": "That is the correction factor applied to fix the problem, not the size of the problem."}]}, {"id": "math-arch-1", "section": "The Maths II: Inside the Transformer", "question": "Why is a saturated softmax specifically fatal during training rather than merely inaccurate?", "options": [{"text": "Its Jacobian p_i(\u03b4_ij \u2212 p_j) vanishes, so no gradient reaches the attention weights.", "correct": true, "explanation": "At a one-hot p every entry of the Jacobian is near zero, so the attention pattern receives no learning signal at all \u2014 it is frozen wherever initialization put it."}, {"text": "It produces NaNs from exponentiating large logits.", "explanation": "That is a separate numerical issue fixed by subtracting the max; a saturated softmax can be perfectly finite and still untrainable."}, {"text": "It makes the output values exceed the range of the value vectors.", "explanation": "The output stays a convex combination of values regardless of sharpness, so it can never leave their range."}, {"text": "It breaks the causal mask.", "explanation": "Masking is applied to the logits before the softmax and is unaffected by how sharp the resulting distribution is."}]}, {"id": "math-arch-2", "section": "The Maths II: Inside the Transformer", "question": "A model has d_model = 8192 and d_ff = 4d with two FFN matrices. Above roughly what context length does attention exceed all other FLOPs in a block?", "options": [{"text": "About 49,000 tokens", "correct": true, "explanation": "The crossover is at L = 6d = 6 \u00d7 8192 = 49,152. Below that the feed-forward network dominates, which is why attention is often not the bottleneck people assume it is."}, {"text": "About 8,000 tokens", "explanation": "That is d itself; the crossover is six times larger because the non-attention terms total 24d\u00b2 against attention's 4Ld."}, {"text": "About 2,000 tokens", "explanation": "Far too low \u2014 at 2k context attention is a small minority of the compute for a model this wide."}, {"text": "About 500,000 tokens", "explanation": "An order of magnitude too high; that would require d \u2248 83,000."}]}, {"id": "math-arch-3", "section": "The Maths II: Inside the Transformer", "question": "What property makes RoPE encode relative position despite rotating by absolute position?", "options": [{"text": "Composing a rotation by m\u03b8 with the inverse of n\u03b8 leaves a rotation by (m\u2212n)\u03b8.", "correct": true, "explanation": "The inner product \u27e8R(m)q, R(n)k\u27e9 therefore depends only on m\u2212n. Absolute rotations go in; relative distance comes out of the dot product."}, {"text": "The rotation angles are learned during training.", "explanation": "RoPE's angles are fixed by the formula base^(\u22122i/d); nothing about it is learned."}, {"text": "Position embeddings are added to the values as well as queries and keys.", "explanation": "RoPE touches only queries and keys \u2014 values are left alone, which is part of why it composes cleanly with a KV cache."}, {"text": "It normalizes each vector to unit length first.", "explanation": "Rotations preserve norms rather than imposing them; no normalization step is involved."}]}, {"id": "math-arch-4", "section": "The Maths II: Inside the Transformer", "question": "Why is the SwiGLU hidden dimension conventionally 8/3\u00b7d rather than 4d?", "options": [{"text": "It uses three matrices instead of two, so 2/3 the width keeps parameters equal.", "correct": true, "explanation": "4d \u00d7 (2/3) = 8/3\u00b7d. The odd constant in modern configs is pure bookkeeping to make the gated variant a fair swap for the classic FFN."}, {"text": "8/3 is the ratio that minimizes the attention/FFN FLOP crossover.", "explanation": "The crossover follows from the ratio rather than motivating it, and nobody chose the width to tune that."}, {"text": "It matches the head dimension of 128 used in most models.", "explanation": "Head dimension is independent of the FFN width; the two are set separately."}, {"text": "Gated activations require a hidden size divisible by 3.", "explanation": "There is no divisibility requirement \u2014 the value comes from a parameter-count equivalence."}]}, {"id": "math-train-0", "section": "The Maths III: Training at Scale", "question": "You train a 7B-parameter model on 2T tokens. Roughly what compute does this take?", "options": [{"text": "\u22488.4 \u00d7 10\u00b2\u00b2 FLOPs", "correct": true, "explanation": "C \u2248 6ND = 6 \u00d7 7e9 \u00d7 2e12 = 8.4e22. This one multiplication is the most useful arithmetic in the field \u2014 it converts any model card into a compute figure."}, {"text": "\u22481.4 \u00d7 10\u00b2\u00b2 FLOPs", "explanation": "That is 1\u00b7N\u00b7D, forgetting the factor of 6 from forward plus the two backward products."}, {"text": "\u22482.8 \u00d7 10\u00b2\u00b2 FLOPs", "explanation": "That uses a factor of 2 \u2014 the forward pass alone. Backward costs twice as much again."}, {"text": "\u22485.0 \u00d7 10\u00b2\u2075 FLOPs", "explanation": "Three orders of magnitude too large; this would be a frontier-scale run rather than a 7B model."}]}, {"id": "math-train-1", "section": "The Maths III: Training at Scale", "question": "Why is the factor 6 rather than 2 in C \u2248 6ND?", "options": [{"text": "Backward computes gradients for both inputs and weights, costing twice the forward pass.", "correct": true, "explanation": "Forward is 2N per token; the two backward matrix products add 2N each, giving 6N total. This is step 3 of the derivation."}, {"text": "Three tokens are processed per parameter update on average.", "explanation": "Token count is D and is already a separate factor; the 6 has nothing to do with batching."}, {"text": "Mixed precision requires three copies of every weight.", "explanation": "That is a memory cost (the 16 bytes/parameter figure), not a FLOP cost."}, {"text": "Attention triples the cost of every matrix multiply.", "explanation": "Attention's cost is a separate additive term with no parameters, and 6ND explicitly excludes it."}]}, {"id": "math-train-2", "section": "The Maths III: Training at Scale", "question": "What does AdamW change relative to Adam with L2 regularization?", "options": [{"text": "Decay is applied to the weights directly instead of passing through the adaptive normalizer.", "correct": true, "explanation": "Under Adam, L2 added to the gradient gets divided by \u221av\u0302, so heavily-updated parameters are barely regularized. Decoupling makes the decay uniform, which is why AdamW became standard."}, {"text": "It removes the second-moment estimate entirely.", "explanation": "v is still maintained and still normalizes the step \u2014 that is what makes Adam scale-free."}, {"text": "It applies weight decay only during warmup.", "explanation": "Decay runs throughout training; the schedule is a separate concern."}, {"text": "It replaces the exponential moving averages with plain sums.", "explanation": "Both moments remain exponential moving averages with the usual \u03b2\u2081, \u03b2\u2082 decay rates."}]}, {"id": "math-train-3", "section": "The Maths III: Training at Scale", "question": "A 13B model trains with mixed-precision AdamW. Roughly how much memory does the persistent state need, before activations?", "options": [{"text": "\u2248208 GB", "correct": true, "explanation": "16 bytes per parameter \u00d7 13e9 = 2.08e11 bytes \u2248 208 GB \u2014 already more than two 80 GB accelerators for state alone, which is why sharding exists."}, {"text": "\u224826 GB", "explanation": "That counts only the 2-byte bf16 weights and ignores gradients, the fp32 master copy, and both optimizer moments."}, {"text": "\u224852 GB", "explanation": "That is weights plus gradients only (4 bytes/param); the 12 bytes of fp32 optimizer state dominate."}, {"text": "\u224813 GB", "explanation": "This would be one byte per parameter \u2014 below even pure int8 weights, and it ignores all training state."}]}, {"id": "math-train-4", "section": "The Maths III: Training at Scale", "question": "FlashAttention is faster than a naive implementation. What does it change?", "options": [{"text": "The volume of HBM traffic; the computed result is identical.", "correct": true, "explanation": "It is exact attention, tiled so the T\u00d7T matrix never reaches HBM, with online softmax keeping running max and sum. The speedup is entirely a memory-hierarchy effect."}, {"text": "It approximates the softmax with a low-rank factorization.", "explanation": "That describes approximate-attention methods like Performer; FlashAttention deliberately gives up nothing."}, {"text": "It reduces the asymptotic FLOP count below quadratic.", "explanation": "The FLOP count is unchanged and still quadratic in sequence length."}, {"text": "It sparsifies the attention matrix to skip masked entries.", "explanation": "Causal masking does save work in good implementations, but that is not the mechanism the paper introduces."}]}, {"id": "math-sota-0", "section": "The Maths IV: Inside the SOTA Methods", "question": "A MoE model has 671B total parameters and activates 37B per token. What does this buy?", "options": [{"text": "Capacity scaling with total parameters at a FLOP cost set by the activated subset.", "correct": true, "explanation": "Memory and knowledge scale with the full 671B; per-token compute tracks the 37B. The costs paid are memory footprint and routing complexity, not FLOPs."}, {"text": "An 18\u00d7 reduction in the memory needed to serve the model.", "explanation": "The opposite \u2014 all 671B parameters must be resident, which is precisely the deployment difficulty of MoE."}, {"text": "An 18\u00d7 longer usable context window.", "explanation": "Context length is governed by attention and the KV cache; routing has no bearing on it."}, {"text": "Elimination of the need for load balancing across experts.", "explanation": "Routing collapse is the central MoE failure mode and needs an explicit fix, whether an auxiliary loss or a bias-adjustment scheme."}]}, {"id": "math-sota-1", "section": "The Maths IV: Inside the SOTA Methods", "question": "In the DPO derivation, what exactly cancels?", "options": [{"text": "The reward model, once the reward is rewritten as a log-ratio of policy to reference.", "correct": true, "explanation": "The KL-regularized optimum \u03c0* \u221d \u03c0_ref\u00b7exp(r/\u03b2) inverts to give r in terms of \u03c0 and \u03c0_ref; substituting into the Bradley-Terry preference likelihood leaves a loss containing only the two policies."}, {"text": "The reference policy, leaving a loss on the trained policy alone.", "explanation": "The reference is essential and must stay frozen \u2014 it defines the implicit reward's zero point."}, {"text": "The KL penalty, which is why DPO needs no \u03b2.", "explanation": "\u03b2 survives as the temperature multiplying the log-ratios and is DPO's main hyperparameter."}, {"text": "The preference labels, replaced by a verifiable reward.", "explanation": "DPO trains directly on preference pairs; verifiable rewards belong to the RLVR/GRPO line instead."}]}, {"id": "math-sota-2", "section": "The Maths IV: Inside the SOTA Methods", "question": "What does GRPO remove relative to PPO, and what replaces it?", "options": [{"text": "The value network; a group of sampled completions supplies the baseline.", "correct": true, "explanation": "Advantages are computed by normalizing rewards within the group, eliminating a second model of comparable size \u2014 the memory saving the paper emphasizes."}, {"text": "The policy gradient; a supervised loss replaces it.", "explanation": "That is DPO's approach. GRPO remains a policy-gradient method with sampling."}, {"text": "The KL penalty; group normalization makes it unnecessary.", "explanation": "GRPO implementations typically retain a KL term against the reference policy."}, {"text": "The reward model; group voting determines correctness.", "explanation": "The reward can be a model or a verifier \u2014 that choice is orthogonal to GRPO's advantage estimator."}]}, {"id": "math-sota-3", "section": "The Maths IV: Inside the SOTA Methods", "question": "A 70B-class model with 80 layers, 64 heads, head dim 128, bf16. Roughly how large is the MHA KV cache for 100k tokens, one sequence?", "options": [{"text": "\u2248262 GB", "correct": true, "explanation": "2 \u00d7 80 \u00d7 64 \u00d7 128 \u00d7 2 bytes = 2.62 MB per token; \u00d7 100,000 \u2248 262 GB \u2014 several times one accelerator, and far more than the model's own weights. This is the entire motivation for GQA and MLA."}, {"text": "\u22482.6 GB", "explanation": "That is the cache for about 1,000 tokens; the per-token figure is 2.62 MB, so 100k tokens is a hundred times larger."}, {"text": "\u224833 GB", "explanation": "That is the GQA-with-8-groups figure \u2014 an eighth of the multi-head cost, since 8 KV groups replace 64 KV heads."}, {"text": "\u2248140 GB", "explanation": "That is roughly the bf16 weights of a 70B model. At this context the cache is larger than the weights, which is the point of the widget."}]}, {"id": "math-sota-4", "section": "The Maths IV: Inside the SOTA Methods", "question": "What is the actual disagreement in the RLVR capability debate?", "options": [{"text": "Whether reliably surfacing an answer the base model could rarely sample counts as new capability.", "correct": true, "explanation": "Both sides accept the pass@k measurements. The dispute is definitional and practical \u2014 sharpening a distribution versus extending its support."}, {"text": "Whether RLVR improves benchmark scores at all.", "explanation": "Score improvements are not disputed by either side."}, {"text": "Whether verifiable rewards can be computed for mathematics.", "explanation": "Verification for maths and code is the least controversial part of the setup."}, {"text": "Whether GRPO is more memory-efficient than PPO.", "explanation": "That is a settled implementation fact, unrelated to the capability question."}]}, {"id": "papers-0", "section": "The Papers & Sources", "question": "Which pairing of paper to contribution is correct?", "options": [{"text": "Hoffmann et al. (2022) \u2014 parameters and tokens should scale together for a fixed budget.", "correct": true, "explanation": "That is Chinchilla. Kaplan et al. (2020) established the power laws but favoured spending on parameters; Besiroglu et al. (2024) is the replication; Ouyang et al. (2022) is InstructGPT."}, {"text": "Hoffmann et al. (2022) \u2014 the first demonstration that loss follows a power law in scale.", "explanation": "That is Kaplan et al. (2020), two years earlier."}, {"text": "Hoffmann et al. (2022) \u2014 introduced rotary position embeddings.", "explanation": "RoPE is the RoFormer paper, Su et al. (2021)."}, {"text": "Hoffmann et al. (2022) \u2014 showed RLHF makes small models preferred over much larger ones.", "explanation": "That is the InstructGPT result, Ouyang et al. (2022)."}]}, {"id": "papers-1", "section": "The Papers & Sources", "question": "What did the Chinchilla replication attempt actually find?", "options": [{"text": "The published Approach-3 constants are inconsistent with the paper's own other approaches.", "correct": true, "explanation": "Re-estimating gives exponents that are near-equal and that reproduce both the 20:1 rule and the 70B/1.4T model \u2014 which minimizing the published constants does not."}, {"text": "Chinchilla's core recommendation was wrong and models should be larger.", "explanation": "The replication supports the headline recommendation; it disputes one set of fitted constants."}, {"text": "The 6ND compute approximation was shown to be invalid.", "explanation": "6ND is unrelated to the fitting dispute and is not challenged."}, {"text": "Scaling laws do not extrapolate beyond the fitted range.", "explanation": "Extrapolation limits are a separate and more general concern, not this paper's finding."}]}, {"id": "papers-2", "section": "The Papers & Sources", "question": "Why does this page fetch arXiv abstract pages instead of trusting remembered identifiers?", "options": [{"text": "A plausible-looking identifier can be confidently wrong, so citations are rendered only from checked records.", "correct": true, "explanation": "The build reads survey/verified.json and explicitly marks anything unconfirmed rather than emitting a guess \u2014 the failure mode being designed against is a citation that looks right and is not."}, {"text": "arXiv identifiers change over time and must be refreshed.", "explanation": "Identifiers are permanent; only version suffixes are appended."}, {"text": "The abstract page is the only place the author list appears.", "explanation": "The API returns authors too \u2014 it was simply rate-limited during this build."}, {"text": "Papers are frequently withdrawn and the check detects this.", "explanation": "Withdrawal is rare and is not what the verification step is for."}]}, {"id": "papers-3", "section": "The Papers & Sources", "question": "Which of these is a genuinely open question rather than a settled result?", "options": [{"text": "Whether RL with verifiable rewards adds capability or sharpens existing sampling.", "correct": true, "explanation": "Both camps accept the pass@k measurements and disagree on interpretation; the page presents both rather than picking."}, {"text": "Whether backward costs about twice the forward pass.", "explanation": "This follows from counting the two backward matrix products \u2014 it is arithmetic, not opinion."}, {"text": "Whether FlashAttention changes the numerical result of attention.", "explanation": "It is exact by construction; only memory traffic changes."}, {"text": "Whether decoupled weight decay differs from L2 under Adam.", "explanation": "The two are mathematically different updates, which is the whole point of AdamW."}]}, {"id": "papers-4", "section": "The Papers & Sources", "question": "Deduplication is described as mandatory, yet the page flags a complication. What is it?", "options": [{"text": "FineWeb found that more aggressive global dedup can reduce model quality.", "correct": true, "explanation": "Removing too much can strip well-written repeated content and skew the surviving distribution, so dedup strength is a tuned parameter rather than a monotone good."}, {"text": "Deduplication is computationally impossible above a trillion tokens.", "explanation": "MinHash/LSH pipelines run at that scale routinely."}, {"text": "It conflicts with the 6ND compute estimate.", "explanation": "Data curation and FLOP accounting are unrelated concerns."}, {"text": "It only helps for code, not natural language.", "explanation": "The original result was demonstrated on natural-language corpora."}]}];</script>
+<script>
+const BANK = window.__BANK__;
+const KEY = 'sr:language-modelling';
+const DAY = 86400000;
+const INT = [0, 1, 3, 7, 14, 30];                    // days per box
+const $ = id => document.getElementById(id);
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
+const save = s => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} };
+function copyText(t) {
+  const go = () => { const ta = document.createElement('textarea'); ta.value = t;
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {} ta.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(t).catch(go); else go();
+}
+let state = load(), queue = [], idx = 0, session = { seen: 0, firstTryRight: 0, wrong: [] };
+
+function dueList() {
+  const now = Date.now();
+  return BANK.filter(q => { const e = state[q.id]; return !e || e.due <= now; });
+}
+function refreshStats() {
+  const now = Date.now();
+  let neu = 0, due = 0, learned = 0;
+  BANK.forEach(q => {
+    const e = state[q.id];
+    if (!e) neu++;
+    else if (e.due <= now) due++;
+    if (e && e.box >= 4) learned++;
+  });
+  $('st-due').textContent = due; $('st-new').textContent = neu;
+  $('st-learned').textContent = learned; $('st-total').textContent = BANK.length;
+  $('start').disabled = (due + neu) === 0;
+  $('start').textContent = (due + neu) ? ('start review (' + (due + neu) + ' cards)') : 'nothing due — come back later';
+}
+function startSession() {
+  queue = dueList(); idx = 0;
+  session = { seen: 0, firstTryRight: 0, wrong: [] };
+  if (!queue.length) return;
+  $('home').classList.add('hidden'); $('play').classList.remove('hidden');
+  showCard();
+}
+function schedule(q, correct, firstTry) {
+  const e = state[q.id] || { box: 0, reps: 0, lapses: 0 };
+  if (correct) {
+    e.box = firstTry ? Math.min(e.box + 1, 5) : 1;
+    e.due = Date.now() + INT[e.box] * DAY;
+  } else {
+    e.lapses++; e.box = 0; e.due = Date.now();      // retried within session
+  }
+  e.reps++; state[q.id] = e; save(state);
+}
+function showCard() {
+  if (idx >= queue.length) return endSession();
+  const q = queue[idx];
+  const host = $('card'); host.innerHTML = '';
+  const sec = document.createElement('div'); sec.className = 'qsec';
+  sec.textContent = q.section + ' · card ' + (idx + 1) + '/' + queue.length;
+  const qt = document.createElement('div'); qt.className = 'qtext'; qt.innerHTML = q.question;
+  host.appendChild(sec); host.appendChild(qt);
+  const opts = q.options.map((o, i) => ({ o, i }));
+  for (let i = opts.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)); [opts[i], opts[j]] = [opts[j], opts[i]];
+  }
+  const btns = [];
+  opts.forEach(({ o }) => {
+    const b = document.createElement('button'); b.className = 'opt'; b.innerHTML = o.text;
+    b.__o = o;
+    b.addEventListener('click', () => {
+      btns.forEach(x => {
+        x.disabled = true;
+        if (x.__o.correct) x.classList.add('right');
+        const ex = document.createElement('div');
+        ex.className = 'expl ' + (x.__o.correct ? 'right' : 'wrong');
+        ex.innerHTML = (x.__o.correct ? '<strong>✓</strong> ' : '<strong>✗</strong> ') + (x.__o.explanation || '');
+        x.insertAdjacentElement('afterend', ex);
+      });
+      const firstTry = !q.__retried;
+      if (!o.correct) b.classList.add('wrong');
+      if (firstTry) { session.seen++; if (o.correct) session.firstTryRight++; else session.wrong.push(q.question.replace(/<[^>]*>/g, '')); }
+      schedule(q, !!o.correct, firstTry);
+      const nxt = document.createElement('button'); nxt.className = 'btn'; nxt.style.marginTop = '.8rem';
+      if (o.correct) {
+        const e = state[q.id];
+        nxt.textContent = 'next — back in ' + (INT[e.box] || '<1') + ' day(s)';
+        nxt.addEventListener('click', () => { idx++; showCard(); });
+      } else {
+        nxt.textContent = 'got it — retry this card later in the session';
+        nxt.addEventListener('click', () => { q.__retried = true; queue.push(q); idx++; showCard(); });
+      }
+      host.appendChild(nxt);
+    });
+    btns.push(b); host.appendChild(b);
+  });
+}
+function endSession() {
+  $('play').classList.add('hidden'); $('doneBox').classList.remove('hidden');
+  $('doneStats').textContent = session.firstTryRight + '/' + session.seen + ' correct on first try';
+  refreshStats();
+}
+function summary() {
+  const lines = ['Spaced-review session — Language modelling — ' + new Date().toISOString().slice(0, 10)];
+  lines.push('First-try score: ' + session.firstTryRight + '/' + session.seen);
+  if (session.wrong.length) lines.push('Missed: ' + session.wrong.map(w => '"' + w + '"').join('; '));
+  const weak = BANK.filter(q => (state[q.id] || {}).lapses > 1).map(q => '"' + q.question.replace(/<[^>]*>/g, '') + '"');
+  if (weak.length) lines.push('Chronic weak spots (2+ lapses): ' + weak.join('; '));
+  lines.push('Please re-teach my weak areas from first principles, then quiz me harder on them.');
+  return lines.join('\n');
+}
+$('start').addEventListener('click', startSession);
+$('copyRes').addEventListener('click', function () {
+  copyText(summary()); this.textContent = 'copied ✓';
+  setTimeout(() => { this.textContent = 'copy results for Claude'; }, 1500);
+});
+$('again').addEventListener('click', () => {
+  $('doneBox').classList.add('hidden'); $('home').classList.remove('hidden'); refreshStats();
+});
+$('reset').addEventListener('click', () => {
+  if (confirm('Erase all review progress?')) { state = {}; save(state); refreshStats(); }
+});
+refreshStats();
+
+(function(){
+  var btn=document.getElementById('theme-toggle'); if(!btn) return;
+  function mode(){var a=document.documentElement.getAttribute('data-theme');
+    if(a) return a;
+    return (window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}
+  function paint(){document.documentElement.setAttribute('data-theme', mode());}
+  btn.addEventListener('click',function(){
+    var next=mode()==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    try{localStorage.setItem('theme',next);}catch(e){}
+    paint(); window.dispatchEvent(new Event('themechange'));});
+  paint();
+})();
+</script>
+</body>
+</html>

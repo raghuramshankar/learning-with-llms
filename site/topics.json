@@ -1,5 +1,21 @@
 [
   {
+    "slug": "language-modelling",
+    "title": "Language Modelling",
+    "blurb": "How a language model is actually built, from raw bytes to a system that follows instructions \u2014 BPE and the cross-entropy objective, attention derived from scratch, the 6ND rule and Chinchilla allocation (including the published fit that does not reproduce its own paper's recommendation), MoE, GQA/MLA, DPO and GRPO. Follows the arc of Stanford CS336; every paper checked against arXiv.",
+    "date": "2026-08-04",
+    "tags": [
+      "transformers",
+      "scaling laws",
+      "CS336"
+    ],
+    "explainer": "2026-08-04-language-modelling.html",
+    "review": "2026-08-04-language-modelling-review.html",
+    "cheatsheet": "2026-08-04-lm-cheatsheet.html",
+    "anki": "language-modelling.apkg",
+    "lab": "https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/language-modelling"
+  },
+  {
     "slug": "bayesian-optimization",
     "title": "Bayesian Optimization",
     "blurb": "How to find the best settings of an expensive black-box function in a few dozen tries \u2014 Gaussian process surrogates and acquisition functions derived by hand, a live GP playground, and the 2024\u201326 fights over high dimensions and LLMs. Every paper arXiv-verified.",

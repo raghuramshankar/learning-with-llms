@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Splitting the budget: Chinchilla — A Language Model, From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>:root {
+  --bg: #ffffff; --fg: #000000; --muted: #555e66; --line: #e1e5ea;
+  --accent: #b509ac; --link: #b509ac; --accent-soft: #f9e9f8;
+  --ok: #168551; --ok-soft: #e9f5ee; --fail: #b03434; --fail-soft: #faeceb;
+  --warn-soft: #fdf6e3; --warn-line: #c9a227;
+  --code-bg: #f6f8fa; --box-bg: #f8f9fb; --mast: #f5f5f5;
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --accent: #2698ba; --link: #2698ba; --accent-soft: #0d2e38;
+  --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
+  --warn-soft: #33290f; --warn-line: #a8842e;
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --bg: #000000; --fg: #e5e8ee; --muted: #9aa3b0; --line: #2a313b;
+  --accent: #2698ba; --link: #2698ba; --accent-soft: #0d2e38;
+  --ok: #57b98a; --ok-soft: #16301f; --fail: #e08585; --fail-soft: #3a2020;
+  --warn-soft: #33290f; --warn-line: #a8842e;
+  --code-bg: #1b2027; --box-bg: #181c23; --mast: #1a1e25;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.75 Merriweather, Georgia, 'Palatino Linotype', serif;
+  -webkit-font-smoothing: antialiased;
+}
+/* global band: replica of the personal site's header */
+.masthead { position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: var(--bg); border-bottom: 1px solid var(--line); }
+.mast-inner { max-width: 1160px; margin: 0 auto; padding: .8rem 1.4rem;
+  display: flex; align-items: baseline; gap: 1.35rem; flex-wrap: wrap;
+  justify-content: flex-end; line-height: 1.5; }
+.mast-brand { margin-right: auto; color: var(--fg); text-decoration: none;
+  font-size: 1.25rem; font-weight: 300; }
+.mast-brand strong { font-weight: 700; }
+.mast-brand:hover { color: var(--accent); }
+.gnav-link { color: var(--accent); text-decoration: none; font-size: 1rem; }
+.gnav-link:hover { text-decoration: underline; }
+.theme-toggle { border: none; background: none; color: var(--accent);
+  cursor: pointer; font-size: 1rem; padding: 0; line-height: inherit;
+  font-family: inherit; }
+.theme-toggle:hover { text-decoration: underline; }
+.theme-toggle svg { width:1em; height:1em; vertical-align:-.125em; }
+.theme-toggle .tt-sun { display:none; }
+html[data-theme="light"] .theme-toggle .tt-moon { display:none; }
+html[data-theme="light"] .theme-toggle .tt-sun { display:inline-block; }
+
+body { padding-top: 58px; }
+/* topic band */
+.topicbar { background: var(--mast); border-bottom: 1px solid var(--line); }
+.topicbar-inner { max-width: 1160px; margin: 0 auto; padding: .5rem 1.4rem;
+  display: flex; align-items: baseline; gap: 1.1rem; flex-wrap: wrap; }
+.topic-title a { color: var(--fg); font-weight: 700; font-size: .95rem;
+  text-decoration: none; }
+.topic-title a:hover { color: var(--accent); }
+.topicbar-nav { margin-left: auto; display: flex; gap: 1.1rem;
+  flex-wrap: wrap; }
+.topicbar-nav a { color: var(--muted); text-decoration: none;
+  font-size: .85rem; }
+.topicbar-nav a:hover { color: var(--accent); text-decoration: underline; }
+@media (max-width: 920px) {
+  .masthead { position: static; }
+  body { padding-top: 0; }
+}
+/* layout */
+.wrap { max-width: 1160px; margin: 0 auto; padding: 2.2rem 1.4rem 5rem; }
+.layout { max-width: 1160px; margin: 0 auto; padding: 0 1.4rem 4rem;
+  display: grid; grid-template-columns: 235px minmax(0, 1fr); gap: 2.6rem; }
+main.content { min-width: 0; padding-top: 1.6rem; }
+/* top nav row */
+.topnav { display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: .8rem;
+  margin-bottom: 1.4rem; border-bottom: 1px solid var(--line);
+  padding-bottom: .6rem; }
+.topnav a { color: var(--muted); text-decoration: none; }
+.topnav a:hover { color: var(--link); text-decoration: underline; }
+.topnav .tn-next { margin-left: auto; }
+/* sidebar */
+aside.sidebar { position: sticky; top: 58px; align-self: start;
+  max-height: calc(100vh - 58px); overflow-y: auto; padding: 1.8rem 0 2rem;
+  font-size: .84rem; line-height: 1.55; }
+.side-topic { font-weight: 700; margin-bottom: .7rem; font-size: .9rem; }
+.side-topic a { color: var(--accent); text-decoration: none; }
+.side-topic a:hover { text-decoration: underline; }
+aside.sidebar ol { list-style: none; margin: 0; padding: 0;
+  border-left: 2px solid var(--line); }
+aside.sidebar ol > li { padding: .22rem 0 .22rem .8rem; margin-left: -2px;
+  border-left: 2px solid transparent; }
+aside.sidebar ol > li.cur { border-left-color: var(--accent); }
+aside.sidebar ol > li > a { color: var(--muted); text-decoration: none; }
+aside.sidebar ol > li.cur > a { color: var(--accent); font-weight: 700; }
+aside.sidebar ol > li > a:hover { color: var(--link); }
+aside.sidebar ul { list-style: none; margin: .3rem 0 .1rem; padding: 0 0 0 .9rem; }
+aside.sidebar ul li { padding: .12rem 0; }
+aside.sidebar ul a { color: var(--muted); text-decoration: none; font-size: .8rem; }
+aside.sidebar ul li.cur a { color: var(--accent); font-weight: 700; }
+aside.sidebar ul a:hover { color: var(--link); }
+.side-foot { margin-top: 1rem; }
+.side-foot a { color: var(--muted); text-decoration: none; font-size: .8rem; }
+.side-foot a:hover { color: var(--link); }
+@media (max-width: 920px) {
+  .layout { grid-template-columns: 1fr; gap: 0; }
+  aside.sidebar { position: static; max-height: none; margin-top: 1.4rem;
+    padding: .9rem 1.1rem; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--box-bg); }
+}
+/* headings */
+header.pagehead { padding-bottom: 1rem; margin-bottom: 1.2rem; }
+.part-eyebrow { color: var(--accent); font-weight: 700; font-size: .82rem;
+  margin: 0 0 .35rem; letter-spacing: .02em; }
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 .5rem; font-weight: 700; }
+.subtitle { color: var(--muted); font-size: 1.02rem; margin: 0; }
+.repo { color: var(--muted); font-size: .8rem; margin-top: .55rem; }
+h2 { font-size: 1.12rem; color: var(--accent); font-weight: 700;
+  border-bottom: 1px solid var(--accent); padding-bottom: .3rem;
+  margin: 2.4rem 0 1rem; }
+h3 { font-size: 1rem; color: var(--accent); font-weight: 700; margin: 1.9rem 0 .5rem; }
+h4 { font-size: .95rem; margin: 1.5rem 0 .4rem; color: var(--fg); }
+p, ul, ol { margin: 0 0 1rem; }
+li { margin-bottom: .35rem; }
+a { color: var(--link); }
+nav.toc { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1rem 1.3rem; margin-bottom: 2.2rem; }
+nav.toc .toc-title { font-weight: 700; font-size: .78rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: .4rem; }
+nav.toc ol { margin: 0; padding-left: 1.2rem; }
+nav.toc a { color: var(--link); text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
+section { margin-bottom: 3rem; }
+code { background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 4px; padding: .08em .35em; font-size: .84em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+pre { background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: .9rem 1.1rem; overflow-x: auto;
+  white-space: pre-wrap; font-size: .82rem; line-height: 1.5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+pre code { background: none; border: none; padding: 0; font-size: inherit; }
+table { border-collapse: collapse; margin: 1rem 0; width: 100%;
+  font-size: .88rem; display: block; overflow-x: auto; }
+th, td { border: 1px solid var(--line); padding: .45rem .7rem;
+  text-align: left; vertical-align: top; }
+th { background: var(--box-bg); font-weight: 700; }
+.callout { background: var(--accent-soft); border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0; padding: .8rem 1.1rem; margin: 1.2rem 0; }
+.callout.warn { background: var(--warn-soft); border-left-color: var(--warn-line); }
+.callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+.diagram { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1.3rem 1.1rem; margin: 1.4rem 0;
+  overflow-x: auto; }
+.flow { display: flex; align-items: center; justify-content: center;
+  gap: .55rem; flex-wrap: wrap; margin: .4rem 0; }
+.flow.vertical { flex-direction: column; }
+.flow.left { justify-content: flex-start; }
+.box { background: var(--bg); border: 1.5px solid var(--fg); border-radius: 8px;
+  padding: .45rem .85rem; font-size: .85rem; text-align: center;
+  line-height: 1.4; }
+.box small { display: block; color: var(--muted); font-size: .76rem; }
+.box.ok { border-color: var(--ok); background: var(--ok-soft); }
+.box.fail { border-color: var(--fail); background: var(--fail-soft); }
+.box.dim { border-color: var(--line); color: var(--muted); }
+.box.accent { border-color: var(--accent); background: var(--accent-soft); }
+.arr { color: var(--muted); font-size: 1.05rem; flex-shrink: 0; }
+.caption { text-align: center; color: var(--muted); font-size: .82rem;
+  margin-top: .8rem; }
+.tag { display: inline-block; background: var(--accent-soft);
+  color: var(--accent); border-radius: 999px; padding: .05em .6em;
+  font-size: .76em; font-weight: 700; }
+.math { font-family: Georgia, 'Times New Roman', serif; text-align: center;
+  margin: 1.2rem 0; padding: .2rem 0; overflow-x: auto; font-size: 1.02rem;
+  line-height: 2.1; }
+.m { font-family: Georgia, 'Times New Roman', serif; white-space: nowrap; }
+.frac { display: inline-block; vertical-align: middle; text-align: center;
+  margin: 0 .15em; line-height: 1.25; }
+.frac .num, .frac .den { display: block; padding: 0 .3em; }
+.frac .den { border-top: 1px solid currentColor; }
+.widget { background: var(--box-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1.1rem; margin: 1.4rem 0; }
+.widget canvas { display: block; margin: .6rem auto; max-width: 100%;
+  border-radius: 8px; }
+.wctl { display: flex; align-items: center; justify-content: center;
+  gap: .7rem; flex-wrap: wrap; margin: .5rem 0; }
+.wctl label { font-size: .84rem; color: var(--muted); }
+.wctl input[type=range] { width: min(240px, 55vw); accent-color: var(--accent); }
+.wbtn { font: inherit; font-size: .82rem; padding: .35rem .9rem;
+  border-radius: 8px; border: 1px solid var(--accent);
+  background: var(--accent-soft); color: var(--accent); cursor: pointer;
+  font-weight: 700; }
+.wbtn:hover { filter: brightness(1.05); }
+.wbtn.active { background: var(--accent); color: var(--bg); }
+.wstat { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .82rem; color: var(--muted); text-align: center; margin-top: .5rem; }
+.wchips { display: flex; flex-wrap: wrap; gap: .3rem; justify-content: center;
+  margin-top: .5rem; max-height: 130px; overflow-y: auto; }
+.wchip { font-size: .76rem; border: 1px solid var(--line); border-radius: 999px;
+  padding: .05em .55em; }
+.wchip.good { border-color: var(--ok); background: var(--ok-soft); }
+.wchip.bad { border-color: var(--fail); background: var(--fail-soft); }
+/* Labeled horizontal bars for distribution widgets: .bar-fill is the
+   theoretical mass, .bar-emp overlays the empirical (sampled) frequency so a
+   Monte-Carlo tally can be watched converging onto the true distribution. */
+.bar-row { display: grid; grid-template-columns: 5.5rem 1fr 3.2rem;
+  align-items: center; gap: .5rem; margin: .18rem 0; font-size: .8rem; }
+.bar-lab { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.bar-track { position: relative; height: 1rem; background: var(--box-bg);
+  border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.bar-fill { position: absolute; inset: 0 auto 0 0; background: var(--accent-soft);
+  border-right: 2px solid var(--accent); }
+.bar-emp { position: absolute; left: 0; top: 50%; height: 3px;
+  transform: translateY(-50%); background: var(--fg); opacity: .75; }
+.bar-val { text-align: right; color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.deriv { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); padding: 1rem 1.2rem; margin: 1.4rem 0; }
+.deriv-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+  margin-bottom: .5rem; }
+.deriv-title { font-weight: 700; margin-right: auto; color: var(--accent); }
+.dstep { border-top: 1px solid var(--line); padding: .55rem 0; }
+.dstep-label { display: flex; align-items: baseline; gap: .6rem; }
+.dstep-goal { flex: 1; font-size: .92rem; }
+.dstep-toggle { flex-shrink: 0; font-size: .74rem; padding: .2rem .6rem; }
+.dstep-body { display: none; margin-top: .55rem; }
+.dstep.open .dstep-body { display: block; }
+.dstep.open .dstep-toggle { opacity: .55; }
+.cmap-edge { stroke: var(--muted); stroke-width: 1.2; opacity: .4; fill: none; }
+.cmap-edge.hl { stroke: var(--accent); opacity: 1; stroke-width: 2.4; }
+.cmap-node { cursor: pointer; }
+.cmap-node rect { fill: var(--bg); stroke: var(--line); stroke-width: 1.4; }
+.cmap-node text { fill: var(--fg); font-size: 13px;
+  font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; }
+.cmap-node.hub rect { stroke: var(--accent); stroke-width: 2; }
+.cmap-node.hl rect { stroke: var(--accent); stroke-width: 2.2; }
+.cmap-node.dim, .cmap-edge.dim { opacity: .15; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem; margin: 1.2rem 0; }
+.cheat-card { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); padding: .8rem 1rem; }
+.cheat-card h4 { margin: 0 0 .4rem; color: var(--accent); }
+.cheat-card .math { margin: .6rem 0; font-size: .95rem; }
+.cheat-card p { font-size: .86rem; margin-bottom: .4rem; }
+.quiz-heading { color: var(--accent); }
+.quiz-note { color: var(--muted); font-size: .84rem; }
+.quiz-q { border: 1px solid var(--line); border-radius: 10px;
+  padding: 1.1rem 1.3rem; margin-bottom: 1.4rem; background: var(--box-bg); }
+.quiz-q .qtext { font-weight: 700; margin-bottom: .8rem; }
+.quiz-opt { display: block; width: 100%; text-align: left; margin: .4rem 0;
+  padding: .6rem .9rem; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: var(--fg); font: inherit; font-size: .9rem;
+  cursor: pointer; transition: border-color .12s; }
+.quiz-opt:hover:not(:disabled) { border-color: var(--accent); }
+.quiz-opt:disabled { cursor: default; opacity: .75; }
+.quiz-opt.chosen-right { border-color: var(--ok); background: var(--ok-soft);
+  opacity: 1; }
+.quiz-opt.chosen-wrong { border-color: var(--fail); background: var(--fail-soft);
+  opacity: 1; }
+.quiz-opt.reveal-right { border-color: var(--ok); opacity: 1; }
+.quiz-expl { font-size: .82rem; line-height: 1.55; margin: -.15rem 0 .55rem;
+  padding: .35rem .9rem; border-left: 3px solid var(--line);
+  color: var(--muted); }
+.quiz-expl.right { border-left-color: var(--ok); color: var(--fg);
+  background: var(--ok-soft); border-radius: 0 8px 8px 0; }
+.quiz-expl.wrong { border-left-color: var(--fail); }
+.quiz-fb { margin-top: .7rem; padding: .6rem .9rem; border-radius: 8px;
+  font-size: .88rem; display: none; }
+.quiz-fb.right { display: block; background: var(--ok-soft); color: var(--fg); }
+.quiz-fb.wrong { display: block; background: var(--fail-soft); color: var(--fg); }
+.quiz-score { font-weight: 700; margin-top: 1rem; display: none; }
+.pn { display: flex; justify-content: space-between; gap: 1rem;
+  border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 1.2rem;
+  flex-wrap: wrap; }
+.pn a { text-decoration: none; font-size: .92rem; max-width: 46%; }
+.pn a:hover { text-decoration: underline; }
+.pn .pn-next { margin-left: auto; text-align: right; }
+.parts { list-style: none; padding: 0; margin: 1.4rem 0; counter-reset: part; }
+.parts li { border: 1px solid var(--line); border-radius: 10px;
+  background: var(--box-bg); margin: .6rem 0; counter-increment: part; }
+.parts li a { display: block; padding: .8rem 1.1rem; text-decoration: none;
+  color: var(--fg); }
+.parts li a:hover { color: var(--link); }
+.parts li a::before { content: counter(part) ". "; color: var(--accent);
+  font-weight: 700; }
+.startbtn { display: inline-block; background: var(--accent); color: var(--bg);
+  padding: .55rem 1.2rem; border-radius: 9px; font-weight: 700;
+  text-decoration: none; }
+.startbtn:hover { filter: brightness(1.1); }
+footer.pagefoot { color: var(--muted); font-size: .8rem;
+  border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 3rem; }
+</style>
+<script>(function(){var t;try{t=localStorage.getItem('theme');}catch(e){}
+if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+document.documentElement.setAttribute('data-theme',t);})();</script>
+<script src="plotly.min.js"></script>
+
+</head>
+<body>
+<div class="masthead"><div class="mast-inner">
+<a class="mast-brand" href="https://raghuramshankar.github.io/"><strong>Raghuram</strong> Shankar</a>
+<button id="theme-toggle" class="theme-toggle"
+ type="button" title="Toggle light/dark theme"><svg class="tt-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 0C114.6 0 0 114.6 0 256S114.6 512 256 512c68.8 0 131.3-27.2 177.3-71.4 7.3-7 9.4-17.9 5.3-27.1s-13.7-14.9-23.8-14.1c-4.9 .4-9.8 .6-14.8 .6-101.6 0-184-82.4-184-184 0-72.1 41.5-134.6 102.1-164.8 9.1-4.5 14.3-14.3 13.1-24.4S322.6 8.5 312.7 6.3C294.4 2.2 275.4 0 256 0z"/></svg><svg class="tt-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M288-32c8.4 0 16.3 4.4 20.6 11.7L364.1 72.3 468.9 46c8.2-2 16.9 .4 22.8 6.3S500 67 498 75.1l-26.3 104.7 92.7 55.5c7.2 4.3 11.7 12.2 11.7 20.6s-4.4 16.3-11.7 20.6L471.7 332.1 498 436.8c2 8.2-.4 16.9-6.3 22.8S477 468 468.9 466l-104.7-26.3-55.5 92.7c-4.3 7.2-12.2 11.7-20.6 11.7s-16.3-4.4-20.6-11.7L211.9 439.7 107.2 466c-8.2 2-16.8-.4-22.8-6.3S76 445 78 436.8l26.2-104.7-92.6-55.5C4.4 272.2 0 264.4 0 256s4.4-16.3 11.7-20.6L104.3 179.9 78 75.1c-2-8.2 .3-16.8 6.3-22.8S99 44 107.2 46l104.7 26.2 55.5-92.6 1.8-2.6c4.5-5.7 11.4-9.1 18.8-9.1zm0 144a144 144 0 1 0 0 288 144 144 0 1 0 0-288zm0 240a96 96 0 1 1 0-192 96 96 0 1 1 0 192z"/></svg></button>
+</div></div>
+<div class="topicbar"><div class="topicbar-inner"><span class="topic-title"><a href="2026-08-04-language-modelling.html">Language Modelling</a></span><nav class="topicbar-nav"><a href="2026-08-04-language-modelling-review.html">review deck</a><a href="2026-08-04-lm-cheatsheet.html">cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/language-modelling">tutorials</a></nav></div></div>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-04-language-modelling.html">A Language Model, From Scratch</a></div><ol><li><a href="2026-08-04-language-modelling-background.html">Background</a></li><li><a href="2026-08-04-language-modelling-intuition.html">Intuition</a></li><li><a href="2026-08-04-language-modelling-math-token.html">The Maths I: Tokens and the Objective</a></li><li><a href="2026-08-04-language-modelling-math-arch.html">The Maths II: Inside the Transformer</a></li><li class="cur"><a href="2026-08-04-language-modelling-math-train.html">The Maths III: Training at Scale</a><ul><li><a href="2026-08-04-language-modelling-math-train-adamw-and-why-the-w-matters.html">AdamW, and why the W matters</a></li><li><a href="2026-08-04-language-modelling-math-train-the-6nd-rule.html">The 6ND rule</a></li><li class="cur"><a href="2026-08-04-language-modelling-math-train-splitting-the-budget-chinchilla.html">Splitting the budget: Chinchilla</a></li><li><a href="2026-08-04-language-modelling-math-train-the-memory-wall.html">The memory wall</a></li><li><a href="2026-08-04-language-modelling-math-train-flashattention-the-same-maths-different-memory-traffic.html">FlashAttention: the same maths, different memory traffic</a></li><li><a href="2026-08-04-language-modelling-math-train-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-04-language-modelling-math-sota.html">The Maths IV: Inside the SOTA Methods</a></li><li><a href="2026-08-04-language-modelling-concept-map.html">The Concept Map</a></li><li><a href="2026-08-04-language-modelling-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-04-language-modelling-papers.html">The Papers &amp; Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-04-language-modelling-math-train-the-6nd-rule.html">&larr; The 6ND rule</a><a href="2026-08-04-language-modelling.html">&#8962; A Language Model, From Scratch</a><a class="tn-next" href="2026-08-04-language-modelling-math-train-the-memory-wall.html">The memory wall &rarr;</a></div><p class="part-eyebrow">Part 5 &middot; The Maths III: Training at Scale</p><h1>Splitting the budget: Chinchilla</h1>
+<p>Given C FLOPs, should you train a big model on few tokens or a small model
+on many? Fit the loss as a parametric form and it becomes a constrained
+optimization with a closed-form answer:</p>
+<div class='math'>L(N, D) = E + <span class='frac'><span class='num'>A</span><span class='den'>N<sup>&alpha;</sup></span></span> + <span class='frac'><span class='num'>B</span><span class='den'>D<sup>&beta;</sup></span></span>
+&nbsp;&nbsp;&nbsp; subject to &nbsp; C = 6ND</div>
+<p>E is the irreducible entropy of the text &mdash; the floor from Part 3.
+Substituting the constraint and differentiating gives</p>
+<div class='math'>N* &prop; C<sup>&beta;/(&alpha;+&beta;)</sup>,&nbsp;&nbsp;&nbsp;
+D* &prop; C<sup>&alpha;/(&alpha;+&beta;)</sup></div>
+<p>so the two exponents sum to one, as they must for the constraint to hold.
+When &alpha;&nbsp;&asymp;&nbsp;&beta; both exponents are &frac12;: model and
+data should scale <em>together</em>, in a fixed ratio. That is the Chinchilla
+result, and it overturned a previous generation of models that were far too
+large for the data they saw.</p>
+
+<div class='widget'>
+<div id='fig-scaling'><div style="height:400px; width:100%;">                            <div id="f78bb869-a66d-4563-bde3-58354fcb4ecb" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("f78bb869-a66d-4563-bde3-58354fcb4ecb")) {                    Plotly.newPlot(                        "f78bb869-a66d-4563-bde3-58354fcb4ecb",                        [{"hovertemplate":"N=%{x:.3s}\u003cbr\u003eloss %{y:.3f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"rgba(128,140,160,0.55)","width":2.2},"mode":"lines","name":"C = 1e+21 FLOPs","x":{"dtype":"f8","bdata":"L3+giWcofkFSWQxQ7Bl\u002fQb17xaR\u002fCYBBzS8QfO6JgEGCGzLhYQ6BQTs+VQH6loFBetRSC9gjgkHOAcM3HrWCQY0JTdHvSoNBcRs6PXHlg0EtyUwEyISEQe9K39saKYVB18lKr5HShUEr+ZmpVYGGQW1ZiT+RNYdBR5PXOXDvh0Gwa+i\u002fH6+IQdzmvGLOdIlBEERDKKxAikHukQGX6hKLQcCwHcK864tB9a7FVVfLjEGCg\u002fuj8LGNQdlBx7HAn45BOfzSRAGVj0FO0bn49kiQQZAjkRRiy5BBAqa0pOFRkUHFjaRVltyRQYgTjNmha5JBRQRx8Cb\u002fkkFi4KRwSZeTQRCWeU8uNJRBdPQ7qvvVlEHqBXbP2HyVQTiRe0juKJZBiRND42XalkGol428apGXQffhX0opTphBqHzPZs8QmUFsQyZbjNmZQagkX+uQqJpBIuD+YQ9+m0E\u002fp0ucO1qcQdeS5hZLPZ1BHALK+nQnnkGpBrAq8hifQZYRcqj+CKBB79nBdmmJoEG+PZiy2A2hQSFxHIhslqFBGM0cJUYjokEBOB7Bh7SiQRYcrKVUSqNBau7qNtHko0ETXm\u002f8IoSkQaBOXKpwKKVBqNfJKuLRpUE\u002fj3enoICmQWR9zJPWNKdBJSMnt6\u002fup0EXGoA3Wa6oQSbeYaQBdKlBVG84Atk\u002fqkFHh\u002fvVEBKrQcA7NjHc6qtBVPZuvm\u002fKrEHfyPLNAbGtQVo2B2PKnq5BvKiFQQOUr0H57vH9c0iwQYFc1gDbyrBBaHs2V1ZRsUGwtYusBtyxQQNA8rENa7JBP2lYJo7+skEFde\u002feq5azQcMQ4M+LM7RB831EFVTVtEGdomr8K3y1Qf08YA08KLZBFo\u002fLFK7ZtkFo4xIurZC3QYhl1c1lTbhBiNa3zAUQuUFAwIdyvNi5QZPYt4G6p7pBoGI4QzJ9u0HXaq6SV1m8QWfZDOtfPL1BzGaSc4ImvkFznS8N+Be\u002fQT0ULLB9CMBBMGWhdeSIwEEvuU2ITw3BQWyBVRPflcFBkDt8Q7QiwkHTmTNP8bPCQdY16365ScNBd9OiNTHkw0FnSMH5fYPEQdQtMn7GJ8VBa5PMqzLRxUG+\u002fASr63\u002fGQbMD7e0bNMdBWA2DOu\u002ftx0G8klS1kq3IQZyTdew0c8lBgtzP4gU\u002fykE038wbNxHLQTbzXKf76ctB8upeLojJzEGDAGv\u002fErDNQTg1BBzUnc5BrVgzRgWTz0Efg0cH8UfQQYkAWvFTytBBgLgYDstQ0UEDUvYHd9vRQWIGAI95atJB\u002f64MYfX90kHvWy1SDpbTQQaDYVXpMtRB4+GQhazU1EH3Q80uf3vVQWpp3teJJ9ZBbWMaTPbY1kFUx4yl74\u002fXQegyb1eiTNhB\u002fKn1ODwP2UEbcHGQ7NfZQW4PzR7kptpBqVpkK1V820HfRjuQc1jcQZyYlsZ0O91B0m\u002f5848l3kFo3or3\u002fRbfQT5j87v8B+BB66+ueF+I4EEVa1JixgzhQVJLAKNRleFBLftwZiIi4kE1AQPiWrPiQYEvCl0eSeNBHaJhOZHj40GmXkL82ILkQX69YFccJ+VBrNBSMoPQ5UHcE0K0Nn\u002fmQWa96k1hM+dBLCHrwy7t50FXo2U5zKzoQXPT9zpoculBfVYJyjI+6kGfYnVoXRDrQUSekSQb6etBOlKVpaDI7EFY7mM4JK\u002ftQSMAvtzdnO5BuMvbUgeS70GcbLoUbkfwQXDtG+bMyfBBDDpbyT9Q8UFbPuRn59rxQSxBtXDlafJB1K6NoFz98kFDbV7KcJXzQbDD\u002fd9GMvRB3fUg+wTU9EE2vp1m0nr1QWfp9afXJvZBAmIviT7Y9kF3E\u002fsiMo\u002f3QZYYLefeS\u002fhB9sOIq3IO+UFVHuO0HNf5QeySnsINpvpBPpCCGnh7+0GYAfKUj1f8QeiUg6mJOv1BK+D+e50k\u002fkExisHpAxb\u002fQfHdx8t7BwBCgpjpf9qHAELvMKZAPQwBQgGrHDfElAFC\u002f+b6jZAhAkIhSIx5xLICQg\u002fiCECDSANC1zEnQvHiA0IFd\u002fIDNIIEQpzS5zVyJgVCRWNcvtPPBULFpi7DgX4GQjd7xbOmMgdC\u002fS1fU27sB0L3GbPDBawIQtNp6I+bcQlCzafkt189CkKD2vS7gw8LQmwE1Kg66AtCh\u002fERJLnHDELkVd14Na4NQuFYNKXnmw5C+cF+ZwmRD0JHikom60YQQj4BHN9FyRBC2tz9iLRPEUKWVlXMV9oRQtvKEVdRaRJCT0Lb5MP8EkIxgYJH05QTQuOptG+kMRRCc4\u002f0dV3TFELf5dujJXoVQu2Ppn0lJhZCmVwKzIbXFkLSl12mdI4XQmblDn0bSxhChvFwJKkNGUKjltzfTNYZQsEsLG03pRpCwMuSEJt6G0JlYdKgq1YcQiGT05OeOR1CSXqiC6sjHkLlYdPjCRUfQsBjqd\u002f6BiBCSP1Ri1WHIELt50gjtAshQuN8qs82lCFCKNoZuv4gIkKASM8VLrIiQjYm5yfoRyNCZlrzT1HiI0LUZ9EQj4EkQhlCxxnIJSVCxh7pTyTPJULxh8rXzH0mQv4NfR\u002fsMSdCDgPf6K3rJ0JaxDxUP6soQjwjR+vOcClCG5thrIw8KkK+D0sWqg4rQtPsIzRa5ytCmo7UqdHGLELP+tbARq0tQhMBZ3Xxmi5CHvsbhAuQL0Itu\u002fc7aEYwQr8ZWty+yDBCpH0ATSlPMUJUdkk1yNkxQi5+FUK9aDJCwEL1LSv8MkLUb5nJNZQzQnkMhgQCMTRCf4QL9rXSNEIxj4fmeHk1Qtsv8FhzJTZCqCSrFM\u002fWNkK3JLQvt403QtlnFBlYSjhCof+to98MOUJgpF0RfdU5QgGndR5hpDpCMdWUDb55O0KILNyzx1U8Qr9XhoWzOD1CLwHkorgiPkIvJsDlDxQ\u002fQgPUl\u002fd5BkBCyrznmtCGQEKRbToKKwtBQiedqWypk0FCuq\u002fN6mwgQkJ73Mu2l7FCQq3UpBRNR0NCRfPFYrHhQ0JKB98i6oBEQifh\u002fgIeJUVCv9b45nTORUKOiRXyF31GQpNGEZExMUdC9G9qhO3qR0I7cALreKpIQtrLE00CcElCD\u002ft\u002fp7k7SkKOy3d30A1LQp8egcZ55ktC0u7cNurFTELHoFAQWKxNQsm6VU37mU5C2jazqA2PT0In3sFV5UVQQtUU1t03yFBCY\u002fliFZ5OUUI3ecCiONlRQqE1wDEpaFJC"},"y":{"dtype":"f8","bdata":"Cr\u002fEXGqVB0Ci5aUK+X4HQIz5f1XNaAdAYRpJmeZSB0Dt5NwzRD0HQLPO94TlJwdAsY4y7skSB0Bek\u002f3S8P0GQKuFnJhZ6QZA9NghpgPVBkC5Z2pk7sAGQPwcGT4ZrQZANaqSn4OZBkCoSfn2LIYGQAqNKLQUcwZAVjixSDpgBkCrKNUnnU0GQCdHg8Y8OwZAi4dTmxgpBkCX8oIeMBcGQAy878mCBQZAE2QVGRD0BUAk5AiJ1+IFQBHndJjY0QVAVgyWxxLBBUBkNjeYhbAFQOnjrY0woAVA6JPWLBOQBUCZNBH8LIAFQN+cPYN9cAVAUBC4SwRhBUCwzVXgwFEFQLWnYc2yQgVAFKiYoNkzBUCxvCbpNCUFQNpuozfEFgVAb6QOHocIBUDzas0vffoEQFzMpgGm7ARAha3AKQHfBEBTtpw\u002fjtEEQDBDFdxMxARAGmBamTy3BEDfzO4SXaoEQLMKpeWtnQRA1HKcry6RBEBZVj4Q34QEQNkmO6i+eARAJqiHGc1sBECtKloHCmEEQLTOJxZ1VQRAMdCh6w1KBEA527Iu1D4EQO5ofIfHMwRA5yRUn+coBEDaWsEgNB4EQKZseresEwRAflBiEFEJBEBHF4bZIP8DQOp6GsIb9QNAxnR5ekHrA0Dq2x+0keEDQEMLqyEM2ANAe4\u002fWdrDOA0Ce3HlofsUDQF0Lhqx1vANA4J0D+pWzA0AjTBAJ36oDQL7X3JJQogNAE+eqUeqZA0DP58oArJEDQKb4mVyViQNAQ9p\u002fIqaBA0Bj5+wQ3nkDQPMTWOc8cgNAPvM8ZsJqA0AOxRlPbmMDQKuJbWRAXANAvRy2aThVA0DnVm4jVk4DQDM2DFeZRwNADw3\u002fygFBA0ACuK1GjzoDQN\u002fZdJJBNANAiB6ldxguA0AchIHAEygDQJiqPTgzIgNAzCn8qnYcA0Ck7czl3RYDQKyYq7ZoEQNA1Ox97BYMA0BXOhJX6AYDQLrUHcfcAQNA5o07DvT8AkBDN+r+LfgCQM8oi2yK8wJAGM5gKwnvAkAqOY0QquoCQEi7EPJs5gJAdYPIplHiAkC6Qm0GWN4CQDDWkel\u002f2gJApvahKcnWAkDz7eCgM9MCQNdRaCq\u002fzwJAdcQmomvMAkBEut7kOMkCQINFJdAmxgJAEudgQjXDAkC9ZMgaZMACQNukYTmzvQJARY8AfyK7AkCR80XNsbgCQJV0ngZhtgJAIXlBDjC0AkDmITDIHrICQIBENBktsAJAsGvf5lquAkCN3IkXqKwCQOigUZIUqwJAmJYZP6CpAkDUg4gGS6gCQHkwCNIUpwJAS4TEi\u002f2lAkATqqoeBaUCQJ03aHYrpAJAklpqf3CjAkAiCt0m1KICQHY9qlpWogJA6iZ5CfehAkD5c60itqECQO6RZpaToQJAMvd+VY+hAkBUcYtRqaECQKV32nzhoQJAfYJzyjeiAkAHZxYurKICQK23Opw+owJAASkPCu+jAkAz+3htvaQCQAJoE72ppQJAJhUv8LOmAkA0i9H+26cCQOOwtOEhqQJAzUpGkoWqAkCFf6cKB6wCQBJgrEWmrQJAynTbPmOvAkB6Tm3yPbECQOYbTF02swJAj0MTfUy1AkDNAQ9QgLcCQCALPNXRuQJAyzJHDEG8AkCkFY31zb4CQCDJGZJ4wQJAl46o40DEAkCqiqPsJscCQOqAI7AqygJAkpPvMUzNAkB\u002fB312i9ACQDEM74Lo0wJAAYgWXWPXAkBi6HEL\u002fNoCQEv2LJWy3gJApq4gAofiAkDeHtNaeeYCQHtFd6iJ6gJAyvbs9LfuAkCOxcBKBPMCQMPvK7Vu9wJAWE8UQPf7AkD8Tgz4nQADQOjiUupiBQNApYXTJEYKA0DQOCa2Rw8DQOSJj61nFANA8ZoAG6YZA0BYLxcPAx8DQG+8HZt+JANALn4L0RgqA0C6j4TD0S8DQPwH2oWpNQNADhoKLKA7A0CwOcDKtUEDQKFDVXfqRwNA5qnPRz5OA0AEpONSsVQDQCRj869DWwNAJEoPd\u002fVhA0CSKfbAxmgDQJV\u002fFae3bwNAwLuJQ8h2A0DPhh6x+H0DQFIOTwtJhQNAN1RGbrmMA0BQgt\u002f2SZQDQLZBpsL6mwNAGxbX78ujA0AGvV+dvasDQPqQ3+rPswNAjPCn+AK8A0BmqbznVsQDQCZn1NnLzANARyZZ8WHVA0DgqmhRGd4DQGL71B3y5gNANt8ke+zvA0BfYZSOCPkDQAFXFX5GAgRA4ulPcKYLBEDaJqOMKBUEQD6QJfvMHgRARbSl5JMoBEBix6pyfTIEQJpCdc+JPARA1IX\u002fJblGBEAzfv6hC1EEQGRQ4m+BWwRA9gbXvBpmBECuRMW213AEQPb6Uoy4ewRAQCTkbL2GBEB8gpuI5pEEQKBhWxA0nQRAQF7GNaaoBEA6MEArPbQEQHF57iP5vwRAp5i5U9rLBEB6gE3v4NcEQHSSGiwN5ARAQH5WQF\u002fwBEAJJf1i1\u002fwEQAiB0ct1CQVAIZFeszoWBUDfSPhSJiMFQG6EvOQ4MAVAAAGUo3I9BUA5WTPL00oFQAsGHJhcWAVAq2OdRw1mBUDsutUX5nMFQMdOs0fngQVAUm71FhGQBUDrii3GY54FQNZSwJbfrAVAGNDmyoS7BUDWi6+lU8oFQPq1\u002f2pM2QVAV1GUX2\u002foBUApZAPJvPcFQCEtve00BwZAy1wNFdgWBkCVUxyHpiYGQDBk8IygNgZAqBpvcMZGBkDah158GFcGQKmRZvyWZwZAokcSPUJ4BkBtPNGLGokGQK7j+DYgmgZAxPTFjVOrBkAK0l3gtLwGQPr0z39EzgZA3F4XvgLgBkBuDhzu7\u002fEGQCJ6tGMMBAdAUQ+nc1gWB0Autqtz1CgHQKVabbqAOwdADHqLn11OB0DbtZt7a2EHQChrK6iqdAdAVE\u002fBfxuIB0CGEd9dvpsHQFABA5+TrwdARLqpoJvDB0DH1E\u002fB1tcHQMybc2BF7AdA8MeW3ucACECIP0CdvhUIQCDc\u002ff7JKghA9zRmZwpACED+bho7gFUIQPQRyN8rawhA7OIqvA2BCEA+xA44JpcIQMqaUbx1rQhAoDjlsvzDCEBGTdGGu9oIQGRbNaSy8QhAAbRKeOIICUBGd2ZxSyAJQPKa+\u002f7tNwlAcPackcpPCUCQVP+a4WcJQPaK+40zgAlAXpeQ3sCYCUCqwuUBirEJQLPJTG6PyglA"},"type":"scatter"},{"hovertemplate":"optimum\u003cbr\u003eN=1.82e+09\u003cbr\u003eD=9.15e+10\u003cbr\u003eD\u002fN=50.2\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"rgba(128,140,160,0.55)","line":{"color":"rgba(128,140,160,.8)","width":1},"size":11,"symbol":"circle"},"mode":"markers","showlegend":false,"x":[1822070351.0368965],"y":[2.328882982343454],"type":"scatter"},{"hovertemplate":"N=%{x:.3s}\u003cbr\u003eloss %{y:.3f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#4aa96c","width":2.2},"mode":"lines","name":"C = 1e+23 FLOPs","x":{"dtype":"f8","bdata":"L3+giWcofkFSWQxQ7Bl\u002fQb17xaR\u002fCYBBzS8QfO6JgEGCGzLhYQ6BQTs+VQH6loFBetRSC9gjgkHOAcM3HrWCQY0JTdHvSoNBcRs6PXHlg0EtyUwEyISEQe9K39saKYVB18lKr5HShUEr+ZmpVYGGQW1ZiT+RNYdBR5PXOXDvh0Gwa+i\u002fH6+IQdzmvGLOdIlBEERDKKxAikHukQGX6hKLQcCwHcK864tB9a7FVVfLjEGCg\u002fuj8LGNQdlBx7HAn45BOfzSRAGVj0FO0bn49kiQQZAjkRRiy5BBAqa0pOFRkUHFjaRVltyRQYgTjNmha5JBRQRx8Cb\u002fkkFi4KRwSZeTQRCWeU8uNJRBdPQ7qvvVlEHqBXbP2HyVQTiRe0juKJZBiRND42XalkGol428apGXQffhX0opTphBqHzPZs8QmUFsQyZbjNmZQagkX+uQqJpBIuD+YQ9+m0E\u002fp0ucO1qcQdeS5hZLPZ1BHALK+nQnnkGpBrAq8hifQZYRcqj+CKBB79nBdmmJoEG+PZiy2A2hQSFxHIhslqFBGM0cJUYjokEBOB7Bh7SiQRYcrKVUSqNBau7qNtHko0ETXm\u002f8IoSkQaBOXKpwKKVBqNfJKuLRpUE\u002fj3enoICmQWR9zJPWNKdBJSMnt6\u002fup0EXGoA3Wa6oQSbeYaQBdKlBVG84Atk\u002fqkFHh\u002fvVEBKrQcA7NjHc6qtBVPZuvm\u002fKrEHfyPLNAbGtQVo2B2PKnq5BvKiFQQOUr0H57vH9c0iwQYFc1gDbyrBBaHs2V1ZRsUGwtYusBtyxQQNA8rENa7JBP2lYJo7+skEFde\u002feq5azQcMQ4M+LM7RB831EFVTVtEGdomr8K3y1Qf08YA08KLZBFo\u002fLFK7ZtkFo4xIurZC3QYhl1c1lTbhBiNa3zAUQuUFAwIdyvNi5QZPYt4G6p7pBoGI4QzJ9u0HXaq6SV1m8QWfZDOtfPL1BzGaSc4ImvkFznS8N+Be\u002fQT0ULLB9CMBBMGWhdeSIwEEvuU2ITw3BQWyBVRPflcFBkDt8Q7QiwkHTmTNP8bPCQdY16365ScNBd9OiNTHkw0FnSMH5fYPEQdQtMn7GJ8VBa5PMqzLRxUG+\u002fASr63\u002fGQbMD7e0bNMdBWA2DOu\u002ftx0G8klS1kq3IQZyTdew0c8lBgtzP4gU\u002fykE038wbNxHLQTbzXKf76ctB8upeLojJzEGDAGv\u002fErDNQTg1BBzUnc5BrVgzRgWTz0Efg0cH8UfQQYkAWvFTytBBgLgYDstQ0UEDUvYHd9vRQWIGAI95atJB\u002f64MYfX90kHvWy1SDpbTQQaDYVXpMtRB4+GQhazU1EH3Q80uf3vVQWpp3teJJ9ZBbWMaTPbY1kFUx4yl74\u002fXQegyb1eiTNhB\u002fKn1ODwP2UEbcHGQ7NfZQW4PzR7kptpBqVpkK1V820HfRjuQc1jcQZyYlsZ0O91B0m\u002f5848l3kFo3or3\u002fRbfQT5j87v8B+BB66+ueF+I4EEVa1JixgzhQVJLAKNRleFBLftwZiIi4kE1AQPiWrPiQYEvCl0eSeNBHaJhOZHj40GmXkL82ILkQX69YFccJ+VBrNBSMoPQ5UHcE0K0Nn\u002fmQWa96k1hM+dBLCHrwy7t50FXo2U5zKzoQXPT9zpoculBfVYJyjI+6kGfYnVoXRDrQUSekSQb6etBOlKVpaDI7EFY7mM4JK\u002ftQSMAvtzdnO5BuMvbUgeS70GcbLoUbkfwQXDtG+bMyfBBDDpbyT9Q8UFbPuRn59rxQSxBtXDlafJB1K6NoFz98kFDbV7KcJXzQbDD\u002fd9GMvRB3fUg+wTU9EE2vp1m0nr1QWfp9afXJvZBAmIviT7Y9kF3E\u002fsiMo\u002f3QZYYLefeS\u002fhB9sOIq3IO+UFVHuO0HNf5QeySnsINpvpBPpCCGnh7+0GYAfKUj1f8QeiUg6mJOv1BK+D+e50k\u002fkExisHpAxb\u002fQfHdx8t7BwBCgpjpf9qHAELvMKZAPQwBQgGrHDfElAFC\u002f+b6jZAhAkIhSIx5xLICQg\u002fiCECDSANC1zEnQvHiA0IFd\u002fIDNIIEQpzS5zVyJgVCRWNcvtPPBULFpi7DgX4GQjd7xbOmMgdC\u002fS1fU27sB0L3GbPDBawIQtNp6I+bcQlCzafkt189CkKD2vS7gw8LQmwE1Kg66AtCh\u002fERJLnHDELkVd14Na4NQuFYNKXnmw5C+cF+ZwmRD0JHikom60YQQj4BHN9FyRBC2tz9iLRPEUKWVlXMV9oRQtvKEVdRaRJCT0Lb5MP8EkIxgYJH05QTQuOptG+kMRRCc4\u002f0dV3TFELf5dujJXoVQu2Ppn0lJhZCmVwKzIbXFkLSl12mdI4XQmblDn0bSxhChvFwJKkNGUKjltzfTNYZQsEsLG03pRpCwMuSEJt6G0JlYdKgq1YcQiGT05OeOR1CSXqiC6sjHkLlYdPjCRUfQsBjqd\u002f6BiBCSP1Ri1WHIELt50gjtAshQuN8qs82lCFCKNoZuv4gIkKASM8VLrIiQjYm5yfoRyNCZlrzT1HiI0LUZ9EQj4EkQhlCxxnIJSVCxh7pTyTPJULxh8rXzH0mQv4NfR\u002fsMSdCDgPf6K3rJ0JaxDxUP6soQjwjR+vOcClCG5thrIw8KkK+D0sWqg4rQtPsIzRa5ytCmo7UqdHGLELP+tbARq0tQhMBZ3Xxmi5CHvsbhAuQL0Itu\u002fc7aEYwQr8ZWty+yDBCpH0ATSlPMUJUdkk1yNkxQi5+FUK9aDJCwEL1LSv8MkLUb5nJNZQzQnkMhgQCMTRCf4QL9rXSNEIxj4fmeHk1Qtsv8FhzJTZCqCSrFM\u002fWNkK3JLQvt403QtlnFBlYSjhCof+to98MOUJgpF0RfdU5QgGndR5hpDpCMdWUDb55O0KILNyzx1U8Qr9XhoWzOD1CLwHkorgiPkIvJsDlDxQ\u002fQgPUl\u002fd5BkBCyrznmtCGQEKRbToKKwtBQiedqWypk0FCuq\u002fN6mwgQkJ73Mu2l7FCQq3UpBRNR0NCRfPFYrHhQ0JKB98i6oBEQifh\u002fgIeJUVCv9b45nTORUKOiRXyF31GQpNGEZExMUdC9G9qhO3qR0I7cALreKpIQtrLE00CcElCD\u002ft\u002fp7k7SkKOy3d30A1LQp8egcZ55ktC0u7cNurFTELHoFAQWKxNQsm6VU37mU5C2jazqA2PT0In3sFV5UVQQtUU1t03yFBCY\u002fliFZ5OUUI3ecCiONlRQqE1wDEpaFJC"},"y":{"dtype":"f8","bdata":"5JVxAmDuBkBOJ\u002fFDfNYGQNtc+ezavgZAx71iUnunBkABh9vKXJAGQK7j4q5+eQZAoTLEWOBiBkDCWJIkgUwGQCcgI3BgNgZAxqMKm30gBkCsx5YG2AoGQIG9yhVv9QVAS5VaLULgBUBP2qazUMsFQNk7uBCatgVA+0E7rh2iBUDlDXz32o0FQPglYlnReQVAQk1sQgBmBUBiZqwiZ1IFQLFhw2sFPwVAiDbdkNorBUCT56wG5hgFQA6SaEMnBgVA0IfFvp3zBEAHdPTxSOEEQI+KnVcozwRAu8Hcazu9BECKFj6sgasEQBXbuZf6mQRAKQ+xrqWIBED\u002fwulygncEQMuDi2eQZgRASdIbEc9VBEDyonr1PUUEQOnn3pvcNARAbiTTjKokBEDKCTJSpxQEQKIdI3fSBARAfmkXiCv1A0CYM8YSsuUDQJ3AKaZl1gNAmR580kXHA0Cf+DMpUrgDQGdzAT2KqQNAhBLLoe2aA0Bkpqrse4wDQK1C6rM0fgNARz0BjxdwA0CVNZEWJGIDQCIkY+RZVANAZnJkk7hGA0DFGqS\u002fPzkDQIfQTwbvKwNA2S+xBcYeA0Cd9SpdxBEDQCU\u002fNq3pBANAitFflzX4AkDKaEW+p+sCQFwOk8U\u002f3wJAYXcAUv3SAkAnak4J4MYCQCgrRJLnugJAKfGslBOvAkC1YFW5Y6MCQKAOCarXlwJArAmQEW+MAkAga6ybKYECQFfuF\u002fUGdgJAKY+BywZrAkAZL4vNKGACQEJBx6psVQJA7ny2E9JKAkC8lsW5WEACQFwAS08ANgJAr66Eh8grAkBk5pUWsSECQNEOhbG5FwJANIs5DuINAkACmnnjKQQCQIw66OiQ+gFAjxgD1xbxAUDzfSBnu+cBQGRKbVN+3gFA9fDqVl\u002fVAUCEe20tXswBQP6TmZN6wwFAWJPiRrS6AUBFlogFC7IBQH2Xlo5+qQFAs4\u002fgoQ6hAUD6mgEAu5gBQLAjWmqDkAFA1RIOo2eIAUDEBQNtZ4ABQD2J3ouCeAFApVkExLhwAUCbqJTaCWkBQKNnapV1YQFA\u002fJcZu\u002ftZAUB4n+0SnFIBQHSi52RWSwFAuOK8eSpEAUBLI9UaGD0BQCMRSRIfNgFAvrDgKj8vAUBu0BEweCgBQH5\u002f\u002fu3JIQFA8YlzMTQbAUAC+ebHthQBQDWYdn9RDgFAA3\u002fmJgQIAUABn5+NzgEBQJVWroOw+wBAGQjB2an1AEBgtSZhuu8AQKKfzevh6QBAvOtBTCDkAECsSqxVdd4AQGqm0Nvg2ABA1dIMs2LTAEDuQlew+s0AQBTCPamoyABAfTHkc2zDAECjSQPnRb4AQMZf59k0uQBAZS9vJDm0AEC4pwqfUq8AQP+8uSKBqgBA0z0LicSlAEAsrBusHKEAQF8alGaJnABAxAupkwqYAEA1WRkPoJMAQDIZLbVJjwBAyYu0YgeLAEAOCgf12IYAQE35AUq+ggBAu8EHQLd+AEDNyP61w3oAQAVvUIvjdgBAThHonxZzAEDGDTLUXG8AQAXMGgm2awBAwsgNICJoAEDnpPT6oGQAQPU3NnwyYQBAzaW1htZdAECyd9H9jFoAQKe4YsVVVwBA\u002fRS8wTBUAEAl\u002fajXHVEAQK7LbOwcTgBAdO7B5S1LAEDwEtmpUEgAQLFVWB+FRQBA33RaLctCAEDhBW67IkAAQASulLGLPQBALV5C+AU7AECOkVx4kTgAQFaPORsuNgBATK+fytszAEBrocRwmjEAQFe4TPhpLwBAwjZKTEotAEClnzxYOysAQGAJEAg9KQBAonMcSE8nAEAhICUFciUAQCXuVyylIwBAy7hMq+ghAEAOuARwPCAAQI3k6WigHgBA\u002fV3OhBQdAEBV1OuymBsAQKLz4uIsGgBAgNK6BNEYAEA7Y+AIhRcAQIbnJeBIFgBA2GbCexwVAEBNJ1HN\u002fxMAQCop0cbyEgBA3qSkWvURAECWi5B7BxEAQFAKvBwpEABAbw+wMVoPAEDK0laumg4AQDhg+4bqDQBAiCRJsEkNAEDyfEsfuAwAQO1Ibck1DABAdX54pMILAECzwJWmXgsAQAL5S8YJCwBAXPJ\u002f+sMKAEAc93M6jQoAQBZxx31lCgBABox2vEwKAEBV2tnuQgoAQBr8pQ1ICgBAfkjrEVwKAEBSeRX1fgoAQPhY67CwCgBAhHKOP\u002fEKAEAhxHqbQAsAQK1zhr+eCwBAl4XhpgsMAEDmlRVNhwwAQH2TBa4RDQBAkH3txaoNAEA\u002fI2KRUg4AQGXlUA0JDwBAj3r\u002fNs4PAEAUtQsMohAAQFpLa4qEEQBANKJrsHUSAEBqmbF8dRMAQFdaOe6DFABApChWBKEVAEAfNbK+zBYAQKtyTh0HGABAPG2CIFAZAED1IvzIpxoAQEnfvxcOHABAOBgoDoMdAECSTeWtBh8AQEvq\u002ffiYIABA1SfO8TkiAECM8web6SMAQBvWsvenJQBA+NwrC3UnAEDUhSXZUCkAQB6sp2U7KwBAd3gPtTQtAEA3Ug\u002fMPC8AQOPSrq9TMQBAqrtKZXkzAEDa7JTyrTUAQFRflF3xNwBA8x+lrEM6AED7THjmpDwAQGwVFBIVPwBAYbrTNpRBAEBWkmdcIkQAQG0O1Yq\u002fRgBApMF2ymtJAED9afwjJ0wAQJ\u002f7aqDxTgBA6a0cSctRAEBtCsEntFQAQO\u002f9XEasVwBAQetKr7NaAEAgwDptyl0AQPcLMovwYABAlBiMFCZkAEDPBPoUa2cAQCDhgpi\u002fagBAHs6DqyNuAED0HLBal3EAQL9xEbMadQBA4ecHwq14AEA2OEqVUHwAQEfh5ToDgABAXVE\u002fwcWDAECOEhI3mIcAQK74cKt6iwBAOFHGLW2PAEAdFdTNb5MAQIgctJuClwBAkVTYp6WbAEDe9goD2Z8AQC\u002fDbr4cpABA6Dp\u002f63CoAEB63hCc1awAQM5sUeJKsQBAliTI0NC1AECYB1Z6Z7oAQOYfNvIOvwBAD8f9S8fDAEBA75ybkMgAQGNuXvVqzQBAI0vobVbSAED8CzwaU9cAQDIItw9h3ABAyLoSZIDhAEByF2UtseYAQIPhIILz6wBAyQQWeUfxAEB68HEprfYAQBP0v6ok\u002fABAO57pFK4BAUCcHTeASQcBQNSjTwX3DAFAUMo5vbYSAUA++VvBiBgBQH3QfCttHgFAkpLDFWQkAUCwkbiabSoBQMKeRdWJMAFA"},"type":"scatter"},{"hovertemplate":"optimum\u003cbr\u003eN=1.46e+10\u003cbr\u003eD=1.14e+12\u003cbr\u003eD\u002fN=78.1\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#4aa96c","line":{"color":"rgba(128,140,160,.8)","width":1},"size":11,"symbol":"circle"},"mode":"markers","showlegend":false,"x":[14606330903.919403],"y":[2.0050101326211074],"type":"scatter"},{"hovertemplate":"N=%{x:.3s}\u003cbr\u003eloss %{y:.3f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#5b8def","width":2.2},"mode":"lines","name":"C = 1e+25 FLOPs","x":{"dtype":"f8","bdata":"L3+giWcofkFSWQxQ7Bl\u002fQb17xaR\u002fCYBBzS8QfO6JgEGCGzLhYQ6BQTs+VQH6loFBetRSC9gjgkHOAcM3HrWCQY0JTdHvSoNBcRs6PXHlg0EtyUwEyISEQe9K39saKYVB18lKr5HShUEr+ZmpVYGGQW1ZiT+RNYdBR5PXOXDvh0Gwa+i\u002fH6+IQdzmvGLOdIlBEERDKKxAikHukQGX6hKLQcCwHcK864tB9a7FVVfLjEGCg\u002fuj8LGNQdlBx7HAn45BOfzSRAGVj0FO0bn49kiQQZAjkRRiy5BBAqa0pOFRkUHFjaRVltyRQYgTjNmha5JBRQRx8Cb\u002fkkFi4KRwSZeTQRCWeU8uNJRBdPQ7qvvVlEHqBXbP2HyVQTiRe0juKJZBiRND42XalkGol428apGXQffhX0opTphBqHzPZs8QmUFsQyZbjNmZQagkX+uQqJpBIuD+YQ9+m0E\u002fp0ucO1qcQdeS5hZLPZ1BHALK+nQnnkGpBrAq8hifQZYRcqj+CKBB79nBdmmJoEG+PZiy2A2hQSFxHIhslqFBGM0cJUYjokEBOB7Bh7SiQRYcrKVUSqNBau7qNtHko0ETXm\u002f8IoSkQaBOXKpwKKVBqNfJKuLRpUE\u002fj3enoICmQWR9zJPWNKdBJSMnt6\u002fup0EXGoA3Wa6oQSbeYaQBdKlBVG84Atk\u002fqkFHh\u002fvVEBKrQcA7NjHc6qtBVPZuvm\u002fKrEHfyPLNAbGtQVo2B2PKnq5BvKiFQQOUr0H57vH9c0iwQYFc1gDbyrBBaHs2V1ZRsUGwtYusBtyxQQNA8rENa7JBP2lYJo7+skEFde\u002feq5azQcMQ4M+LM7RB831EFVTVtEGdomr8K3y1Qf08YA08KLZBFo\u002fLFK7ZtkFo4xIurZC3QYhl1c1lTbhBiNa3zAUQuUFAwIdyvNi5QZPYt4G6p7pBoGI4QzJ9u0HXaq6SV1m8QWfZDOtfPL1BzGaSc4ImvkFznS8N+Be\u002fQT0ULLB9CMBBMGWhdeSIwEEvuU2ITw3BQWyBVRPflcFBkDt8Q7QiwkHTmTNP8bPCQdY16365ScNBd9OiNTHkw0FnSMH5fYPEQdQtMn7GJ8VBa5PMqzLRxUG+\u002fASr63\u002fGQbMD7e0bNMdBWA2DOu\u002ftx0G8klS1kq3IQZyTdew0c8lBgtzP4gU\u002fykE038wbNxHLQTbzXKf76ctB8upeLojJzEGDAGv\u002fErDNQTg1BBzUnc5BrVgzRgWTz0Efg0cH8UfQQYkAWvFTytBBgLgYDstQ0UEDUvYHd9vRQWIGAI95atJB\u002f64MYfX90kHvWy1SDpbTQQaDYVXpMtRB4+GQhazU1EH3Q80uf3vVQWpp3teJJ9ZBbWMaTPbY1kFUx4yl74\u002fXQegyb1eiTNhB\u002fKn1ODwP2UEbcHGQ7NfZQW4PzR7kptpBqVpkK1V820HfRjuQc1jcQZyYlsZ0O91B0m\u002f5848l3kFo3or3\u002fRbfQT5j87v8B+BB66+ueF+I4EEVa1JixgzhQVJLAKNRleFBLftwZiIi4kE1AQPiWrPiQYEvCl0eSeNBHaJhOZHj40GmXkL82ILkQX69YFccJ+VBrNBSMoPQ5UHcE0K0Nn\u002fmQWa96k1hM+dBLCHrwy7t50FXo2U5zKzoQXPT9zpoculBfVYJyjI+6kGfYnVoXRDrQUSekSQb6etBOlKVpaDI7EFY7mM4JK\u002ftQSMAvtzdnO5BuMvbUgeS70GcbLoUbkfwQXDtG+bMyfBBDDpbyT9Q8UFbPuRn59rxQSxBtXDlafJB1K6NoFz98kFDbV7KcJXzQbDD\u002fd9GMvRB3fUg+wTU9EE2vp1m0nr1QWfp9afXJvZBAmIviT7Y9kF3E\u002fsiMo\u002f3QZYYLefeS\u002fhB9sOIq3IO+UFVHuO0HNf5QeySnsINpvpBPpCCGnh7+0GYAfKUj1f8QeiUg6mJOv1BK+D+e50k\u002fkExisHpAxb\u002fQfHdx8t7BwBCgpjpf9qHAELvMKZAPQwBQgGrHDfElAFC\u002f+b6jZAhAkIhSIx5xLICQg\u002fiCECDSANC1zEnQvHiA0IFd\u002fIDNIIEQpzS5zVyJgVCRWNcvtPPBULFpi7DgX4GQjd7xbOmMgdC\u002fS1fU27sB0L3GbPDBawIQtNp6I+bcQlCzafkt189CkKD2vS7gw8LQmwE1Kg66AtCh\u002fERJLnHDELkVd14Na4NQuFYNKXnmw5C+cF+ZwmRD0JHikom60YQQj4BHN9FyRBC2tz9iLRPEUKWVlXMV9oRQtvKEVdRaRJCT0Lb5MP8EkIxgYJH05QTQuOptG+kMRRCc4\u002f0dV3TFELf5dujJXoVQu2Ppn0lJhZCmVwKzIbXFkLSl12mdI4XQmblDn0bSxhChvFwJKkNGUKjltzfTNYZQsEsLG03pRpCwMuSEJt6G0JlYdKgq1YcQiGT05OeOR1CSXqiC6sjHkLlYdPjCRUfQsBjqd\u002f6BiBCSP1Ri1WHIELt50gjtAshQuN8qs82lCFCKNoZuv4gIkKASM8VLrIiQjYm5yfoRyNCZlrzT1HiI0LUZ9EQj4EkQhlCxxnIJSVCxh7pTyTPJULxh8rXzH0mQv4NfR\u002fsMSdCDgPf6K3rJ0JaxDxUP6soQjwjR+vOcClCG5thrIw8KkK+D0sWqg4rQtPsIzRa5ytCmo7UqdHGLELP+tbARq0tQhMBZ3Xxmi5CHvsbhAuQL0Itu\u002fc7aEYwQr8ZWty+yDBCpH0ATSlPMUJUdkk1yNkxQi5+FUK9aDJCwEL1LSv8MkLUb5nJNZQzQnkMhgQCMTRCf4QL9rXSNEIxj4fmeHk1Qtsv8FhzJTZCqCSrFM\u002fWNkK3JLQvt403QtlnFBlYSjhCof+to98MOUJgpF0RfdU5QgGndR5hpDpCMdWUDb55O0KILNyzx1U8Qr9XhoWzOD1CLwHkorgiPkIvJsDlDxQ\u002fQgPUl\u002fd5BkBCyrznmtCGQEKRbToKKwtBQiedqWypk0FCuq\u002fN6mwgQkJ73Mu2l7FCQq3UpBRNR0NCRfPFYrHhQ0JKB98i6oBEQifh\u002fgIeJUVCv9b45nTORUKOiRXyF31GQpNGEZExMUdC9G9qhO3qR0I7cALreKpIQtrLE00CcElCD\u002ft\u002fp7k7SkKOy3d30A1LQp8egcZ55ktC0u7cNurFTELHoFAQWKxNQsm6VU37mU5C2jazqA2PT0In3sFV5UVQQtUU1t03yFBCY\u002fliFZ5OUUI3ecCiONlRQqE1wDEpaFJC"},"y":{"dtype":"f8","bdata":"EP2SR17ABkCz5CqDFKgGQGw8DUQMkAZA+9Uc3UR4BkA84A2jvWAGQA4WYex1SQZADvpeEW0yBkAxHxNsohsGQPl9R1gVBQZAMNZ\u002fM8XuBUALHfVcsdgFQIn3kDXZwgVA\u002fUDpHzytBUCSnTuA2ZcFQLYYabywggVAS8\u002fxO8FtBUBwpfBnClkFQNoHF6uLRAVAlLiocUQwBUD5pncpNBwFQOjS30FaCAVA+zrDK7b0BECz1YVZR+EEQG6VCT8NzgRAHHeqUQe7BECFmzoINagEQBRr\u002ftqVlQRA+sOoQymDBECfMle97nAEQDg0jsTlXgRAb4M11w1NBEADb5R0ZjsEQDk6Th3vKQRAFodeU6cYBEBAyhWajgcEQGfIFXak9gNAJB1ObejlA0Azy\u002fgGWtUDQPHVlsv4xANA\u002fePsRMS0A0D76v\u002f9u6QDQDDkEYPflANAK4qeYS6FA0AQH1goqHUDQLI7JGdMZgNANqcYrxpXA0BON3iSEkgDQMm4r6QzOQNAn+BSen0qA0AVRRmp7xsDQDZf28eJDQNARpSPbkv\u002fAkBFR0c2NPECQFryK7lD4wJAHEh8knnVAkCKXIle1ccCQNXVs7pWugJAnSRpRf2sAkDUwyCeyJ8CQPd\u002fWWW4kgJAyMWWPMyFAkAu+F3GA3kCQG3NM6ZebAJAabOZgNxfAkAXOwv7fFMCQM6K+7s\u002fRwJApdfSaiQ7AkCQ5euvKi8CQFyOkTRSIwJAVk\u002f8opoXAkCd3U+mAwwCQALBmOqMAAJAc\u002fXJHDb1AUDTkrrq\u002fukBQDV7IwPn3gFAXg+dFe7TAUCd6ZzSE8kBQLSec+tXvgFA\u002foRKErqzAUCHgSH6OakBQEDbzFbXngFACRTz3JGUAUCvxwpCaYoBQKaQWDxdgAFAoPLsgm12AUC0SqLNmWwBQEjFGtXhYgFAfFm+UkVZAUAiyrgAxE8BQCqs95ldRgFAgnIo2hE9AUBBf7Z94DMBQCo6yUHJKgFAayxC5MshAUCTIbsj6BgBQKhNhL8dEAFAS3iid2wHAUD4LM0M1P4AQDfwbEBU9gBAwXmZ1OztAEB78xeMneUAQF89WSpm3QBAGzZ4c0bVAEB3CDgsPs0AQF99AhpNxQBAp1LmAnO9AEBUlpWtr7UAQH0GZOECrgBAqXVFZmymAECdM8wE7J4AQKZ6J4aBlwBALeEhtCyQAECkzx9Z7YgAQMT6HUDDgQBAAOKvNK56AEAsUv4CrnMAQETsxXfCbABAZrBVYOtlAEC8jI2KKF8AQJLw3MR5WABAS2NB3t5RAEBfH0WmV0sAQDCx\u002fezjRABAzpkKg4M+AECH9ZM5NjgAQEQmSeL7MQBAo4FfT9QrAEDWApFTvyUAQCIAG8K8HwBADuS8bswZAEAk6rYt7hMAQE3fyNMhDgBAtOUwNmcIAEAqPKoqvgIAQPMR2A5N+v8\u002fe1BQRkDv\u002fz8K+xOqVeT\u002fP9ORaumM2f8\u002f2v6JtOXO\u002fz9dTZS8X8T\u002fP7BnlbP6uf8\u002fsNuATLav\u002fz96pS87kqX\u002fP58AXjSOm\u002f8\u002fez+p7amR\u002fz\u002fsqI0d5Yf\u002fPwdcZHs\u002ffv8\u002fFzphv7h0\u002fz9z1pCiUGv\u002fP39s1t4GYv8\u002fcdvpLttY\u002fz8VqFVOzU\u002f\u002fP0UEdfncRv8\u002fN9xx7Qk+\u002fz9r6ULoUzX\u002fP1LLqai6LP8\u002fdiUx7j0k\u002fz86wyp53Rv\u002fPw7BrQqZE\u002f8\u002fFruUZHAL\u002fz8lAXxJYwP\u002fPyLQv3xx+\u002f4\u002flpB6wprz\u002fj+LGoPf3uv+P43+apk95P4\u002fz9N8trbc\u002fj9Xi7r9SdX+P0rI2zb3zf4\u002fFz1MKr7G\u002fj+oDSqhnr\u002f+P2U2RGWYuP4\u002fGvgYQaux\u002fj+gSNT\u002f1qr+P1BITm0bpP4\u002fH7wJVnid\u002fj9tjDKH7Zb+P3JInM56kP4\u002fM67A+h+K\u002fj8SN77a3IP+P82oVj6xff4\u002f9qrt9Zx3\u002fj\u002fUYIfSn3H+P6IHx6W5a\u002f4\u002fJJntQepl\u002fj+Dcth5MWD+P2b\u002f\u002fyCPWv4\u002fSml2CwNV\u002fj8IS+YNjU\u002f+P2tokf0sSv4\u002f+GlPsOJE\u002fj+xnIz8rT\u002f+P+21SLmOOv4\u002fKpsVvoQ1\u002fj\u002fLLRbjjzD+P8oa\u002fQCwK\u002f4\u002fS64L8eQm\u002fj8GqxCNLiL+P4YlZ6+MHf4\u002fKGP1Mv8Y\u002fj\u002fkvCvzhRT+P8iFA8wgEP4\u002fI\u002fX9mc8L\u002fj9VFCM6kgf+P0SwAIpoA\u002f4\u002fZU6pZ1L\u002f\u002fT9MJbOxT\u002fv9P9MYN0dg9\u002f0\u002ftrnPB4Tz\u002fT+rSJjTuu\u002f9P+W8K4sE7P0\u002fCs6jD2Ho\u002fT+FAZhC0OT9PzO7HAZS4f0\u002fYFHCPObd\u002fT8dJJTJjNr9P9G3F5BF1\u002f0\u002fCNNLdBDU\u002fT+An6da7dD9P2XOGSjczf0\u002fvr8HwtzK\u002fT\u002fsrEwO78f9P17WOPMSxf0\u002fTLSQV0jC\u002fT+OKowij7\u002f9P3W\u002f1TvnvP0\u002fsNWJi1C6\u002fT8s6TX6yrf9P\u002fTO13BWtf0\u002f9ffc2PKy\u002fT\u002fGtiEcoLD9P0CI8CRerv0\u002fDl8B3iys\u002fT8J8ngyDKr9P3MN6A38p\u002f0\u002fA+dKXPyl\u002fT\u002fCdAgKDaT9P6HG8QMuov0\u002f5WJBN1+g\u002fT9ApZqRoJ79P6cgCQHynP0\u002f5AMAdFOb\u002fT\u002fHgFnZxJn9Pwc2ViBGmP0\u002f0pucONeW\u002fT\u002ftcjgSeJX9P3Q2mp0olP0\u002fPpCWy+iS\u002fT+6z2WNuJH9P3hjo9SXkP0\u002fJlVNk4aP\u002fT8XyMO7hI79P1R6yECSjf0\u002fIUh+Fa+M\u002fT8Asmgt24v9Pydla3wWi\u002f0\u002facbJ9mCK\u002fT+LfyaRuon9PwQPg0Ajif0\u002fI1o\u002f+pqI\u002fT+UQRm0IYj9P004LGS3h\u002f0\u002fxtzwAFyH\u002fT+XlDyBD4f9P2oqQdzRhv0\u002fL26MCaOG\u002fT+w1wcBg4b9P2Qr+Lpxhv0\u002fjCH9L2+G\u002fT+TDxFZe4b9P7OTiC+Whv0\u002f0EISrb+G\u002fT+aWLbL94b9P9hp1oU+h\u002f0\u002f9Rgt1pOH\u002fT+5zM2394f9PzFpJCZqiP0\u002fxwr1HOuI\u002fT+Kw1uYeon9P4pazJQYiv0\u002fcg0SD8WK\u002fT8zVE8EgIv9P9im\u002fXFJjP0\u002fd0XtVSGN\u002fT84AkWuB479P4ANgnn8jv0\u002fJ8R3tv+P\u002fT\u002fRf09kEZH9P0xpiIIxkv0\u002fCk33EGCT\u002fT+lccYPnZT9P29wdX\u002folf0\u002fFBDZYEKX\u002fT87IRu1qpj9Pztdun0hmv0\u002fykaKvKab\u002fT+5DLNzOp39P65usaXcnv0\u002f46NWVY2g\u002fT\u002fdQ8iFTKL9PywxgDoapP0\u002f"},"type":"scatter"},{"hovertemplate":"optimum\u003cbr\u003eN=1.17e+11\u003cbr\u003eD=1.43e+13\u003cbr\u003eD\u002fN=122.3\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#5b8def","line":{"color":"rgba(128,140,160,.8)","width":1},"size":11,"symbol":"circle"},"mode":"markers","showlegend":false,"x":[116752668799.52211],"y":[1.8453201318681323],"type":"scatter"}],                        {"annotations":[{"font":{"color":"#8b95a5","size":11},"showarrow":false,"text":"E = 1.69 \u2014 irreducible entropy of the data","x":1,"xanchor":"right","xref":"x domain","y":1.69,"yanchor":"bottom","yref":"y"}],"font":{"color":"#8b95a5","family":"-apple-system, Segoe UI, Roboto, sans-serif","size":13},"height":400,"legend":{"orientation":"h","x":0,"y":1.12},"margin":{"b":45,"l":55,"r":20,"t":40},"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)","shapes":[{"line":{"color":"rgba(128,140,160,0.55)","dash":"dot"},"type":"line","x0":0,"x1":1,"xref":"x domain","y0":1.69,"y1":1.69,"yref":"y"}],"template":{"data":{"scatter":[{"type":"scatter"}]}},"xaxis":{"gridcolor":"rgba(128,140,160,0.28)","linecolor":"rgba(128,140,160,0.28)","title":{"text":"parameters N"},"type":"log","zerolinecolor":"rgba(128,140,160,0.28)"},"yaxis":{"gridcolor":"rgba(128,140,160,0.28)","linecolor":"rgba(128,140,160,0.28)","title":{"text":"loss L(N, D)"},"zerolinecolor":"rgba(128,140,160,0.28)"}},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div></div>
+<div class='caption'>Iso-FLOP curves from the published parametric fit: for
+each budget, sweeping model size traces a U whose minimum is the
+compute-optimal point. The floor E = 1.69 is the entropy term no amount of
+compute removes.</div>
+</div>
+
+<div class='callout warn'>
+<p><strong>An honest wrinkle, checkable in one line of code.</strong> If you
+take Hoffmann et al.&rsquo;s published Approach-3 constants and actually
+minimize them under the constraint, at their own budget
+(C&nbsp;=&nbsp;5.9&times;10<sup>23</sup>) you get roughly a
+<strong>33B model on 3.0T tokens</strong> &mdash; not the 70B on 1.4T they
+recommended and trained. The exponents &alpha;&nbsp;=&nbsp;0.34 and
+&beta;&nbsp;=&nbsp;0.28 differ enough that the optimal tokens-per-parameter
+ratio <em>grows</em> with compute rather than staying near 20. The replication
+by <a href='https://arxiv.org/abs/2404.10102'>Besiroglu et al.</a> <span class='cite-id'>2404.10102</span>
+re-estimates the constants and recovers &alpha;&nbsp;&asymp;&nbsp;&beta;, which
+reproduces both the 20:1 rule and the model they actually built. The figure
+below plots both.</p>
+</div>
+
+<div class='widget'>
+<div id='fig-ratio'><div style="height:380px; width:100%;">                            <div id="2b454227-0c47-4bd5-8496-6ba4851dbfd5" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("2b454227-0c47-4bd5-8496-6ba4851dbfd5")) {                    Plotly.newPlot(                        "2b454227-0c47-4bd5-8496-6ba4851dbfd5",                        [{"hovertemplate":"C=%{x:.1e}\u003cbr\u003eD\u002fN = %{y:.1f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#d9705f","width":2.4},"mode":"lines","name":"Hoffmann Approach 3, as published","x":{"dtype":"f8","bdata":"AMhOZ23Bq0Nv\u002fUoQyjyyQ4TKJCd697dDHbEJz+t+v0M74Z\u002fq7rHEQ6eDENlDMstDLJnumrje0UOWzFuR23vXQ15RS4h33N5DgW7LWjBH5EMsif+3\u002fKXqQ2\u002fD7FiMgvFD+qyYm7oC90MRpHswST3+Qxjsc2CY3gNEbHBUI4kcCkSPfp+DOygRROwgAm0KjBZErnqS5U+hHURIoLTjG3gjRE5eBYfalSlE5WDNhrzPMERlowJvvhc2RCWLnBx7CD1EFeXgBbATQ0RsMjqa4hFJRN99pf8FeVBEJ6ryS8qlVUT5RvqfunJcROwEXSBKsWJERq7IXZOQaET\u002fjcC7DiRwROG+ye0hNnVEfr2njf7fe0RYC33D31CCRPRquBrfEYhEiXJOcJuhj0SlVdZ8uciURLZdjVU3UJtEUWhptWbyoURUec5guJWnRJzQukB0\u002fq5E4kJ8XoVdtETEZdm3VcO6RBFKCfHUlcFEkYEgBRIcx0TyCeWall7ORAGp+TN69NNEq9lhw0o52kRojfKkIDvhRP49ryDfpOZEix0tivHB7UQ3QTLZjI3zRPvNDtQHsvlE2CpfMkDiAEXfJwgPEzAGRYLXZ3F0KA1FktuAY7IoE0W\u002f4UyRfi0ZRZECKCwqiyBF"},"y":{"dtype":"f8","bdata":"Ms4p83+jOUAxU1rUrk06QOECqFdH\u002fDpApfK951PYO0CnwO34J5E8QNdXZ+LGTj1AA3moc1ARPkAMXVVP5dg+QEdGsvCmpT9AD2XrWNtTQEACJ5YyPMBAQGKxq29sL0FAw\u002ftKt36hQUCeD2MshhZCQDPd6HCWjkJAGWIiqcMJQ0DXUrgRAqVDQBxj119nJ0RA2RHENi6tREA5GLIHbTZFQL5ozNg6w0VAdfoRSa9TRkB3OUyU4udGQOEH9ciqokdA+fvdm40\u002fSEDofZ3NgeBIQP4\u002fj16ihUlAw3ZJAgsvSkAaiUIk2NxKQAKSlewmj0tAnkoKJeFvTEBcvKcsoyxNQIJc4yFK7k1AGmBdgfa0TkD0rVmfyYBPQHKdq9byKFBAf0Hm3zaUUECaIXe1ZxtRQHrwaxz1jFFAzVzXPnQBUkASys+n+HhSQJTaJGSW81JAe4S8BWJxU0D2dgancPJTQL5XwGEYlVRAqL9rU7cdVUDrdxIg4alVQJ2KL0utOVZAOtNR9DPNVkA7\u002fyfbjWRXQJJqp2PU\u002f1dAGPfUXIfDWEDIMAOU52dZQCVKM+GKEFpAdb3Ajo29WkCI\u002fc+iDG9bQHbrLOQlJVxAO6RJ3\u002fffXEC9uqecbMtdQL0av44xkV5A"},"type":"scatter"},{"hovertemplate":"C=%{x:.1e}\u003cbr\u003eD\u002fN = %{y:.1f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#4aa96c","width":2.4},"mode":"lines","name":"Besiroglu et al. re-estimate","x":{"dtype":"f8","bdata":"AMhOZ23Bq0Nv\u002fUoQyjyyQ4TKJCd697dDHbEJz+t+v0M74Z\u002fq7rHEQ6eDENlDMstDLJnumrje0UOWzFuR23vXQ15RS4h33N5DgW7LWjBH5EMsif+3\u002fKXqQ2\u002fD7FiMgvFD+qyYm7oC90MRpHswST3+Qxjsc2CY3gNEbHBUI4kcCkSPfp+DOygRROwgAm0KjBZErnqS5U+hHURIoLTjG3gjRE5eBYfalSlE5WDNhrzPMERlowJvvhc2RCWLnBx7CD1EFeXgBbATQ0RsMjqa4hFJRN99pf8FeVBEJ6ryS8qlVUT5RvqfunJcROwEXSBKsWJERq7IXZOQaET\u002fjcC7DiRwROG+ye0hNnVEfr2njf7fe0RYC33D31CCRPRquBrfEYhEiXJOcJuhj0SlVdZ8uciURLZdjVU3UJtEUWhptWbyoURUec5guJWnRJzQukB0\u002fq5E4kJ8XoVdtETEZdm3VcO6RBFKCfHUlcFEkYEgBRIcx0TyCeWall7ORAGp+TN69NNEq9lhw0o52kRojfKkIDvhRP49ryDfpOZEix0tivHB7UQ3QTLZjI3zRPvNDtQHsvlE2CpfMkDiAEXfJwgPEzAGRYLXZ3F0KA1FktuAY7IoE0W\u002f4UyRfi0ZRZECKCwqiyBF"},"y":{"dtype":"f8","bdata":"0uJA+fi3NkCbQqQhKIQ2QEdJ9nfNUDZA0vqs7ucdNkBWWE\u002fD3Qs2QMUNOHSV2TVAVCLJ07+nNUBpgnLcW3Y1QOQ9RVraZDVAoCAL9g40NUDtTbHbsgM1QG4uZQ3F0zRAohKXj0SkNEBkHRpqbpM0QKbU4amAZDRAdoMn8v01NEAkMs1O5Qc0QAbYDrWO9zNAykCmdwTKM0ABveUX4pwzQIen6KgmcDNAQt+t1EtgM0B0tuOUGjQzQBVE6h9OCDNAk3vfj+XcMkCz94TXgs0yQJJm2l+gojJA5PBxtx94MkD5Bzf\u002f\u002f00yQI\u002fnEVpAJDJAiHclPXQVMkBPMr6PNewxQB8yKPRUwzFAqJjWk9GaMUCxh\u002fePdYwxQBxGY1ZvZDFA7zD\u002fZcQ8MUDnwJfucxUxQIkBkrKEBzFAebrQra3gMEB4F7U+L7owQITONJsIlDBAkoL17oKGMEATgxIm0mAwQNJtwVN3OzBAWInys3EWMED\u002fo8l3UgkwQJfekWt+yS9An2REvv6AL0DC9CVrJDkvQJKIFfnt8S5AAcqrZrDYLkDXSjHxVZIuQBtEQ\u002fGbTC5AH6Xp+IAHLkAxnXucAu8tQFWeMh69qi1Ale3kVRNnLUBB5m7gAyQtQLpddRE\u002fDC1A"},"type":"scatter"},{"hovertemplate":"the model they actually trained\u003cbr\u003eD\u002fN = 20\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#5b8def","size":13,"symbol":"star"},"mode":"markers+text","showlegend":false,"text":["Chinchilla itself (70B, 1.4T)"],"textfont":{"color":"#8b95a5","size":11},"textposition":"bottom right","x":[5.88e+23],"y":[20.0],"type":"scatter"}],                        {"annotations":[{"font":{"color":"#8b95a5","size":11},"showarrow":false,"text":"the famous \u224820 tokens per parameter","x":1,"xanchor":"right","xref":"x domain","y":20,"yanchor":"bottom","yref":"y"}],"font":{"color":"#8b95a5","family":"-apple-system, Segoe UI, Roboto, sans-serif","size":13},"height":380,"legend":{"orientation":"h","x":0,"y":1.16},"margin":{"b":45,"l":55,"r":20,"t":40},"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)","shapes":[{"line":{"color":"#5b8def","dash":"dash"},"type":"line","x0":0,"x1":1,"xref":"x domain","y0":20,"y1":20,"yref":"y"}],"template":{"data":{"scatter":[{"type":"scatter"}]}},"xaxis":{"gridcolor":"rgba(128,140,160,0.28)","linecolor":"rgba(128,140,160,0.28)","title":{"text":"training compute C (FLOPs)"},"type":"log","zerolinecolor":"rgba(128,140,160,0.28)"},"yaxis":{"gridcolor":"rgba(128,140,160,0.28)","linecolor":"rgba(128,140,160,0.28)","title":{"text":"optimal tokens per parameter (D\u002fN)"},"type":"log","zerolinecolor":"rgba(128,140,160,0.28)"}},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div></div>
+<div class='caption'>Optimal tokens-per-parameter under each fit, with the
+Chinchilla model itself marked. The re-estimated constants pass essentially
+through it; the published ones do not. <strong>The famous 20:1 is a fitted
+number, not a law of nature</strong> &mdash; and it is inference cost, not
+this curve, that pushes production models far past it.</div>
+</div>
+
+<div class='widget' id='w-budget'>
+  <div class='wctl'>
+    <label>compute budget (log&#8321;&#8320; FLOPs) <input type='range' id='w-budget-c' min='190' max='260' value='230'></label>
+  </div>
+  <div id='w-budget-out'></div>
+  <div class='caption'>Both fits, minimized live under C = 6ND. Slide up to a
+  frontier-scale budget and watch the two recommendations diverge by more than
+  a factor of two in model size.</div>
+</div>
+
+<div class="pn"><a class="pn-prev" href="2026-08-04-language-modelling-math-train-the-6nd-rule.html">&larr; The 6ND rule</a><a class="pn-next" href="2026-08-04-language-modelling-math-train-the-memory-wall.html">The memory wall &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-04 08:05:05 UTC</footer></main></div>
+<script>window.__PAGES__ = {"background": "2026-08-04-language-modelling-background.html", "intuition": "2026-08-04-language-modelling-intuition.html", "math-token": "2026-08-04-language-modelling-math-token.html", "math-arch": "2026-08-04-language-modelling-math-arch.html", "math-train": "2026-08-04-language-modelling-math-train.html", "math-sota": "2026-08-04-language-modelling-math-sota.html", "concept-map": "2026-08-04-language-modelling-concept-map.html", "keep-learning": "2026-08-04-language-modelling-keep-learning.html", "papers": "2026-08-04-language-modelling-papers.html"};</script>
+<script>window.__QUIZZES__ = [];</script>
+<script>
+window.copyTextFallback = function (text) {
+  function legacy() {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(legacy);
+  } else legacy();
+};
+(function () {
+  const groups = window.__QUIZZES__ || [];
+  const LOGKEY = 'quizlog:' + location.pathname.split('/').pop();
+  const loadLog = () => { try { return JSON.parse(localStorage.getItem(LOGKEY)) || {}; } catch (e) { return {}; } };
+  const saveLog = (l) => { try { localStorage.setItem(LOGKEY, JSON.stringify(l)); } catch (e) {} };
+  const buildSummary = () => {
+    const log = loadLog();
+    const lines = ['Quiz results — ' + document.title + ' — ' + new Date().toISOString().slice(0, 10)];
+    let tot = 0, got = 0;
+    groups.forEach(g => {
+      const e = log[g.host];
+      if (!e) return;
+      tot += e.total; got += e.score;
+      lines.push(e.score + '/' + e.total +
+        (e.wrong.length ? '. Missed: ' + e.wrong.map(w => '"' + w + '"').join('; ') : ''));
+    });
+    lines.push('Total: ' + got + '/' + tot);
+    const miss = (loadLog().__miss) || {};
+    const rep = Object.entries(miss).filter(([, n]) => n > 1).map(([q, n]) => '"' + q + '" (x' + n + ')');
+    if (rep.length) lines.push('Repeat offenders: ' + rep.join('; '));
+    lines.push('Please quiz me again on my weak areas, harder.');
+    return lines.join('\n');
+  };
+  groups.forEach(function (group) {
+    const host = document.getElementById(group.host);
+    const data = group.questions || [];
+    if (!host || !data.length) return;
+    let answered = 0, right = 0;
+    const results = [];
+    const score = document.createElement('div');
+    score.className = 'quiz-score';
+    data.forEach((q, qi) => {
+      const card = document.createElement('div');
+      card.className = 'quiz-q';
+      const qt = document.createElement('div');
+      qt.className = 'qtext';
+      qt.innerHTML = (qi + 1) + '. ' + q.question;
+      card.appendChild(qt);
+      const fb = document.createElement('div');
+      fb.className = 'quiz-fb';
+      const opts = q.options.map((o, i) => ({ o, i }));
+      for (let i = opts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [opts[i], opts[j]] = [opts[j], opts[i]];
+      }
+      const buttons = [];
+      opts.forEach(({ o }) => {
+        const b = document.createElement('button');
+        b.className = 'quiz-opt';
+        b.innerHTML = o.text;
+        b.addEventListener('click', () => {
+          answered++;
+          buttons.forEach(x => {
+            x.disabled = true;
+            if (x.__correct) x.classList.add('reveal-right');
+            const ex = document.createElement('div');
+            ex.className = 'quiz-expl ' + (x.__correct ? 'right' : 'wrong');
+            ex.innerHTML = (x.__correct ? '<strong>✓ Correct answer.</strong> '
+                                        : '<strong>✗</strong> ') +
+                           (x.__opt.explanation || '');
+            x.insertAdjacentElement('afterend', ex);
+          });
+          if (o.correct) {
+            right++;
+            b.classList.add('chosen-right');
+            fb.className = 'quiz-fb right';
+            fb.innerHTML = '<strong>Correct.</strong> Explanations for every option are shown above.';
+          } else {
+            b.classList.add('chosen-wrong');
+            fb.className = 'quiz-fb wrong';
+            fb.innerHTML = '<strong>Not quite.</strong> The correct answer is outlined above, with explanations for every option.';
+          }
+          results.push({ q: q.question.replace(/<[^>]*>/g, ''), ok: !!o.correct });
+          if (answered === data.length) {
+            score.textContent = 'Score: ' + right + ' / ' + data.length;
+            score.style.display = 'block';
+            const log = loadLog();
+            log[group.host] = { ts: Date.now(), score: right, total: data.length,
+              wrong: results.filter(r => !r.ok).map(r => r.q) };
+            log.__miss = log.__miss || {};
+            results.filter(r => !r.ok).forEach(r => { log.__miss[r.q] = (log.__miss[r.q] || 0) + 1; });
+            saveLog(log);
+            const cp = document.createElement('button');
+            cp.className = 'wbtn'; cp.style.marginTop = '.6rem';
+            cp.textContent = 'copy results for Claude';
+            cp.addEventListener('click', () => {
+              window.copyTextFallback(buildSummary());
+              cp.textContent = 'copied \u2713';
+              setTimeout(() => { cp.textContent = 'copy results for Claude'; }, 1500);
+            });
+            score.insertAdjacentElement('afterend', cp);
+          }
+        });
+        b.__correct = !!o.correct;
+        b.__opt = o;
+        buttons.push(b);
+        card.appendChild(b);
+      });
+      card.appendChild(fb);
+      host.appendChild(card);
+    });
+    host.appendChild(score);
+  });
+})();
+</script>
+<script>
+(function () {
+  document.querySelectorAll('.dstep-toggle').forEach(b =>
+    b.addEventListener('click', () => b.closest('.dstep').classList.toggle('open')));
+  document.querySelectorAll('.deriv').forEach(d => {
+    const setAll = open => d.querySelectorAll('.dstep').forEach(s => s.classList.toggle('open', open));
+    const w = d.querySelector('.deriv-worked'), p = d.querySelector('.deriv-practice');
+    if (w) w.addEventListener('click', () => setAll(true));
+    if (p) p.addEventListener('click', () => setAll(false));
+  });
+  document.querySelectorAll('[data-copy]').forEach(b =>
+    b.addEventListener('click', () => {
+      const el = document.getElementById(b.getAttribute('data-copy'));
+      if (!el) return;
+      window.copyTextFallback(el.innerText);
+      const old = b.textContent;
+      b.textContent = 'copied \u2713';
+      setTimeout(() => { b.textContent = old; }, 1500);
+    }));
+  // light/dark toggle
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    const mode = () => {
+      const a = document.documentElement.getAttribute('data-theme');
+      if (a) return a;
+      return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    };
+    const paint = () => { document.documentElement.setAttribute('data-theme', mode()); };
+    btn.addEventListener('click', () => {
+      const next = mode() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+      paint();
+      window.dispatchEvent(new Event('themechange'));
+    });
+    paint();
+  }
+})();
+</script>
+<script>/* Shared helpers for explainer widgets. Load BEFORE the topic's widgets.js
+   (build_spec.py passes [widgets_lib.js, widgets.js] as the spec's scripts).
+   Exposes window.WLib = { $, cssVar, mulberry32, gauss, onTheme }. */
+window.WLib = (function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function mulberry32(a) {           // seeded PRNG for repeatable scrubbing
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function gauss(rng) {              // Box-Muller
+    var u = 0, v = 0;
+    while (u === 0) u = rng();
+    while (v === 0) v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  var redraws = [];
+  function onTheme(fn) { redraws.push(fn); }   // canvases re-render on theme flip
+  var repaint = function () { redraws.forEach(function (f) { f(); }); };
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mq.addEventListener) mq.addEventListener('change', repaint);
+  window.addEventListener('themechange', repaint);  // fired by the masthead toggle
+  return { $: $, cssVar: cssVar, mulberry32: mulberry32, gauss: gauss, onTheme: onTheme };
+})();
+</script><script>/* Interactive widgets for the language-modelling explainer.
+   All simulations are the real algorithm, computed live in the browser.
+   Each widget guards on its container id so this file is safe to load anywhere. */
+(function () {
+  'use strict';
+  var $ = WLib.$, cssVar = WLib.cssVar, mulberry32 = WLib.mulberry32,
+      gauss = WLib.gauss, onTheme = WLib.onTheme;
+
+  function col(name, fb) { var c = cssVar(name); return c && c.trim() ? c.trim() : fb; }
+  function softmax(z) {
+    var m = Math.max.apply(null, z), s = 0, o = z.map(function (v) {
+      var e = Math.exp(v - m); s += e; return e;
+    });
+    return o.map(function (e) { return e / s; });
+  }
+  function entropy(p) {
+    var h = 0;
+    p.forEach(function (v) { if (v > 1e-12) h -= v * Math.log(v); });
+    return h;
+  }
+
+  /* =====================================================================
+     1. BPE: train a real byte-pair encoder live and watch tokens grow.
+     ===================================================================== */
+  (function bpeWidget() {
+    var host = document.getElementById('w-bpe');
+    if (!host) return;
+    var TEXT = "the deeper the network the lower the loss; the lower the loss " +
+               "the better the model, and the model that models the model wins";
+    var bytes = [];
+    for (var i = 0; i < TEXT.length; i++) bytes.push(TEXT.charCodeAt(i));
+
+    // Precompute the full merge list once; the slider just replays a prefix.
+    function trainAll(maxMerges) {
+      var ids = bytes.slice(), merges = [], vocab = {};
+      for (var m = 0; m < maxMerges; m++) {
+        var counts = new Map(), best = null, bestN = 1;
+        for (var j = 0; j < ids.length - 1; j++) {
+          var k = ids[j] + ',' + ids[j + 1];
+          var c = (counts.get(k) || 0) + 1; counts.set(k, c);
+          if (c > bestN) { bestN = c; best = k; }
+        }
+        if (!best) break;
+        var parts = best.split(',').map(Number), nid = 256 + m;
+        merges.push({ pair: parts, id: nid, count: bestN });
+        vocab[nid] = (vocab[parts[0]] || String.fromCharCode(parts[0])) +
+                     (vocab[parts[1]] || String.fromCharCode(parts[1]));
+        var out = [], p = 0;
+        while (p < ids.length) {
+          if (p < ids.length - 1 && ids[p] === parts[0] && ids[p + 1] === parts[1]) {
+            out.push(nid); p += 2;
+          } else { out.push(ids[p]); p++; }
+        }
+        ids = out;
+      }
+      return { merges: merges, vocab: vocab };
+    }
+    var trained = trainAll(80);
+    // BPE halts once no adjacent pair repeats, so a short corpus yields fewer
+    // merges than asked for. Clamp the control to what actually exists rather
+    // than indexing past the end.
+    var MAXM = trained.merges.length;
+
+    function encode(n) {
+      var ids = bytes.slice();
+      n = Math.min(n, MAXM);
+      for (var m = 0; m < n; m++) {
+        var mg = trained.merges[m], out = [], p = 0;
+        while (p < ids.length) {
+          if (p < ids.length - 1 && ids[p] === mg.pair[0] && ids[p + 1] === mg.pair[1]) {
+            out.push(mg.id); p += 2;
+          } else { out.push(ids[p]); p++; }
+        }
+        ids = out;
+      }
+      return ids;
+    }
+    function label(id) {
+      return id < 256 ? String.fromCharCode(id) : trained.vocab[id];
+    }
+
+    var slider = $('w-bpe-n'), chips = $('w-bpe-chips'), stat = $('w-bpe-stat');
+    slider.max = String(MAXM);
+    function draw() {
+      var n = Math.min(+slider.value, MAXM), ids = encode(n);
+      chips.innerHTML = '';
+      ids.forEach(function (id) {
+        var s = document.createElement('span');
+        s.className = 'wchip';
+        s.textContent = label(id).replace(/ /g, '·');
+        if (id >= 256) s.style.borderColor = col('--accent', '#5b8def');
+        if (id >= 256) s.style.color = col('--accent', '#5b8def');
+        chips.appendChild(s);
+      });
+      var bpt = (bytes.length / ids.length).toFixed(3);
+      var last = n > 0 ? trained.merges[n - 1] : null;
+      stat.innerHTML = '<strong>' + ids.length + '</strong> tokens for ' + bytes.length +
+        ' bytes &mdash; <strong>' + bpt + '</strong> bytes/token, vocabulary ' + (256 + n) +
+        (last ? '. Last merge: <code>' + label(last.id).replace(/ /g, '·') +
+                '</code> (' + last.count + ' occurrences)' : '') +
+        (n >= MAXM ? ' &mdash; <em>exhausted: no adjacent pair repeats any more, ' +
+                     'so this corpus cannot fill a larger vocabulary.</em>' : '');
+    }
+    slider.addEventListener('input', draw);
+    draw();
+  })();
+
+  /* =====================================================================
+     2. Attention: why the 1/sqrt(d_k) is not cosmetic.
+        Predict-before-run, then a live sweep over d_k.
+     ===================================================================== */
+  (function attnWidget() {
+    var host = document.getElementById('w-attn');
+    if (!host) return;
+    var cv = $('w-attn-cv'), stat = $('w-attn-stat'), slider = $('w-attn-d');
+    var scaled = true, predicted = null;
+
+    $('w-attn-scale').addEventListener('click', function () {
+      scaled = !scaled;
+      this.textContent = scaled ? 'scaling: 1/√dₖ (on)' : 'scaling: none (off)';
+      draw();
+    });
+    var predWrap = $('w-attn-predict');
+    if (predWrap) {
+      predWrap.querySelectorAll('[data-pred]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (predicted) return;
+          predicted = b.getAttribute('data-pred');
+          predWrap.querySelectorAll('[data-pred]').forEach(function (x) {
+            x.disabled = true;
+          });
+          b.style.borderColor = col('--accent', '#5b8def');
+          resolvePrediction();
+        });
+      });
+    }
+    function resolvePrediction() {
+      var fb = $('w-attn-predfb');
+      if (!fb || !predicted) return;
+      var right = predicted === 'sharper';
+      fb.style.display = '';
+      fb.innerHTML = (right ? '✓ ' : '✗ ') +
+        'Turn the scaling <em>off</em> and drag dₖ up: the attention collapses onto a ' +
+        'single key. Dot products of two random dₖ-dimensional unit-variance vectors have ' +
+        'variance dₖ, so the logits spread as √dₖ and softmax saturates. Dividing ' +
+        'by √dₖ holds the logit variance at 1 no matter how wide the head is' +
+        (right ? '.' : ' — so attention gets <em>sharper</em>, not flatter.');
+    }
+
+    function draw() {
+      var d = +slider.value, n = 12, rnd = mulberry32(7);
+      var Q = [], K = [];
+      for (var i = 0; i < n; i++) {
+        var q = [], k = [];
+        for (var j = 0; j < d; j++) { q.push(gauss(rnd)); k.push(gauss(rnd)); }
+        Q.push(q); K.push(k);
+      }
+      var rows = [], maxw = 0, hsum = 0;
+      for (i = 0; i < n; i++) {
+        var s = [];
+        for (var m = 0; m < n; m++) {
+          var dot = 0;
+          for (j = 0; j < d; j++) dot += Q[i][j] * K[m][j];
+          s.push(m > i ? -Infinity : (scaled ? dot / Math.sqrt(d) : dot));
+        }
+        var p = softmax(s);
+        rows.push(p);
+        maxw = Math.max(maxw, Math.max.apply(null, p));
+        hsum += entropy(p) / Math.log(i + 1 || 1) || 0;
+      }
+      // draw heatmap. Fall back to a sane width when the element has not been
+      // laid out yet (hidden tab, print, zero-size viewport) — otherwise the
+      // canvas silently paints nothing.
+      var dpr = window.devicePixelRatio || 1, H = 190;
+      var W = cv.clientWidth || (cv.parentElement && cv.parentElement.clientWidth) || 640;
+      cv.width = W * dpr; cv.height = H * dpr;
+      var g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.clearRect(0, 0, W, H);
+      var cell = Math.min(H / n, W / n), x0 = (W - cell * n) / 2;
+      var acc = col('--accent', '#5b8def');
+      for (i = 0; i < n; i++) for (m = 0; m <= i; m++) {
+        var a = rows[i][m];
+        g.fillStyle = acc.replace(/^#/, '') === acc ? acc : acc;
+        g.globalAlpha = Math.pow(a, 0.55);
+        g.fillRect(x0 + m * cell, i * cell, cell - 1, cell - 1);
+      }
+      g.globalAlpha = 1;
+      var lastRow = rows[n - 1];
+      stat.innerHTML = 'dₖ = <strong>' + d + '</strong>, scaling ' +
+        (scaled ? '<strong>on</strong>' : '<strong>off</strong>') +
+        ' &mdash; peak attention weight in the last row: <strong>' +
+        Math.max.apply(null, lastRow).toFixed(3) + '</strong>, entropy <strong>' +
+        entropy(lastRow).toFixed(3) + '</strong> nats (uniform over ' + n + ' would be ' +
+        Math.log(n).toFixed(3) + ')';
+    }
+    slider.addEventListener('input', draw);
+    onTheme(draw);
+    window.addEventListener('resize', draw);
+    draw();
+  })();
+
+  /* =====================================================================
+     3. Sampling: temperature / top-k / top-p on a fixed distribution,
+        with a Monte-Carlo tally that converges to the theoretical mass.
+     ===================================================================== */
+  (function sampleWidget() {
+    var host = document.getElementById('w-sample');
+    if (!host) return;
+    var BASE = [3.2, 2.6, 2.4, 1.1, 0.9, 0.4, 0.1, -0.3, -0.8, -1.5];
+    var WORDS = ['model', 'network', 'system', 'method', 'token',
+                 'banana', 'pencil', 'cloud', 'tuesday', 'quark'];
+    var tally = new Array(BASE.length).fill(0), total = 0;
+    var rnd = mulberry32(11);
+    var tSl = $('w-sample-t'), kSl = $('w-sample-k'), pSl = $('w-sample-p');
+    var bars = $('w-sample-bars'), stat = $('w-sample-stat');
+
+    function dist() {
+      var t = +tSl.value / 100, k = +kSl.value, p = +pSl.value / 100;
+      var z = BASE.map(function (v) { return t > 0 ? v / t : v * 1e6; });
+      if (k < BASE.length) {
+        var sorted = z.slice().sort(function (a, b) { return b - a; });
+        var cut = sorted[k - 1];
+        z = z.map(function (v) { return v < cut ? -Infinity : v; });
+      }
+      var q = softmax(z);
+      if (p < 1) {
+        var idx = q.map(function (v, i) { return [v, i]; })
+                   .sort(function (a, b) { return b[0] - a[0]; });
+        var c = 0, keep = new Set();
+        for (var i = 0; i < idx.length; i++) {
+          keep.add(idx[i][1]); c += idx[i][0];
+          if (c >= p) break;                       // include the crosser
+        }
+        var s = 0;
+        q = q.map(function (v, i) { var kept = keep.has(i) ? v : 0; s += kept; return kept; });
+        q = q.map(function (v) { return v / s; });
+      }
+      return q;
+    }
+    function drawBars() {
+      var q = dist();
+      bars.innerHTML = '';
+      q.forEach(function (v, i) {
+        var row = document.createElement('div');
+        row.className = 'bar-row';
+        var emp = total ? tally[i] / total : 0;
+        row.innerHTML = "<span class='bar-lab'>" + WORDS[i] + "</span>" +
+          "<span class='bar-track'><span class='bar-fill' style='width:" +
+          (v * 100).toFixed(1) + "%'></span>" +
+          "<span class='bar-emp' style='width:" + (emp * 100).toFixed(1) + "%'></span></span>" +
+          "<span class='bar-val'>" + (v * 100).toFixed(1) + "%</span>";
+        bars.appendChild(row);
+      });
+      stat.innerHTML = total
+        ? '<strong>' + total + '</strong> draws &mdash; the thin bar is the empirical ' +
+          'frequency, converging to the theoretical mass above it.'
+        : 'Solid bars: the distribution you are sampling from. Draw to overlay the empirical counts.';
+    }
+    function draw(n) {
+      var q = dist();
+      for (var i = 0; i < n; i++) {
+        var u = rnd(), c = 0;
+        for (var j = 0; j < q.length; j++) { c += q[j]; if (u <= c) { tally[j]++; break; } }
+        total++;
+      }
+      drawBars();
+    }
+    [tSl, kSl, pSl].forEach(function (s) {
+      s.addEventListener('input', function () {
+        tally = new Array(BASE.length).fill(0); total = 0;
+        $('w-sample-cfg').textContent =
+          'temperature ' + (+tSl.value / 100).toFixed(2) +
+          ' · top-k ' + kSl.value +
+          ' · top-p ' + (+pSl.value / 100).toFixed(2);
+        drawBars();
+      });
+    });
+    $('w-sample-1').addEventListener('click', function () { draw(1); });
+    $('w-sample-200').addEventListener('click', function () { draw(200); });
+    $('w-sample-reset').addEventListener('click', function () {
+      tally = new Array(BASE.length).fill(0); total = 0; drawBars();
+    });
+    $('w-sample-cfg').textContent = 'temperature 1.00 · top-k 10 · top-p 1.00';
+    drawBars();
+  })();
+
+  /* =====================================================================
+     4. Compute budget: Chinchilla under both the published and the
+        replicated fits, plus the 6ND accounting.
+     ===================================================================== */
+  (function budgetWidget() {
+    var host = document.getElementById('w-budget');
+    if (!host) return;
+    var FITS = {
+      published: { E: 1.69, A: 406.4, B: 410.7, a: 0.34, b: 0.28,
+                   name: 'Hoffmann Approach 3 (as published)' },
+      replicated: { E: 1.82, A: 482.0, B: 2085.0, a: 0.35, b: 0.37,
+                    name: 'Besiroglu et al. re-estimate' }
+    };
+    function optimal(C, f) {
+      var bestN = 0, bestL = Infinity, bestD = 0;
+      for (var e = 7; e <= 13; e += 0.002) {
+        var N = Math.pow(10, e), D = C / (6 * N);
+        if (D < 1e6) continue;
+        var L = f.E + f.A / Math.pow(N, f.a) + f.B / Math.pow(D, f.b);
+        if (L < bestL) { bestL = L; bestN = N; bestD = D; }
+      }
+      return { N: bestN, D: bestD, L: bestL };
+    }
+    function human(x) {
+      if (x >= 1e12) return (x / 1e12).toFixed(2) + 'T';
+      if (x >= 1e9) return (x / 1e9).toFixed(2) + 'B';
+      if (x >= 1e6) return (x / 1e6).toFixed(2) + 'M';
+      return x.toExponential(2);
+    }
+    var sl = $('w-budget-c'), out = $('w-budget-out');
+    function draw() {
+      var C = Math.pow(10, +sl.value / 10);
+      var rows = Object.keys(FITS).map(function (k) {
+        var r = optimal(C, FITS[k]);
+        return "<tr><td>" + FITS[k].name + "</td><td><strong>" + human(r.N) +
+               "</strong></td><td><strong>" + human(r.D) + "</strong></td><td>" +
+               (r.D / r.N).toFixed(1) + "</td><td>" + r.L.toFixed(3) + "</td></tr>";
+      }).join('');
+      out.innerHTML =
+        "<div class='wstat'>Budget C = <strong>" + C.toExponential(1) +
+        "</strong> FLOPs &nbsp;(&asymp; " + human(C / 6 / 1e9 * 1e9 / 1e9 * 1e9) +
+        " parameter-tokens, since C &asymp; 6ND)</div>" +
+        "<table><thead><tr><th>fit</th><th>optimal N</th><th>optimal D</th>" +
+        "<th>D/N</th><th>loss</th></tr></thead><tbody>" + rows + "</tbody></table>";
+    }
+    sl.addEventListener('input', draw);
+    draw();
+  })();
+
+  /* =====================================================================
+     5. KV cache calculator: the memory wall of long-context decoding.
+     ===================================================================== */
+  (function kvWidget() {
+    var host = document.getElementById('w-kv');
+    if (!host) return;
+    var ctx = $('w-kv-ctx'), batch = $('w-kv-b'), mode = $('w-kv-mode');
+    var out = $('w-kv-out');
+    var CFG = { layers: 80, heads: 64, head_dim: 128, bytes: 2 };
+    function perToken(m) {
+      if (m === 'mha') return 2 * CFG.layers * CFG.heads * CFG.head_dim * CFG.bytes;
+      if (m === 'gqa') return 2 * CFG.layers * 8 * CFG.head_dim * CFG.bytes;
+      return CFG.layers * 512 * CFG.bytes;                     // MLA latent
+    }
+    function draw() {
+      var L = Math.pow(10, +ctx.value / 10), B = +batch.value;
+      var names = { mha: 'MHA (64 kv heads)', gqa: 'GQA (8 groups)', mla: 'MLA (latent 512)' };
+      var rows = ['mha', 'gqa', 'mla'].map(function (m) {
+        var gb = perToken(m) * L * B / 1e9;
+        var flag = gb > 80 ? " style='color:var(--fail,#d9705f)'" : '';
+        return "<tr" + flag + "><td>" + names[m] + "</td><td>" +
+               (perToken(m) / 1024).toFixed(1) + " KB</td><td><strong>" +
+               gb.toFixed(2) + " GB</strong></td><td>" +
+               (gb / 80).toFixed(2) + "&times;</td></tr>";
+      }).join('');
+      out.innerHTML =
+        "<div class='wstat'>context <strong>" + Math.round(L).toLocaleString() +
+        "</strong> tokens &times; batch <strong>" + B + "</strong> " +
+        "&mdash; 70B-class model, bf16</div>" +
+        "<table><thead><tr><th>attention variant</th><th>per token</th>" +
+        "<th>KV cache</th><th>of one 80&nbsp;GB GPU</th></tr></thead><tbody>" +
+        rows + "</tbody></table>";
+    }
+    [ctx, batch].forEach(function (s) { s.addEventListener('input', draw); });
+    draw();
+  })();
+
+  /* =====================================================================
+     6. Concept map.
+     ===================================================================== */
+  (function conceptMap() {
+    var host = document.getElementById('w-cmap');
+    if (!host) return;
+    var N = [
+      { id: 'bytes', x: 60, y: 40, w: 108, t: 'bytes / text', s: 'background' },
+      { id: 'bpe', x: 210, y: 40, w: 104, t: 'BPE merges', s: 'math-token', hub: false },
+      { id: 'vocab', x: 356, y: 40, w: 128, t: 'vocab / context', s: 'math-token' },
+      { id: 'ce', x: 530, y: 40, w: 150, t: 'cross entropy → perplexity', s: 'math-token', hub: true },
+      { id: 'embed', x: 60, y: 130, w: 108, t: 'embeddings', s: 'math-arch' },
+      { id: 'attn', x: 210, y: 130, w: 104, t: 'attention', s: 'math-arch', hub: true },
+      { id: 'rope', x: 356, y: 130, w: 128, t: 'RoPE / position', s: 'math-arch' },
+      { id: 'ffn', x: 530, y: 130, w: 150, t: 'SwiGLU FFN + RMSNorm', s: 'math-arch' },
+      { id: 'moe', x: 60, y: 220, w: 108, t: 'MoE routing', s: 'math-sota' },
+      { id: 'flops', x: 210, y: 220, w: 104, t: 'C ≈ 6ND', s: 'math-train', hub: true },
+      { id: 'adamw', x: 356, y: 220, w: 128, t: 'AdamW + schedule', s: 'math-train' },
+      { id: 'scaling', x: 530, y: 220, w: 150, t: 'Chinchilla allocation', s: 'math-train', hub: true },
+      { id: 'flash', x: 60, y: 310, w: 108, t: 'FlashAttention', s: 'math-train' },
+      { id: 'parallel', x: 210, y: 310, w: 104, t: 'ZeRO / TP / PP', s: 'math-train' },
+      { id: 'kv', x: 356, y: 310, w: 128, t: 'KV cache / GQA', s: 'math-sota' },
+      { id: 'align', x: 530, y: 310, w: 150, t: 'SFT → RLHF / DPO / GRPO', s: 'math-sota', hub: true }
+    ];
+    var E = [
+      ['bytes', 'bpe'], ['bpe', 'vocab'], ['vocab', 'ce'], ['vocab', 'embed'],
+      ['embed', 'attn'], ['attn', 'rope'], ['attn', 'ffn'], ['ffn', 'moe'],
+      ['attn', 'flops'], ['ffn', 'flops'], ['flops', 'scaling'], ['ce', 'scaling'],
+      ['ce', 'adamw'], ['adamw', 'scaling'], ['attn', 'flash'], ['flops', 'parallel'],
+      ['attn', 'kv'], ['kv', 'align'], ['ce', 'align'], ['moe', 'flops'],
+      ['rope', 'kv'], ['scaling', 'align']
+    ];
+    var RECAP = {
+      bytes: 'Text is bytes. Everything downstream is a choice about how to group them.',
+      bpe: 'Merge the most frequent adjacent pair, repeat. Compression buys shorter sequences.',
+      vocab: 'Bigger vocabulary means shorter sequences but a higher entropy ceiling per token.',
+      ce: 'The training objective. Perplexity is its exponential: effective number of choices.',
+      embed: 'Token ids become vectors; the unembedding ties back to the vocabulary.',
+      attn: 'softmax(QKᵀ/√dₖ)V. The 1/√dₖ keeps the softmax out of saturation.',
+      rope: 'Rotate query and key by position; the dot product then sees only relative distance.',
+      ffn: 'Where most parameters live. RMSNorm drops the mean subtraction and the bias.',
+      moe: 'Route each token to a few experts: more parameters, near-constant FLOPs per token.',
+      flops: 'Forward+backward costs about 6 FLOPs per parameter per token. The whole budget.',
+      adamw: 'Scale-free first step, decoupled weight decay, warmup then decay.',
+      scaling: 'Given C, split it between N and D. The famous ratio is about 20 tokens/parameter.',
+      flash: 'Tile attention in SRAM so the N² matrix is never written to HBM.',
+      parallel: 'Shard optimizer state, layers, or the batch. Each choice trades memory for bandwidth.',
+      kv: 'Decoding is memory-bandwidth bound; the KV cache is what you are moving.',
+      align: 'Pretraining predicts text. Alignment makes it answer, via preferences or verifiers.'
+    };
+    var svg = host.querySelector('svg');
+    var byId = {}; N.forEach(function (n) { byId[n.id] = n; });
+    function cx(n) { return n.x + n.w / 2; } function cy(n) { return n.y + 17; }
+
+    var frag = '';
+    E.forEach(function (e, i) {
+      var a = byId[e[0]], b = byId[e[1]];
+      frag += "<path class='cmap-edge' data-a='" + e[0] + "' data-b='" + e[1] +
+              "' d='M" + cx(a) + ' ' + cy(a) + ' L' + cx(b) + ' ' + cy(b) + "'/>";
+    });
+    N.forEach(function (n) {
+      frag += "<g class='cmap-node" + (n.hub ? ' hub' : '') + "' data-id='" + n.id + "'>" +
+              "<rect x='" + n.x + "' y='" + n.y + "' width='" + n.w + "' height='34' rx='7'/>" +
+              "<text x='" + cx(n) + "' y='" + (n.y + 22) + "' text-anchor='middle'>" +
+              n.t + "</text></g>";
+    });
+    svg.innerHTML = frag;
+
+    var info = $('w-cmap-info');
+    function highlight(id) {
+      svg.querySelectorAll('.cmap-edge').forEach(function (p) {
+        var on = p.getAttribute('data-a') === id || p.getAttribute('data-b') === id;
+        p.classList.toggle('hl', on); p.classList.toggle('dim', !on);
+      });
+      var nbrs = new Set([id]);
+      E.forEach(function (e) {
+        if (e[0] === id) nbrs.add(e[1]); if (e[1] === id) nbrs.add(e[0]);
+      });
+      svg.querySelectorAll('.cmap-node').forEach(function (g) {
+        var gid = g.getAttribute('data-id');
+        g.classList.toggle('hl', gid === id);
+        g.classList.toggle('dim', !nbrs.has(gid));
+      });
+    }
+    function clear() {
+      svg.querySelectorAll('.cmap-edge,.cmap-node').forEach(function (el) {
+        el.classList.remove('hl', 'dim');
+      });
+    }
+    svg.querySelectorAll('.cmap-node').forEach(function (g) {
+      var id = g.getAttribute('data-id');
+      g.addEventListener('mouseenter', function () { highlight(id); });
+      g.addEventListener('mouseleave', clear);
+      g.addEventListener('click', function () {
+        var sec = byId[id].s;
+        var href = (window.__PAGES__ || {})[sec];
+        info.innerHTML = "<strong>" + byId[id].t + ".</strong> " + RECAP[id] +
+          (href ? " <a href='" + href + "'>Go to the section →</a>" : '');
+      });
+    });
+    info.innerHTML = 'Hover a node to isolate its connections; click for a one-breath recap. ' +
+      'The outlined nodes are the load-bearing hubs: if you can only keep four ideas, keep those.';
+  })();
+})();
+</script>
+</body>
+</html>

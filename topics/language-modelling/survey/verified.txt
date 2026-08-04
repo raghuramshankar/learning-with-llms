@@ -1,0 +1,61 @@
+EXACT  | 1706.03762v7 | 2017-06-12 | Ashish Vaswani         | Attention Is All You Need
+ERROR Language Models are Few-Shot Learners HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Language Models are Few-Shot Learners
+ERROR BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+ERROR Root Mean Square Layer Normalization HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Root Mean Square Layer Normalization
+ERROR On Layer Normalization in the Transformer Architecture HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | On Layer Normalization in the Transformer Architecture
+ERROR RoFormer: Enhanced Transformer with Rotary Position Embedding HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | RoFormer: Enhanced Transformer with Rotary Position Embedding
+ERROR Train Short, Test Long: Attention with Linear Biases Enables Input Length Extrapolation HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Train Short, Test Long: Attention with Linear Biases Enables Input Length Extrapolation
+ERROR GLU Variants Improve Transformer HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | GLU Variants Improve Transformer
+EXACT  | 1911.02150v1 | 2019-11-06 | Noam Shazeer           | Fast Transformer Decoding: One Write-Head is All You Need
+EXACT  | 2305.13245v3 | 2023-05-22 | Joshua Ainslie         | GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints
+ERROR YaRN: Efficient Context Window Extension of Large Language Models HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | YaRN: Efficient Context Window Extension of Large Language Models
+ERROR Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer
+ERROR Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity
+ERROR DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models
+ERROR DeepSeek-V3 Technical Report HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | DeepSeek-V3 Technical Report
+ERROR Mamba: Linear-Time Sequence Modeling with Selective State Spaces HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Mamba: Linear-Time Sequence Modeling with Selective State Spaces
+ERROR Neural Machine Translation of Rare Words with Subword Units HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Neural Machine Translation of Rare Words with Subword Units
+ERROR SentencePiece: A simple and language independent subword tokenizer and detokenizer for Neural Text Processing HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | SentencePiece: A simple and language independent subword tokenizer and detokenizer for Neural Text Processing
+ERROR Byte Latent Transformer: Patches Scale Better Than Tokens HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Byte Latent Transformer: Patches Scale Better Than Tokens
+ERROR Deduplicating Training Data Makes Language Models Better HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Deduplicating Training Data Makes Language Models Better
+ERROR The FineWeb Datasets: Decanting the Web for the Finest Text Data at Scale HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | The FineWeb Datasets: Decanting the Web for the Finest Text Data at Scale
+ERROR DataComp-LM: In search of the next generation of training sets for language models HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | DataComp-LM: In search of the next generation of training sets for language models
+ERROR Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer
+ERROR DoReMi: Optimizing Data Mixtures Speeds Up Language Model Pretraining HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | DoReMi: Optimizing Data Mixtures Speeds Up Language Model Pretraining
+ERROR Scaling Data-Constrained Language Models HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Scaling Data-Constrained Language Models
+ERROR Adam: A Method for Stochastic Optimization HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Adam: A Method for Stochastic Optimization
+ERROR Decoupled Weight Decay Regularization HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Decoupled Weight Decay Regularization
+ERROR Scaling Laws for Neural Language Models HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Scaling Laws for Neural Language Models
+ERROR Training Compute-Optimal Large Language Models HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Training Compute-Optimal Large Language Models
+ERROR Chinchilla Scaling: A replication attempt HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Chinchilla Scaling: A replication attempt
+ERROR Beyond Chinchilla-Optimal: Accounting for Inference in Language Model Scaling Laws HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Beyond Chinchilla-Optimal: Accounting for Inference in Language Model Scaling Laws
+ERROR Tensor Programs V: Tuning Large Neural Networks via Zero-Shot Hyperparameter Transfer HTTP Error 429: Unknown Error
+NOTFOUND | -            | -          | -                      | Tensor Programs V: Tuning Large Neural Networks via Zero-Shot Hyperparameter Transfer
