@@ -44,6 +44,7 @@ trillions of tokens and the model absorbs grammar, facts, and reasoning patterns
 in, predicts the next, and so on, strictly left to right. Mathematically it factorizes the
 probability of a sentence as a chain of next-token predictions:</p>
 <div class='math'>P(x) = P(x<sub>1</sub>) &middot; P(x<sub>2</sub> | x<sub>1</sub>) &middot; P(x<sub>3</sub> | x<sub>1</sub>, x<sub>2</sub>) &middot;&thinsp;&ctdot;&thinsp;&middot; P(x<sub>N</sub> | x<sub>1</sub>, &hellip;, x<sub>N&minus;1</sub>)</div>
+<p class='where'><b>x</b> a sequence of N tokens &middot; <b>x<sub>i</sub></b> the token at position i &middot; each factor conditions only on the tokens before it &mdash; the autoregressive choice</p>
 <p>Note something important: this factorization is <em>fully general</em>. The chain rule of
 probability lets you decompose <em>any</em> joint distribution this way. Autoregression&rsquo;s
 limits are not about what it can represent &mdash; they are about how it must compute.</p>
@@ -483,6 +484,7 @@ are Gaussians, expectations, and a tolerance for subscripts.</p>
 typically increasing values, and let data be <span class='m'>x<sub>0</sub> ~ q(x<sub>0</sub>)</span>.
 The forward process is a Markov chain that corrupts one step at a time:</p>
 <div class='math'>q(x<sub>t</sub> | x<sub>t&minus;1</sub>) = &#119977;( x<sub>t</sub> ; &radic;(1&minus;&beta;<sub>t</sub>) &middot; x<sub>t&minus;1</sub> , &beta;<sub>t</sub>&middot;I )</div>
+<p class='where'><b>x<sub>t</sub></b> the data after t noising steps &middot; <b>&beta;<sub>t</sub></b> how much noise this step adds &middot; <b>&#119977;(&mu;, &Sigma;)</b> a Gaussian &middot; <b>I</b> the identity, so noise is added independently per coordinate</p>
 <p>The odd-looking <span class='m'>&radic;(1&minus;&beta;<sub>t</sub>)</span> is deliberate: if
 <span class='m'>Var(x<sub>t&minus;1</sub>) = I</span>, then
 <span class='m'>Var(x<sub>t</sub>) = (1&minus;&beta;<sub>t</sub>)&middot;I + &beta;<sub>t</sub>&middot;I = I</span>.
@@ -492,6 +494,7 @@ jump. Writing <span class='m'>&alpha;<sub>t</sub> = 1&minus;&beta;<sub>t</sub></
 <span class='m'>&#8113;<sub>t</sub> = &alpha;<sub>1</sub>&alpha;<sub>2</sub>&ctdot;&alpha;<sub>t</sub></span>:</p>
 <div class='math'>q(x<sub>t</sub> | x<sub>0</sub>) = &#119977;( &radic;&#8113;<sub>t</sub>&middot;x<sub>0</sub> , (1&minus;&#8113;<sub>t</sub>)&middot;I )
 &nbsp;&nbsp;&hArr;&nbsp;&nbsp; x<sub>t</sub> = &radic;&#8113;<sub>t</sub>&middot;x<sub>0</sub> + &radic;(1&minus;&#8113;<sub>t</sub>)&middot;&epsilon;,&nbsp;&nbsp;&epsilon; ~ &#119977;(0, I)</div>
+<p class='where'><b>&#8113;<sub>t</sub></b> the cumulative signal retained after t steps (the product of all 1&minus;&beta; so far) &middot; <b>&epsilon;</b> a standard Gaussian draw &middot; the point is that any t is reachable in one shot, without simulating the chain</p>
 <div class='callout'>
 <p><strong>Why this closed form matters.</strong> Training never has to simulate the chain: draw a
 random t, draw &epsilon;, and you have a corrupted sample at exactly noise level t in one line of
@@ -511,12 +514,14 @@ Gaussian with closed form:</p>
 <div class='math'>q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>) = &#119977;( &mu;&#771;<sub>t</sub>, &beta;&#771;<sub>t</sub>&middot;I ),&nbsp;&nbsp;&nbsp;
 &mu;&#771;<sub>t</sub> = __FRAC_MU1__&middot;x<sub>0</sub> &nbsp;+&nbsp; __FRAC_MU2__&middot;x<sub>t</sub>,&nbsp;&nbsp;&nbsp;
 &beta;&#771;<sub>t</sub> = __FRAC_BETA__&middot;&beta;<sub>t</sub></div>
+<p class='where'><b>&mu;&#771;<sub>t</sub>, &beta;&#771;<sub>t</sub></b> the mean and variance of the true reverse step &middot; it is conditioned on <b>x<sub>0</sub></b>, which the model does not have &mdash; that gap is what the network is trained to close</p>
 <p>The standard variational argument (the same one behind VAEs) then bounds the negative
 log-likelihood &mdash; the <strong>NELBO</strong> &mdash; and the bound splits cleanly per timestep:</p>
 <div class='math'>&minus;log p<sub>&theta;</sub>(x<sub>0</sub>) &le;
 &#120124;<sub>q</sub>[ &minus;log p<sub>&theta;</sub>(x<sub>0</sub> | x<sub>1</sub>) ]
 &nbsp;+&nbsp; &sum;<sub>t=2</sub><sup>T</sup> &#120124;<sub>q</sub> KL( q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>) &Vert; p<sub>&theta;</sub>(x<sub>t&minus;1</sub> | x<sub>t</sub>) )
 &nbsp;+&nbsp; KL( q(x<sub>T</sub> | x<sub>0</sub>) &Vert; &#119977;(0, I) )</div>
+<p class='where'><b>p<sub>&theta;</sub></b> the model's reverse process &middot; <b>q</b> the fixed forward process &middot; <b>KL</b> the divergence between them at each step &middot; the sum is a bound on the negative log likelihood, so minimizing it maximizes likelihood</p>
 <p>Read the three terms left to right: a <strong>reconstruction</strong> term for the final tiny
 step; the <strong>denoising-matching</strong> sum &mdash; the workhorse, demanding that at every noise
 level the model's one-step denoiser match the tractable posterior above; and the
@@ -525,9 +530,11 @@ schedule truly destroys the signal. Every KL is between Gaussians, hence closed-
 <p>One reparameterization turns this into the loss everyone actually ships. Predict the
 <em>noise</em> &epsilon; rather than the mean:</p>
 <div class='math'>&mu;<sub>&theta;</sub>(x<sub>t</sub>, t) = __FRAC_MUTHETA1__&middot;( x<sub>t</sub> &minus; __FRAC_MUTHETA2__&middot;&epsilon;<sub>&theta;</sub>(x<sub>t</sub>, t) )</div>
+<p class='where'><b>&epsilon;<sub>&theta;</sub></b> the network's prediction of the noise that was added &middot; <b>&alpha;<sub>t</sub></b> the per-step signal retained, <b>&#8113;<sub>t</sub></b> the cumulative version &middot; predicting noise and predicting the mean are equivalent, related by this rearrangement</p>
 <p>after which the KL terms collapse into weighted squared errors on &epsilon;. DDPM famously drops
 the weights (it trains better) and arrives at:</p>
 <div class='math'>L<sub>simple</sub> = &#120124;<sub>t, x<sub>0</sub>, &epsilon;</sub> &Vert; &epsilon; &minus; &epsilon;<sub>&theta;</sub>( &radic;&#8113;<sub>t</sub>&middot;x<sub>0</sub> + &radic;(1&minus;&#8113;<sub>t</sub>)&middot;&epsilon;, &nbsp;t ) &Vert;&sup2;</div>
+<p class='where'><b>&epsilon;</b> the noise actually drawn &middot; <b>&epsilon;<sub>&theta;</sub></b> the network's guess at it &middot; the expectation runs over timesteps t, clean data x<sub>0</sub>, and noise draws &mdash; a plain regression loss</p>
 <p>&ldquo;Guess the noise I added&rdquo; &mdash; that single regression, averaged over all noise
 levels, trains the entire generative hierarchy.</p>
 <div class='callout'>
@@ -583,6 +590,7 @@ current best guess of the clean image:</p>
 <div class='math'>x<sub>t&minus;1</sub> = &radic;&#8113;<sub>t&minus;1</sub>&middot;x&#770;<sub>0</sub>
 &nbsp;+&nbsp; &radic;(1&minus;&#8113;<sub>t&minus;1</sub>&minus;&sigma;<sub>t</sub>&sup2;)&middot;&epsilon;<sub>&theta;</sub>(x<sub>t</sub>, t)
 &nbsp;+&nbsp; &sigma;<sub>t</sub>&middot;z,&nbsp;&nbsp;&nbsp;z ~ &#119977;(0, I)</div>
+<p class='where'><b>x&#770;<sub>0</sub></b> the model's current estimate of the clean data &middot; <b>&#8113;<sub>t&minus;1</sub></b> the signal level being stepped to &middot; the second term re-injects exactly enough noise to land on the right marginal</p>
 <p>Three ingredients: rescaled <em>signal</em> (the clean estimate), a <em>direction</em> term that
 re-applies the predicted noise at the new level, and <em>fresh randomness</em> &sigma;<sub>t</sub>z.
 One particular choice of &sigma;<sub>t</sub> recovers stochastic DDPM sampling exactly. The
@@ -735,6 +743,7 @@ special mask symbol <span class='m'>m</span>. Choose a strictly decreasing sched
 and <span class='m'>&alpha;<sub>1</sub> &asymp; 0</span>. The forward process corrupts every position
 independently by interpolating, in probability, between the token and the mask:</p>
 <div class='math'>q(z<sub>t</sub> | x) = Cat( z<sub>t</sub> ; &alpha;<sub>t</sub>&middot;x + (1&minus;&alpha;<sub>t</sub>)&middot;m )</div>
+<p class='where'><b>z<sub>t</sub></b> the partially masked sequence &middot; <b>Cat</b> a categorical distribution over the vocabulary plus the mask symbol &middot; <b>&alpha;<sub>t</sub></b> the probability a token survives unmasked &middot; <b>m</b> the mask token</p>
 <p>In words: at time t the token has survived with probability &alpha;<sub>t</sub> and has been
 absorbed into <code>[MASK]</code> with probability 1&minus;&alpha;<sub>t</sub> &mdash; and once
 masked, always masked (the mask state is <em>absorbing</em>). This is the direct analogue of
@@ -792,6 +801,7 @@ __FIG_REVEAL__
 to infinity gives MDLM&rsquo;s continuous-time objective:</p>
 <div class='math'>L<sub>&infin;</sub> = &int;<sub>0</sub><sup>1</sup> __FRAC_WEIGHT__ &middot;
 &#120124;<sub>q</sub>&#8202;[ &sum;<sub>&#8467;: masked</sub> &minus;log &lang;x<sub>&theta;,&#8467;</sub>(z<sub>t</sub>, t), x<sub>&#8467;</sub>&rang; ] &nbsp;dt</div>
+<p class='where'><b>x<sub>&theta;</sub></b> the model's predicted distribution for a masked position &middot; <b>&#8467;</b> indexes the masked positions &middot; the integral runs over the continuous time variable t, weighting each noise level</p>
 <p>Unpack it: sample a corruption level t, mask the sentence accordingly, and charge the model
 cross-entropy for every masked position &mdash; <em>that inner sum is exactly BERT&rsquo;s
 masked-language-modeling loss</em>. The integral averages it over all masking ratios, weighted by
@@ -949,6 +959,7 @@ distribution, or the training signal.</p>
 <p>Chop the sequence into blocks x<sup>(1)</sup>, x<sup>(2)</sup>, &hellip; of length
 L&prime; and put the autoregressive chain rule at block granularity only:</p>
 <div class='math'>&minus;log p<sub>&theta;</sub>(x) &nbsp;&le;&nbsp; &sum;<sub>b</sub> L<sub>MDLM</sub>( x<sup>(b)</sup> | x<sup>(&lt;b)</sup> )</div>
+<p class='where'><b>x<sup>(b)</sup></b> the b-th block of tokens &middot; <b>x<sup>(&lt;b)</sup></b> all earlier blocks &middot; autoregressive across blocks, diffusion within one &mdash; which is why the bound is a sum of per-block diffusion losses</p>
 <p>Each summand is the Maths II NELBO for one block, conditioned on all previous blocks through
 attention to their (frozen, cacheable) keys and values. The block length is a genuine dial
 between the two worlds: <strong>at L&prime; = 1 each &ldquo;block&rdquo; is a single token whose
@@ -969,6 +980,7 @@ tuned per block length to cut gradient variance.)</p>
 marginals Cat(&alpha;<sub>s</sub>x + (1&minus;&alpha;<sub>s</sub>)m) must be preserved &mdash;
 which forces the reveal probability for masked tokens up to compensate:</p>
 <div class='math'>P(reveal at s) = """ + frac("&alpha;<sub>s</sub> &minus; (1&minus;&sigma;<sub>t</sub>)&thinsp;&alpha;<sub>t</sub>", "1 &minus; &alpha;<sub>t</sub>") + """</div>
+<p class='where'><b>&alpha;<sub>s</sub>, &alpha;<sub>t</sub></b> the unmasking levels at the two times &middot; <b>&sigma;<sub>t</sub></b> the remasking rate, the knob ReMDM adds &middot; setting &sigma;<sub>t</sub> = 0 recovers the ordinary forward-only sampler</p>
 <p>Requiring this to be a probability (&le; 1) caps the remasking rate:</p>
 <div class='math'>0 &le; &sigma;<sub>t</sub> &le; min( 1, """ + frac("1 &minus; &alpha;<sub>s</sub>", "&alpha;<sub>t</sub>") + """ )</div>
 <p>Within that band, any schedule works with the same trained network &mdash; a remasked token
@@ -984,6 +996,7 @@ sharpened product:</p>
 <div class='math'>p&#771;<sub>&gamma;</sub>(z<sub>s,&#8467;</sub> | z<sub>t</sub>, c) &nbsp;&prop;&nbsp;
 p<sub>&theta;</sub>(z<sub>s,&#8467;</sub> | z<sub>t</sub>) &middot;
 ( p<sub>&theta;</sub>(z<sub>s,&#8467;</sub> | z<sub>t</sub>, c) / p<sub>&theta;</sub>(z<sub>s,&#8467;</sub> | z<sub>t</sub>) )<sup>&gamma;</sup></div>
+<p class='where'><b>p&#771;<sub>&gamma;</sub></b> the guided distribution actually sampled &middot; <b>c</b> the conditioning signal &middot; <b>&gamma;</b> the guidance strength: 0 is unguided, larger values push harder toward c at the cost of diversity</p>
 <p>Equivalently in logits: &#8467;&#771; = &#8467;<sub>u</sub> + &gamma;(&#8467;<sub>c</sub> &minus; &#8467;<sub>u</sub>).
 The dial reads: &gamma; = 0 ignores the condition, &gamma; = 1 is ordinary conditional sampling,
 &gamma; &gt; 1 exaggerates whatever direction the condition pulls &mdash; a token whose
@@ -998,6 +1011,7 @@ c is a sentiment, a molecular property, or a DNA motif.</p>
 &rho;<sub>k</sub> = &pi;<sub>&theta;</sub>(o<sub>k</sub>|q) / &pi;<sub>old</sub>(o<sub>k</sub>|q)
 and group-relative advantages computed over G sampled completions of the same prompt:</p>
 <div class='math'>A&#770;<sub>i</sub> = """ + frac("r<sub>i</sub> &minus; mean(r<sub>1..G</sub>)", "std(r<sub>1..G</sub>)") + """</div>
+<p class='where'><b>G</b> the number of completions sampled per prompt &middot; <b>r<sub>i</sub></b> the reward for completion i &middot; <b>A&#770;<sub>i</sub></b> its advantage, standardized within the group so no value network is needed</p>
 <p>&mdash; no value network. The obstacle: a dLLM defines no left-to-right factorization
 &pi;<sub>&theta;</sub>(o<sub>k</sub> | o<sub>&lt;k</sub>). d1&rsquo;s estimator replaces it with
 a <em>one-step mean-field</em> probe: mask the entire completion, run one forward pass, and read

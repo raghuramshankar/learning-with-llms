@@ -70,6 +70,11 @@ body { padding-top: 58px; }
 .topic-back { display: inline-block; margin-right: .15rem;
   transition: transform .12s ease; }
 .topic-title a:hover .topic-back { transform: translateX(-2px); }
+/* Term glossary for a display formula: one crisp line naming every symbol.
+   Sits directly under the .math block it explains. */
+.where { margin: -.55rem 0 1.1rem; text-align: center; color: var(--muted);
+  font-size: .86rem; line-height: 1.5; }
+.where b { color: var(--fg); font-weight: 600; }
 .topicbar-nav { margin-left: auto; display: flex; gap: 1.1rem;
   flex-wrap: wrap; }
 .topicbar-nav a { color: var(--muted); text-decoration: none;
@@ -324,12 +329,14 @@ Gaussian with closed form:</p>
 <div class='math'>q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>) = &#119977;( &mu;&#771;<sub>t</sub>, &beta;&#771;<sub>t</sub>&middot;I ),&nbsp;&nbsp;&nbsp;
 &mu;&#771;<sub>t</sub> = <span class='frac'><span class='num'>&radic;&#8113;<sub>t&minus;1</sub>&middot;&beta;<sub>t</sub></span><span class='den'>1&minus;&#8113;<sub>t</sub></span></span>&middot;x<sub>0</sub> &nbsp;+&nbsp; <span class='frac'><span class='num'>&radic;&alpha;<sub>t</sub>&middot;(1&minus;&#8113;<sub>t&minus;1</sub>)</span><span class='den'>1&minus;&#8113;<sub>t</sub></span></span>&middot;x<sub>t</sub>,&nbsp;&nbsp;&nbsp;
 &beta;&#771;<sub>t</sub> = <span class='frac'><span class='num'>1&minus;&#8113;<sub>t&minus;1</sub></span><span class='den'>1&minus;&#8113;<sub>t</sub></span></span>&middot;&beta;<sub>t</sub></div>
+<p class='where'><b>&mu;&#771;<sub>t</sub>, &beta;&#771;<sub>t</sub></b> the mean and variance of the true reverse step &middot; it is conditioned on <b>x<sub>0</sub></b>, which the model does not have &mdash; that gap is what the network is trained to close</p>
 <p>The standard variational argument (the same one behind VAEs) then bounds the negative
 log-likelihood &mdash; the <strong>NELBO</strong> &mdash; and the bound splits cleanly per timestep:</p>
 <div class='math'>&minus;log p<sub>&theta;</sub>(x<sub>0</sub>) &le;
 &#120124;<sub>q</sub>[ &minus;log p<sub>&theta;</sub>(x<sub>0</sub> | x<sub>1</sub>) ]
 &nbsp;+&nbsp; &sum;<sub>t=2</sub><sup>T</sup> &#120124;<sub>q</sub> KL( q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>) &Vert; p<sub>&theta;</sub>(x<sub>t&minus;1</sub> | x<sub>t</sub>) )
 &nbsp;+&nbsp; KL( q(x<sub>T</sub> | x<sub>0</sub>) &Vert; &#119977;(0, I) )</div>
+<p class='where'><b>p<sub>&theta;</sub></b> the model's reverse process &middot; <b>q</b> the fixed forward process &middot; <b>KL</b> the divergence between them at each step &middot; the sum is a bound on the negative log likelihood, so minimizing it maximizes likelihood</p>
 <p>Read the three terms left to right: a <strong>reconstruction</strong> term for the final tiny
 step; the <strong>denoising-matching</strong> sum &mdash; the workhorse, demanding that at every noise
 level the model's one-step denoiser match the tractable posterior above; and the
@@ -338,9 +345,11 @@ schedule truly destroys the signal. Every KL is between Gaussians, hence closed-
 <p>One reparameterization turns this into the loss everyone actually ships. Predict the
 <em>noise</em> &epsilon; rather than the mean:</p>
 <div class='math'>&mu;<sub>&theta;</sub>(x<sub>t</sub>, t) = <span class='frac'><span class='num'>1</span><span class='den'>&radic;&alpha;<sub>t</sub></span></span>&middot;( x<sub>t</sub> &minus; <span class='frac'><span class='num'>&beta;<sub>t</sub></span><span class='den'>&radic;(1&minus;&#8113;<sub>t</sub>)</span></span>&middot;&epsilon;<sub>&theta;</sub>(x<sub>t</sub>, t) )</div>
+<p class='where'><b>&epsilon;<sub>&theta;</sub></b> the network's prediction of the noise that was added &middot; <b>&alpha;<sub>t</sub></b> the per-step signal retained, <b>&#8113;<sub>t</sub></b> the cumulative version &middot; predicting noise and predicting the mean are equivalent, related by this rearrangement</p>
 <p>after which the KL terms collapse into weighted squared errors on &epsilon;. DDPM famously drops
 the weights (it trains better) and arrives at:</p>
 <div class='math'>L<sub>simple</sub> = &#120124;<sub>t, x<sub>0</sub>, &epsilon;</sub> &Vert; &epsilon; &minus; &epsilon;<sub>&theta;</sub>( &radic;&#8113;<sub>t</sub>&middot;x<sub>0</sub> + &radic;(1&minus;&#8113;<sub>t</sub>)&middot;&epsilon;, &nbsp;t ) &Vert;&sup2;</div>
+<p class='where'><b>&epsilon;</b> the noise actually drawn &middot; <b>&epsilon;<sub>&theta;</sub></b> the network's guess at it &middot; the expectation runs over timesteps t, clean data x<sub>0</sub>, and noise draws &mdash; a plain regression loss</p>
 <p>&ldquo;Guess the noise I added&rdquo; &mdash; that single regression, averaged over all noise
 levels, trains the entire generative hierarchy.</p>
 <div class='callout'>
@@ -384,7 +393,7 @@ differential equations and is where samplers, guidance, and much else are derive
   unaided, you own this derivation. (Steps start hidden; &ldquo;worked&rdquo; shows everything.)</div>
 </div>
 
-<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-math-continuous-the-forward-process.html">&larr; The forward process</a><a class="pn-next" href="2026-08-01-diffusion-language-models-math-continuous-ddim-same-training-a-fraction-of-the-steps.html">DDIM: same training, a fraction of the steps &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-04 08:17:15 UTC</footer></main></div>
+<div class="pn"><a class="pn-prev" href="2026-08-01-diffusion-language-models-math-continuous-the-forward-process.html">&larr; The forward process</a><a class="pn-next" href="2026-08-01-diffusion-language-models-math-continuous-ddim-same-training-a-fraction-of-the-steps.html">DDIM: same training, a fraction of the steps &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-04 14:00:15 UTC</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-01-diffusion-language-models-background.html", "intuition": "2026-08-01-diffusion-language-models-intuition.html", "math-continuous": "2026-08-01-diffusion-language-models-math-continuous.html", "math-discrete": "2026-08-01-diffusion-language-models-math-discrete.html", "math-sota": "2026-08-01-diffusion-language-models-math-sota.html", "concept-map": "2026-08-01-diffusion-language-models-concept-map.html", "keep-learning": "2026-08-01-diffusion-language-models-keep-learning.html", "papers": "2026-08-01-diffusion-language-models-papers.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>

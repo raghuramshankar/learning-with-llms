@@ -381,9 +381,11 @@ the data) and a <strong>kernel</strong> k(x, x&prime;) giving the covariance bet
 at any two inputs:</p>
 <div class='math'>f ~ GP(0, k),&nbsp;&nbsp;&nbsp;
 Cov(f(x), f(x&prime;)) = k(x, x&prime;)</div>
+<p class='where'><b>f</b> the unknown objective &middot; <b>GP(0, k)</b> a Gaussian process prior with zero mean and covariance function k &middot; <b>x, x&prime;</b> any two input points</p>
 <p>The workhorse kernel is the squared exponential (RBF), with signal variance fixed at 1 and a
 <strong>lengthscale</strong> &#8467;:</p>
 <div class='math'>k(x, x&prime;) = exp( &minus;""" + frac("&Vert;x &minus; x&prime;&Vert;&sup2;", "2&#8467;&sup2;") + """ )</div>
+<p class='where'><b>&Vert;x &minus; x&prime;&Vert;</b> the distance between two inputs &middot; <b>&#8467;</b> the lengthscale: how far apart inputs must be before their values decorrelate</p>
 <p>Nearby inputs get correlation &asymp;1 (the function barely moves between them); inputs more
 than a few lengthscales apart get correlation &asymp;0 (their values are essentially
 independent). <em>The kernel is a hypothesis about how fast f varies</em> &mdash; and you can
@@ -403,6 +405,7 @@ approximation, it is an identity. Writing K for the n&times;n matrix K<sub>ij</s
 k(x<sub>i</sub>, x<sub>j</sub>) and k<sub>*</sub> for the vector k(x, x<sub>i</sub>):</p>
 <div class='math'>&mu;<sub>n</sub>(x) = k<sub>*</sub><sup>T</sup> (K + &sigma;<sub>n</sub>&sup2;I)<sup>&minus;1</sup> y</div>
 <div class='math'>&sigma;<sub>n</sub>&sup2;(x) = k(x, x) &minus; k<sub>*</sub><sup>T</sup> (K + &sigma;<sub>n</sub>&sup2;I)<sup>&minus;1</sup> k<sub>*</sub></div>
+<p class='where'><b>&mu;<sub>n</sub>, &sigma;<sub>n</sub>&sup2;</b> posterior mean and variance after n observations &middot; <b>K</b> the n&times;n kernel matrix between observed inputs &middot; <b>k<sub>*</sub></b> the vector of kernel values between x and each observed input &middot; <b>y</b> the observed values &middot; <b>&sigma;<sub>n</sub>&sup2;</b> (inside the inverse) the observation-noise variance &middot; <b>I</b> the identity matrix</p>
 <p>Read them as prose. The mean is a data-weighted correction to the prior: y filtered through
 the kernel&rsquo;s similarity geometry. The variance is <em>prior variance minus explained
 variance</em> &mdash; what the data could not pin down. Note that &sigma;<sub>n</sub>&sup2;(x)
@@ -430,7 +433,8 @@ surrogates in the Papers section.</p>
   </div>
   <div class='dstep'>
     <div class='dstep-label'><span class='tag'>2</span><span class='dstep-goal'>State the Gaussian conditioning identity for a partitioned Gaussian (a | b).</span><button class='wbtn dstep-toggle'>reveal</button></div>
-    <div class='dstep-body'><div class='math'>a | b ~ &#119977;( &mu;<sub>a</sub> + &Sigma;<sub>ab</sub>&Sigma;<sub>bb</sub><sup>&minus;1</sup>(b &minus; &mu;<sub>b</sub>), &nbsp;&Sigma;<sub>aa</sub> &minus; &Sigma;<sub>ab</sub>&Sigma;<sub>bb</sub><sup>&minus;1</sup>&Sigma;<sub>ba</sub> )</div><p>The single most useful identity in GP land; derived by completing the square in the joint density&rsquo;s exponent.</p></div>
+    <div class='dstep-body'><div class='math'>a | b ~ &#119977;( &mu;<sub>a</sub> + &Sigma;<sub>ab</sub>&Sigma;<sub>bb</sub><sup>&minus;1</sup>(b &minus; &mu;<sub>b</sub>), &nbsp;&Sigma;<sub>aa</sub> &minus; &Sigma;<sub>ab</sub>&Sigma;<sub>bb</sub><sup>&minus;1</sup>&Sigma;<sub>ba</sub> )</div>
+<p class='where'><b>a, b</b> the two halves of a jointly Gaussian vector &middot; <b>&mu;<sub>a</sub>, &mu;<sub>b</sub></b> their prior means &middot; <b>&Sigma;<sub>ab</sub></b> the cross-covariance block, <b>&Sigma;<sub>bb</sub></b> the block for the part being conditioned on</p><p>The single most useful identity in GP land; derived by completing the square in the joint density&rsquo;s exponent.</p></div>
   </div>
   <div class='dstep'>
     <div class='dstep-label'><span class='tag'>3</span><span class='dstep-goal'>Apply it with a = f(x), b = y to get the posterior mean.</span><button class='wbtn dstep-toggle'>reveal</button></div>
@@ -456,6 +460,7 @@ Gaussian):</p>
 <div class='math'>log p(y | X, &theta;) = &minus;&frac12; y<sup>T</sup>(K<sub>&theta;</sub> + &sigma;<sub>n</sub>&sup2;I)<sup>&minus;1</sup>y
 &nbsp;&minus;&nbsp; &frac12; log det(K<sub>&theta;</sub> + &sigma;<sub>n</sub>&sup2;I)
 &nbsp;&minus;&nbsp; """ + frac("n", "2") + """ log 2&pi;</div>
+<p class='where'><b>&theta;</b> the kernel hyperparameters being fitted &middot; <b>K<sub>&theta;</sub></b> the kernel matrix they produce &middot; <b>y</b> the observations, <b>X</b> their inputs &middot; <b>n</b> how many there are</p>
 <p>The first term rewards fitting the data; the second &mdash; the log-determinant &mdash;
 punishes models flexible enough to fit anything (short lengthscales inflate it). Maximizing
 their sum is an automatic Occam&rsquo;s razor. Feel it yourself:</p>
@@ -568,6 +573,7 @@ I(x) = max( f(x) &minus; f<sup>*</sup><sub>n</sub>, 0 ). Under the posterior, f(
 so I(x) is a censored Gaussian &mdash; and its expectation has a closed form:</p>
 <div class='math'>EI<sub>n</sub>(x) = &#120124;[I(x)] =
 (&mu;<sub>n</sub>(x) &minus; f<sup>*</sup><sub>n</sub>)&middot;&Phi;(z) + &sigma;<sub>n</sub>(x)&middot;&phi;(z)</div>
+<p class='where'><b>&mu;<sub>n</sub>, &sigma;<sub>n</sub></b> the posterior mean and standard deviation at x &middot; <b>f*<sub>n</sub></b> the best value seen so far &middot; <b>z = (&mu;<sub>n</sub> &minus; f*<sub>n</sub>)/&sigma;<sub>n</sub></b> the standardized improvement &middot; <b>&Phi;, &phi;</b> the standard normal CDF and density</p>
 <p>with &Phi; and &phi; the standard normal CDF and PDF. The two terms are exploitation and
 exploration wearing mathematical clothes: the first pays for a mean above the incumbent
 (weighted by the probability the improvement is real), the second pays for spread &mdash; a
@@ -613,6 +619,7 @@ improvements by their size.</p>
 <p><strong>Upper confidence bound</strong> (GP-UCB; Srinivas et al., 2010) is optimism made
 explicit:</p>
 <div class='math'>UCB<sub>n</sub>(x) = &mu;<sub>n</sub>(x) + &beta;<sub>n</sub><sup>&frac12;</sup>&sigma;<sub>n</sub>(x)</div>
+<p class='where'><b>&beta;<sub>n</sub></b> the exploration weight, grown like log n to keep the confidence bound valid as evidence accumulates &middot; a larger &beta; buys more exploration</p>
 <p>&mdash; act as if every point is as good as its confidence interval allows. Its gift is
 theory: with &beta;<sub>n</sub> growing logarithmically in n, cumulative regret is sublinear
 &mdash; BO provably converges. Its price is that &beta; is a dial someone must set.</p>
@@ -671,6 +678,7 @@ acquisitions was this artifact all along. LogEI variants are now the BoTorch def
 <p>Real experiments also run in parallel: you want q candidate points at once, not one. The
 joint criterion is the expected improvement of the <em>best of the batch</em>:</p>
 <div class='math'>qEI(x<sub>1..q</sub>) = &#120124;[ max( max<sub>j</sub> f(x<sub>j</sub>) &minus; f<sup>*</sup><sub>n</sub>, 0 ) ]</div>
+<p class='where'><b>q</b> the batch size &middot; <b>x&#8321;..x<sub>q</sub></b> the points proposed together &middot; the inner max means the batch is rewarded for its <em>best</em> member, not its average</p>
 <p>No closed form survives the inner max, so BoTorch estimates it by Monte Carlo: draw posterior
 samples over the batch jointly (reparameterization trick, so gradients flow), average the
 improvements, ascend. The joint expectation is what stops the optimizer from proposing q copies
@@ -762,6 +770,7 @@ Nothing here requires more than Maths I and II.</p>
 each coordinate contributes &#120124;[(x<sub>i</sub>&minus;x&prime;<sub>i</sub>)&sup2;] =
 2&middot;Var(u) = 1/6, so:</p>
 <div class='math'>&#120124;&Vert;x &minus; x&prime;&Vert;&sup2; = d/6</div>
+<p class='where'><b>d</b> the number of input dimensions &middot; the expectation is over two points drawn uniformly in the unit cube &mdash; squared distance grows linearly with d</p>
 <p>Feed that into the RBF kernel with a fixed lengthscale &#8467;: the typical correlation
 between random points is exp(&minus;d/(12&#8467;&sup2;)), which crashes to zero as d grows.
 Every point is &ldquo;far from the data,&rdquo; the posterior reverts to the prior everywhere,
@@ -780,6 +789,7 @@ disputed is whether it is the whole story.</p>
 kernel), then be Bayesian about relevance:</p>
 <div class='math'>k(x, x&prime;) = exp( &minus;&frac12; &sum;<sub>i</sub> &rho;<sub>i</sub> (x<sub>i</sub> &minus; x&prime;<sub>i</sub>)&sup2; ),&nbsp;&nbsp;&nbsp;
 &tau; ~ HalfCauchy(&alpha;),&nbsp;&nbsp;&rho;<sub>i</sub> ~ HalfCauchy(&tau;)</div>
+<p class='where'><b>&rho;<sub>i</sub></b> the inverse squared lengthscale for dimension i &middot; <b>&tau;</b> the global shrinkage controlling how many dimensions stay active &middot; small &rho;<sub>i</sub> means dimension i is effectively ignored</p>
 <p>The half-Cauchy is the load-bearing choice: its mode at zero means every dimension is
 switched <em>off</em> by default (&rho;<sub>i</sub> &asymp; 0 &rArr; that coordinate leaves the
 kernel), while its heavy tail lets the handful of dimensions the data actually supports escape
@@ -794,6 +804,7 @@ maximum likelihood to 30 points.</p>
 models/acquires inside it. The region has base side L, shaped per-dimension by the fitted
 lengthscales (so the box is wide where the function is flat):</p>
 <div class='math'>&lambda;<sub>i</sub> = &#8467;<sub>i</sub> &middot; L / ( &prod;<sub>j</sub> &#8467;<sub>j</sub> )<sup>1/d</sup></div>
+<p class='where'><b>&lambda;<sub>i</sub></b> the trust region's side length along dimension i &middot; <b>&#8467;<sub>i</sub></b> that dimension's fitted lengthscale &middot; <b>L</b> the base side length &middot; <b>d</b> the dimensionality; the product term renormalizes so volume is preserved</p>
 <p>The side length then <em>breathes</em> by simple counters: &tau;<sub>succ</sub> consecutive
 improving evaluations double it (capped at L<sub>max</sub>); &tau;<sub>fail</sub> consecutive
 failures halve it; and when L &lt; L<sub>min</sub> the region has collapsed onto a local
@@ -815,6 +826,7 @@ TuRBO&rsquo;s entire bet.</div>
 around 10<sup>&minus;3</sup>&rdquo;), &pi;BO injects that belief &pi;(x) as a decaying
 multiplicative reweighting of any acquisition &alpha;:</p>
 <div class='math'>&alpha;<sub>&pi;,n</sub>(x) = &alpha;<sub>n</sub>(x) &middot; &pi;(x)<sup>&beta;/n</sup></div>
+<p class='where'><b>&alpha;<sub>n</sub></b> the ordinary acquisition value &middot; <b>&pi;(x)</b> the expert's prior belief about where the optimum lies &middot; <b>&beta;/n</b> the decaying exponent, so the prior's influence fades as real observations accumulate</p>
 <p>At n = &beta; the prior speaks with full voice; as n grows the exponent &beta;/n &rarr; 0 and
 &pi;(x)<sup>&beta;/n</sup> &rarr; 1 &mdash; <em>the data always wins eventually</em>, and a wrong
 prior costs only the early iterations (the paper proves EI&rsquo;s convergence rate survives).
@@ -826,6 +838,7 @@ Compare Maths I&rsquo;s marginal likelihood: that fits the <em>smoothness</em> p
 tasks from a prior over functions; train a transformer q<sub>&theta;</sub> to predict a held-out
 value from the context set D by straight cross-entropy:</p>
 <div class='math'>min<sub>&theta;</sub> &nbsp;&#120124;<sub>D, x<sup>*</sup>, y<sup>*</sup></sub> [ &minus;log q<sub>&theta;</sub>( y<sup>*</sup> | x<sup>*</sup>, D ) ]</div>
+<p class='where'><b>q<sub>&theta;</sub></b> the transformer's predictive distribution &middot; <b>D</b> a dataset drawn from the prior &middot; <b>x*, y*</b> a held-out query and its true value &middot; minimizing this over many synthetic datasets makes one forward pass approximate Bayesian inference</p>
 <p>The identity that makes this Bayesian rather than a heuristic: that expectation decomposes as
 &#120124;<sub>D,x*</sub>[ KL( p(&middot;|x<sup>*</sup>, D) &Vert; q<sub>&theta;</sub>(&middot;|x<sup>*</sup>, D) ) ] plus an
 entropy constant &mdash; so the loss is minimized <em>exactly</em> when q<sub>&theta;</sub>
