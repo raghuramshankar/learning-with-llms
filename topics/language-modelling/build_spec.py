@@ -382,6 +382,7 @@ probability of the token that actually occurred:</p>
     "&sum;<sub>j</sub> e<sup>z<sub>j</sub></sup>") + """
 &nbsp;&nbsp;&nbsp;&nbsp; L = &minus;""" + frac("1", "T") + """
 &sum;<sub>t</sub> log p<sub>t</sub>[x<sub>t</sub>]</div>
+<p class='where'><b>z</b> the logit vector the network emits &middot; <b>V</b> the vocabulary size &middot; <b>T</b> the number of tokens scored &middot; <b>p<sub>t</sub>[x<sub>t</sub>]</b> the probability the model gave the token that actually occurred at position t</p>
 <div class='callout'>
 <p><strong>Why this matters.</strong> Minimizing this is exactly maximizing
 the log-likelihood the model assigns to the corpus, which by the chain rule is
@@ -502,6 +503,9 @@ dot product; softmax over j turns compatibilities into weights that sum to
 one; the output is the weighted average of values.</p>
 <div class='math'>Attention(Q,K,V) = softmax( """ +
     frac("QK<sup>T</sup>", "&radic;d<sub>k</sub>") + """ + M ) V</div>
+<p class='where'><b>Q, K, V</b> the stacked query, key and value matrices, one
+row per position &middot; <b>d<sub>k</sub></b> the head dimension (the length
+of a single query or key vector) &middot; <b>M</b> the causal mask</p>
 <p>M is the causal mask: 0 where j &le; i and &minus;&infin; above the
 diagonal, so position i cannot read the future. The mask must be added
 <em>before</em> the softmax; zeroing weights afterwards would leave the rows
@@ -538,7 +542,7 @@ exactly what the widget below shows.</p>
   </div>
   <div class='dstep'>
     <div class='dstep-label'><span class='tag'>4</span><span class='dstep-goal'>Why is saturation fatal for training specifically?</span><button class='wbtn dstep-toggle'>reveal</button></div>
-    <div class='dstep-body'><div class='math'>&part;softmax<sub>i</sub>/&part;z<sub>j</sub> = p<sub>i</sub>(&delta;<sub>ij</sub> &minus; p<sub>j</sub>)</div><p>When p is one-hot, every entry of that Jacobian is ~0: p<sub>i</sub>&nbsp;&asymp;&nbsp;0 kills most terms and p<sub>i</sub>&nbsp;&asymp;&nbsp;1 gives p(1&minus;p)&nbsp;&asymp;&nbsp;0. <strong>No gradient flows back through a saturated softmax, so the attention pattern cannot be learned.</strong></p></div>
+    <div class='dstep-body'><div class='math'>&part;softmax<sub>i</sub>/&part;z<sub>j</sub> = p<sub>i</sub>(&delta;<sub>ij</sub> &minus; p<sub>j</sub>)</div><p class='where'><b>p</b> the softmax output &middot; <b>z</b> its input logits &middot; <b>&delta;<sub>ij</sub></b> the Kronecker delta, 1 when i = j and 0 otherwise</p><p>When p is one-hot, every entry of that Jacobian is ~0: p<sub>i</sub>&nbsp;&asymp;&nbsp;0 kills most terms and p<sub>i</sub>&nbsp;&asymp;&nbsp;1 gives p(1&minus;p)&nbsp;&asymp;&nbsp;0. <strong>No gradient flows back through a saturated softmax, so the attention pattern cannot be learned.</strong></p></div>
   </div>
   <div class='dstep'>
     <div class='dstep-label'><span class='tag'>5</span><span class='dstep-goal'>Choose the divisor that makes the logit variance independent of width.</span><button class='wbtn dstep-toggle'>reveal</button></div>
@@ -582,6 +586,7 @@ is <strong>rotary position embedding</strong>: rotate each consecutive pair of
 coordinates of q and k by an angle proportional to the position.</p>
 <div class='math'>&theta;<sub>i</sub> = base<sup>&minus;2i/d</sup>,&nbsp;&nbsp;
 R(p) rotates pair i by p&middot;&theta;<sub>i</sub></div>
+<p class='where'><b>d</b> the head dimension &middot; <b>i</b> indexes the d/2 coordinate pairs &middot; <b>base</b> a fixed constant (10,000 originally; 500,000 in Llama&nbsp;3) setting how slowly the angles decay &middot; <b>p</b> the token's position</p>
 <p>The property that earns its place: because a rotation by
 p&theta; followed by an inverse rotation by n&theta; is a rotation by
 (p&minus;n)&theta;, the resulting attention score</p>
@@ -595,6 +600,7 @@ in the tutorial, and both fail loudly if you get the pairing wrong.</p>
 <p><strong>RMSNorm</strong> divides by the root-mean-square of the activation
 vector and rescales, dropping LayerNorm&rsquo;s mean subtraction and bias:</p>
 <div class='math'>RMSNorm(x) = """ + frac("x", "&radic;( (1/d)&sum;x<sub>i</sub>&sup2; + &epsilon; )") + """ &middot; g</div>
+<p class='where'><b>x</b> the activation vector for one position &middot; <b>d</b> its length &middot; <b>g</b> a learned per-channel gain &middot; <b>&epsilon;</b> a small constant guarding against division by zero</p>
 <p>The empirical finding is that re-centering was never doing the work &mdash;
 only re-scaling was. Applying it <em>before</em> each sublayer (pre-norm)
 rather than after leaves a clean residual path from input to loss, which is
@@ -602,6 +608,7 @@ what makes deep stacks trainable without careful warmup.</p>
 <p><strong>SwiGLU</strong> replaces the two-matrix feed-forward network with a
 gated three-matrix version:</p>
 <div class='math'>SwiGLU(x) = ( swish(xW<sub>1</sub>) &odot; xW<sub>3</sub> ) W<sub>2</sub></div>
+<p class='where'><b>W<sub>1</sub>, W<sub>3</sub></b> project up to the hidden width; <b>W<sub>2</sub></b> projects back down &middot; <b>&odot;</b> elementwise product &middot; <b>swish(z) = z&middot;&sigma;(z)</b>, a smooth gate</p>
 <p>Three matrices instead of two means the hidden dimension is shrunk by 2/3
 &mdash; the familiar 8/3&nbsp;d rather than 4d &mdash; to hold the parameter
 count fixed, which is where that odd-looking constant in every modern config
@@ -614,6 +621,7 @@ forward pass costs (in FLOPs per token, counting a multiply-add as 2):</p>
 <span class='dim'>(output)</span> + 4Ld <span class='dim'>(scores and
 values)</span> + 2&middot;n<sub>mat</sub>&middot;d&middot;d<sub>ff</sub>
 <span class='dim'>(FFN)</span></div>
+<p class='where'><b>d</b> the model width &middot; <b>d<sub>ff</sub></b> the feed-forward hidden width &middot; <b>L</b> the context length &middot; <b>n<sub>mat</sub></b> the number of FFN matrices (2 classic, 3 for SwiGLU)</p>
 <p>Set d<sub>ff</sub>&nbsp;=&nbsp;4d with two matrices and the quadratic term
 overtakes everything else only when 4Ld &gt; 24d&sup2;, that is
 <strong>L&nbsp;&gt;&nbsp;6d</strong>.</p>
@@ -701,6 +709,7 @@ moments and steps by their ratio:</p>
 <div class='math'>&theta;<sub>t</sub> = &theta;<sub>t&minus;1</sub> &minus; &eta;
 """ + frac("m&#770;<sub>t</sub>", "&radic;v&#770;<sub>t</sub> + &epsilon;") + """
 &minus; &eta;&lambda;&theta;<sub>t&minus;1</sub></div>
+<p class='where'><b>g<sub>t</sub></b> the gradient &middot; <b>m, v</b> running estimates of its mean and squared magnitude &middot; <b>&beta;&#8321;, &beta;&#8322;</b> their decay rates (0.9, 0.95&ndash;0.999) &middot; <b>m&#770;, v&#770;</b> the same after bias correction &middot; <b>&eta;</b> the learning rate &middot; <b>&lambda;</b> the weight decay &middot; <b>&epsilon;</b> a small constant (~10<sup>&minus;8</sup>) keeping the denominator finite</p>
 <p>The ratio makes the step <em>scale-free</em>: multiply every gradient by a
 million and the first step is unchanged, because the numerator and denominator
 scale together. That is why Adam needs no per-layer learning-rate tuning.</p>
@@ -756,6 +765,7 @@ optimization with a closed-form answer:</p>
 <div class='math'>L(N, D) = E + """ + frac("A", "N<sup>&alpha;</sup>") + """ + """
     + frac("B", "D<sup>&beta;</sup>") + """
 &nbsp;&nbsp;&nbsp; subject to &nbsp; C = 6ND</div>
+<p class='where'><b>N</b> parameters &middot; <b>D</b> training tokens &middot; <b>C</b> the compute budget in FLOPs &middot; <b>E</b> the irreducible entropy of the text &middot; <b>A, B</b> fitted scale constants &middot; <b>&alpha;, &beta;</b> fitted exponents saying how fast loss falls with parameters and with data</p>
 <p>E is the irreducible entropy of the text &mdash; the floor from Part 3.
 Substituting the constraint and differentiating gives</p>
 <div class='math'>N* &prop; C<sup>&beta;/(&alpha;+&beta;)</sup>,&nbsp;&nbsp;&nbsp;
@@ -907,6 +917,7 @@ description of what the paper claims.</p>
 router scores experts, keeps the top k, and mixes their outputs:</p>
 <div class='math'>y = &sum;<sub>i&isin;TopK(g(x))</sub> g<sub>i</sub>(x) &middot; FFN<sub>i</sub>(x),
 &nbsp;&nbsp; g(x) = softmax(xW<sub>r</sub>)</div>
+<p class='where'><b>E</b> the number of experts &middot; <b>k</b> how many are used per token &middot; <b>W<sub>r</sub></b> the router's projection &middot; <b>g<sub>i</sub>(x)</b> the gate weight expert i receives</p>
 <p>Total parameters scale with E; FLOPs per token scale with k. """ +
     cite("DeepSeek-V3 Technical Report", "DeepSeek-V3") + """ carries 671B
 parameters but activates 37B per token &mdash; an 18&times; gap between what
@@ -923,6 +934,7 @@ all.</p>
 attention that is</p>
 <div class='math'>2 &middot; n<sub>layers</sub> &middot; n<sub>heads</sub>
 &middot; d<sub>head</sub> &middot; L &middot; 2 bytes</div>
+<p class='where'>the leading <b>2</b> counts keys and values &middot; <b>n<sub>layers</sub>, n<sub>heads</sub>, d<sub>head</sub></b> the model's depth, head count and head width &middot; <b>L</b> the tokens cached so far &middot; the trailing <b>2 bytes</b> is bf16</p>
 <p>which grows linearly with context and quickly exceeds the weights
 themselves. """ + cite("Fast Transformer Decoding: One Write-Head is All You Need", "MQA") +
     """ shares one key/value head across all query heads &mdash; a large saving
@@ -959,6 +971,7 @@ machine at all.</div>
 a KL penalty:</p>
 <div class='math'>max<sub>&pi;</sub> &#120124;[ r(x,y) ] &minus; &beta;
 &middot; KL( &pi; &#8214; &pi;<sub>ref</sub> )</div>
+<p class='where'><b>&pi;</b> the policy being trained &middot; <b>&pi;<sub>ref</sub></b> the frozen starting model &middot; <b>r(x,y)</b> the learned reward for response y to prompt x &middot; <b>&beta;</b> how hard the KL term pulls &pi; back toward &pi;<sub>ref</sub></p>
 <p>""" + cite("Direct Preference Optimization: Your Language Model is Secretly a Reward Model", "DPO") + """
 observes that this objective has a closed-form optimum,
 &pi;*(y|x)&nbsp;&prop;&nbsp;&pi;<sub>ref</sub>(y|x)&nbsp;exp(r(x,y)/&beta;).
@@ -968,6 +981,7 @@ plain classification loss on preference pairs:</p>
 <div class='math'>&#8466;<sub>DPO</sub> = &minus;log &sigma;( &beta; log """ +
     frac("&pi;(y<sub>w</sub>|x)", "&pi;<sub>ref</sub>(y<sub>w</sub>|x)") + """
 &minus; &beta; log """ + frac("&pi;(y<sub>l</sub>|x)", "&pi;<sub>ref</sub>(y<sub>l</sub>|x)") + """ )</div>
+<p class='where'><b>y<sub>w</sub>, y<sub>l</sub></b> the preferred and rejected responses to prompt x &middot; <b>&sigma;</b> the logistic function &middot; <b>&beta;</b> the same KL strength as above, here acting as a temperature on the log-ratios</p>
 <div class='callout'>
 <p><strong>Why this matters.</strong> No reward model, no sampling loop, no
 value network &mdash; just supervised learning on pairs. The implicit reward
@@ -984,6 +998,7 @@ group be its own baseline.</p>
 <div class='math'>A&#770;<sub>i</sub> = """ +
     frac("r<sub>i</sub> &minus; mean(r&#8321;..r<sub>G</sub>)",
          "std(r&#8321;..r<sub>G</sub>)") + """</div>
+<p class='where'><b>G</b> the number of completions sampled for one prompt &middot; <b>r<sub>i</sub></b> the reward for completion i &middot; <b>A&#770;<sub>i</sub></b> its advantage, standardized within the group</p>
 <p>When the reward is a verifier rather than a learned model &mdash; does the
 program pass its tests, is the final answer correct &mdash; the whole reward
 model disappears too. That is the recipe behind """ +

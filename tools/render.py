@@ -133,6 +133,11 @@ body { padding-top: 58px; }
 .topic-back { display: inline-block; margin-right: .15rem;
   transition: transform .12s ease; }
 .topic-title a:hover .topic-back { transform: translateX(-2px); }
+/* Term glossary for a display formula: one crisp line naming every symbol.
+   Sits directly under the .math block it explains. */
+.where { margin: -.55rem 0 1.1rem; text-align: center; color: var(--muted);
+  font-size: .86rem; line-height: 1.5; }
+.where b { color: var(--fg); font-weight: 600; }
 .topicbar-nav { margin-left: auto; display: flex; gap: 1.1rem;
   flex-wrap: wrap; }
 .topicbar-nav a { color: var(--muted); text-decoration: none;

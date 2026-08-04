@@ -62,9 +62,19 @@ Sections, in this order (adapt names to the topic):
    are independent commits"), so the math sections can formalize rather than surprise. Include an
    "honesty box" callout with the topic's real caveats and open questions.
 3. **Maths deep dives** — one or more sections, as technical as needed; never dumb it down. Real
-   derivations with display math, notation defined at first use, each key formula followed by a
-   "why this matters" callout. Bold the punchline sentence of each derivation. Carry ONE running
-   example/notation through all math sections. **The LAST maths section must cover the SOTA
+   derivations with display math, each key formula followed by a "why this matters" callout. Bold
+   the punchline sentence of each derivation. Carry ONE running example/notation through all math
+   sections.
+   **EVERY display formula must define every symbol in it** (user requirement) — including
+   formulas inside faded-derivation steps. Use the renderer's `.where` component: one muted line
+   directly under the `.math` block, symbols in `<b>`, separated by `&middot;`. Keep it CRISP —
+   one line, no bulleted glossary, no paragraph per symbol; density is the point of these pages.
+   ```html
+   <div class='math'>C = 6ND</div>
+   <p class='where'><b>N</b> parameters &middot; <b>D</b> training tokens &middot;
+   <b>C</b> compute in FLOPs</p>
+   ```
+   An undefined symbol stops the reader dead; a verbose glossary destroys the density. Both. **The LAST maths section must cover the SOTA
    methods from the literature survey** — the actual equations each modern method changes (its
    prior, update rule, search region, or training objective), one h3 per method, cross-referenced
    from the papers narrative; not just prose about what the papers claim.
