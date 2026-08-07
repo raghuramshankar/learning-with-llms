@@ -57,3 +57,25 @@ def run_bo(f, X_init, n_steps, lengthscale, rng, noise=1e-6):
     """
     raise NotImplementedError
 
+
+
+def knowledge_gradient(candidates, X, y, lengthscale, noise=1e-6, n_fantasy=64, rng=None):
+    """Monte-Carlo knowledge gradient for each row of `candidates`.
+
+        KG(x) = E[ max_x' mu_{n+1}(x') | sampled at x ] - max_x' mu_n(x')
+
+    where mu_{n+1} is the posterior mean AFTER observing a value at x. That
+    value is unknown, so average over `n_fantasy` draws from the current
+    posterior at x (this is the "fantasy" sampling described in Maths II).
+
+    The inner max is over `candidates` — the discretization that makes KG
+    affordable. Steps for one candidate x:
+      1. current best posterior mean over candidates  -> baseline
+      2. for each fantasy value y~ ~ N(mu(x), sd(x)^2):
+           refit the posterior with (x, y~) appended, take max over candidates
+      3. KG(x) = mean(those maxima) - baseline   (clip at >= 0)
+
+    Returns an array of shape (len(candidates),). Use `rng` for the draws so
+    the tests are reproducible.
+    """
+    raise NotImplementedError

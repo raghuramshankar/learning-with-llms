@@ -68,3 +68,27 @@ def run_bo(f, X_init, n_steps, lengthscale, rng, noise=1e-6):
         X = np.vstack([X, x_next])
         y = np.append(y, f(x_next[None, :]))
     return X, y
+
+
+def knowledge_gradient(candidates, X, y, lengthscale, noise=1e-6, n_fantasy=64, rng=None):
+    """Monte-Carlo knowledge gradient (see the docstring in bayes_opt.py)."""
+    rng = rng if rng is not None else np.random.default_rng(0)
+    C = np.asarray(candidates, dtype=float)
+    X = np.asarray(X, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    mu_c, _ = gp_posterior(C, X, y, lengthscale, noise)
+    baseline = mu_c.max()
+
+    mu_x, sd_x = gp_posterior(C, X, y, lengthscale, noise)
+    out = np.empty(len(C))
+    for i, x in enumerate(C):
+        Xa = np.vstack([X, x])
+        fantasies = mu_x[i] + sd_x[i] * rng.standard_normal(n_fantasy)
+        best = np.empty(n_fantasy)
+        for j, yf in enumerate(fantasies):
+            ya = np.append(y, yf)
+            mu_new, _ = gp_posterior(C, Xa, ya, lengthscale, noise)
+            best[j] = mu_new.max()
+        out[i] = max(best.mean() - baseline, 0.0)
+    return out

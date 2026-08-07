@@ -7,8 +7,8 @@ import math
 import numpy as np
 import pytest
 
-from bayes_opt import (expected_improvement, gp_posterior, propose_next,
-                       rbf_kernel, run_bo, ucb)
+from bayes_opt import (expected_improvement, gp_posterior, knowledge_gradient,
+                       propose_next, rbf_kernel, run_bo, ucb)
 
 
 # ---------------------------------------------------------------- kernel ---
@@ -112,3 +112,59 @@ def test_run_bo_beats_random_at_equal_budget():
         y_rand = f(np.random.default_rng(100 + s).uniform(0, 1, (12, 1)))
         gaps.append(y.max() - y_rand.max())
     assert np.mean(gaps) > 0
+
+
+# ------------------------------------------------------- knowledge gradient
+def test_kg_is_non_negative_everywhere():
+    """More information can never make the best achievable recommendation worse."""
+    rng = np.random.default_rng(0)
+    X = rng.uniform(0, 1, (4, 1)); y = np.sin(6 * X[:, 0])
+    C = np.linspace(0, 1, 25)[:, None]
+    kg = knowledge_gradient(C, X, y, 0.2, n_fantasy=32, rng=np.random.default_rng(1))
+    assert kg.shape == (25,)
+    assert np.all(kg >= -1e-9)
+
+
+def test_kg_is_near_zero_where_the_model_is_already_certain():
+    """At an observed point the posterior barely moves, so a resample buys nothing."""
+    X = np.array([[0.2], [0.5], [0.8]]); y = np.array([0.1, 1.0, 0.2])
+    C = np.vstack([X, np.array([[0.35]])])
+    kg = knowledge_gradient(C, X, y, 0.2, n_fantasy=64, rng=np.random.default_rng(2))
+    # the three already-sampled rows should carry much less value than the gap
+    assert kg[3] > kg[:3].max()
+
+
+def test_kg_matches_ei_when_noiseless_and_restricted_to_sampled_points():
+    """The equivalence derived in Maths II, checked numerically.
+
+    Restrict the recommendation set to the sampled points plus the candidate,
+    with (effectively) noiseless observations, and KG collapses onto EI.
+    """
+    X = np.array([[0.2], [0.6]]); y = np.array([0.4, 0.9])
+    ls, noise = 0.25, 1e-8
+    for xq in ([0.35], [0.8], [0.05]):
+        C = np.vstack([X, np.array([xq])])
+        kg = knowledge_gradient(C, X, y, ls, noise=noise, n_fantasy=20000,
+                                   rng=np.random.default_rng(3))[-1]
+        mu, sd = gp_posterior(np.array([xq]), X, y, ls, noise)
+        ei = expected_improvement(mu, sd, y.max())[0]
+        assert abs(kg - ei) < 0.02 * max(ei, 1e-3) + 0.01, (xq, kg, ei)
+
+
+def test_kg_is_more_exploratory_than_ei():
+    """The two criteria genuinely disagree, and in a predictable direction.
+
+    EI is anchored to the observed best, so it proposes another sample right at
+    the peak it already found. KG asks what could *relocate* the peak of the
+    posterior mean, which points further out.
+    """
+    X = np.array([[0.10], [0.15], [0.90]])
+    y = np.array([2.0, 2.0, 0.0])
+    C = np.linspace(0, 1, 41)[:, None]
+    ls = 0.12
+    mu, sd = gp_posterior(C, X, y, ls, 1e-6)
+    ei_pick = C[expected_improvement(mu, sd, y.max()).argmax(), 0]
+    kg_pick = C[knowledge_gradient(C, X, y, ls, n_fantasy=200,
+                                   rng=np.random.default_rng(7)).argmax(), 0]
+    assert ei_pick < 0.2, ei_pick             # EI stays on the incumbent
+    assert kg_pick > ei_pick, (ei_pick, kg_pick)

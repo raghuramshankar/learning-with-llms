@@ -351,6 +351,7 @@
       { id: 'ei', x: 520, y: 100, label: 'EI', sec: '#math-acq', desc: 'Expected improvement: (μ−f*)Φ(z) + σφ(z). Closed form, magnitude-aware, the default since EGO (1998). At z=0 it equals σφ(0) ≈ 0.4σ.' },
       { id: 'piucb', x: 520, y: 200, label: 'PI & UCB', sec: '#math-acq', desc: 'PI = Φ(z) ignores improvement size; UCB = μ + βσ makes the trade-off explicit and carries GP-UCB\\u2019s no-regret theory.' },
       { id: 'info', x: 520, y: 300, label: 'info-theoretic', sec: '#math-acq', desc: 'Entropy Search / PES / MES: pick the point that most reduces uncertainty about the optimum — principled, less myopic, costlier to compute.' },
+      { id: 'kg', x: 520, y: 350, label: 'knowledge gradient', sec: '#math-acq', desc: 'Score a point by how much it improves the best RECOMMENDATION you could make, not the best value seen. One-step Bayes-optimal for the final decision; equals EI only when noiseless and restricted to sampled points.' },
       { id: 'logei', x: 520, y: 400, label: 'LogEI', sec: '#math-acq', desc: 'EI and its gradients vanish numerically when improvements are unlikely; computing in log-space (NeurIPS 2023) fixed a decades-old silent failure. Modern default.' },
       { id: 'batch', x: 520, y: 500, label: 'batch qEI', sec: '#math-acq', desc: 'Choose q points jointly via Monte-Carlo over posterior samples — parallel experiments without picking q clustered copies of the same point.' },
       { id: 'tpe', x: 745, y: 70, label: 'TPE / SMAC', sec: '#papers', desc: 'Non-GP surrogates: TPE models p(x|good)/p(x|bad) densities (Optuna); SMAC uses random forests. Robust for conditional, high-dimensional search spaces.' },
@@ -366,7 +367,7 @@
       ['expensive', 'tradeoff'], ['tradeoff', 'loop'], ['expensive', 'loop'],
       ['loop', 'posterior'], ['loop', 'ei'], ['prior', 'kernel'], ['prior', 'posterior'],
       ['kernel', 'posterior'], ['kernel', 'lml'], ['posterior', 'lml'],
-      ['posterior', 'ei'], ['ei', 'piucb'], ['ei', 'logei'], ['ei', 'batch'],
+      ['posterior', 'ei'], ['ei', 'piucb'], ['ei', 'kg'], ['kg', 'info'], ['ei', 'logei'], ['ei', 'batch'],
       ['posterior', 'info'], ['loop', 'tpe'], ['turbo', 'debate'], ['saas', 'debate'],
       ['posterior', 'pfn'], ['pfn', 'llm'], ['loop', 'software'], ['software', 'apps'],
       ['ei', 'turbo'], ['loop', 'apps']

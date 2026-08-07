@@ -684,9 +684,136 @@ samples over the batch jointly (reparameterization trick, so gradients flow), av
 improvements, ascend. The joint expectation is what stops the optimizer from proposing q copies
 of the same argmax &mdash; a batch&rsquo;s members are valued for <em>covering</em> each
 other&rsquo;s failure modes.</p>
+
+<h3>The knowledge gradient: valuing what you will believe</h3>
+<p>Every criterion so far scores a point by what it might <em>observe</em>. The knowledge
+gradient scores it by what you will be able to <em>conclude</em>. The difference sounds
+philosophical and is entirely practical.</p>
+<p>Suppose that when the budget runs out you must name a single answer &mdash; the input you
+would actually put into production. The sensible choice is the maximizer of the posterior mean.
+So the quantity worth buying is not a better observation, it is a better final recommendation:</p>
+<div class='math'>KG<sub>n</sub>(x) = &#120124;<sub>n</sub>[ max<sub>x&prime;</sub> &mu;<sub>n+1</sub>(x&prime;) &#8739; x<sub>n+1</sub> = x ] &minus; max<sub>x&prime;</sub> &mu;<sub>n</sub>(x&prime;)</div>
+<p class='where'><b>&mu;<sub>n</sub></b> the posterior mean after n observations &middot; <b>&mu;<sub>n+1</sub></b> the posterior mean <em>after</em> sampling at x, which is random because the value has not been seen yet &middot; <b>&#120124;<sub>n</sub></b> averages over that unseen value &middot; the max runs over the whole domain, not just sampled points</p>
+<div class='callout'>
+<p><strong>Why this matters.</strong> KG is one-step Bayes-optimal for the decision you actually
+face: name the best input you can. EI is one-step Bayes-optimal for a different objective &mdash;
+improving the best value you have <em>seen</em>. When those two objectives diverge, EI optimizes
+the wrong thing.</p>
+</div>
+
+<p>They diverge in exactly two situations, and both are common.</p>
+<p><strong>Noise.</strong> EI is anchored to f<sup>*</sup><sub>n</sub>, the best observed value.
+Under noise that anchor is itself a random variable, and it is biased upward &mdash; the largest
+of n noisy draws tends to be a lucky one. EI then chases an incumbent that may not be real. KG
+never mentions an observed value; it is built entirely from posterior means, so nothing lucky
+can anchor it.</p>
+<p><strong>Points that move the recommendation.</strong> EI scores a point by whether it might
+beat the observed best, so it clusters tightly around the incumbent. KG asks a different question
+&mdash; could an observation here <em>relocate the peak of the posterior mean?</em> &mdash; which
+favours points just outside the explored cluster, where a good draw would genuinely change your
+answer. The tutorial makes the split visible on a single-peak problem: EI proposes x&nbsp;&asymp;
+&nbsp;0.13, essentially resampling the peak it already found, while KG proposes
+x&nbsp;&asymp;&nbsp;0.38.</p>
+<p>The mechanism to hold on to is that KG rewards <em>decision-relevant</em> information
+specifically. A candidate is worth something exactly insofar as some plausible value there would
+change which point you would name at the end &mdash; not because it reduces uncertainty in the
+abstract.</p>
+
+<div class='deriv'>
+  <div class='deriv-head'>
+    <span class='deriv-title'>Faded derivation: when the knowledge gradient IS expected improvement</span>
+    <button class='wbtn deriv-practice'>practice (hide all)</button>
+    <button class='wbtn deriv-worked'>worked (show all)</button>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>1</span><span class='dstep-goal'>Restrict the final recommendation to points you have already sampled. What does max<sub>x&prime;</sub> &mu;<sub>n</sub>(x&prime;) become?</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>max<sub>x&prime;</sub> &mu;<sub>n</sub>(x&prime;) &rarr; max<sub>i &le; n</sub> &mu;<sub>n</sub>(x<sub>i</sub>)</div><p>The domain of the inner maximization collapses from the whole space to the n sampled locations.</p></div>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>2</span><span class='dstep-goal'>Now assume observations are noiseless. What is &mu;<sub>n</sub>(x<sub>i</sub>) at a sampled point?</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>&mu;<sub>n</sub>(x<sub>i</sub>) = y<sub>i</sub>&nbsp;&nbsp;&rArr;&nbsp;&nbsp; max<sub>i &le; n</sub> &mu;<sub>n</sub>(x<sub>i</sub>) = f<sup>*</sup><sub>n</sub></div><p>A noiseless GP interpolates: the posterior mean passes exactly through every observation. So the best posterior mean over sampled points is precisely the best observed value.</p></div>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>3</span><span class='dstep-goal'>Substitute both into the KG definition. What is left?</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>&#120124;<sub>n</sub>[ max( f<sup>*</sup><sub>n</sub>, y<sub>n+1</sub> ) ] &minus; f<sup>*</sup><sub>n</sub> = &#120124;<sub>n</sub>[ max( y<sub>n+1</sub> &minus; f<sup>*</sup><sub>n</sub>, 0 ) ]</div><p>After the new sample the candidate set is the old points plus x, so the new best is whichever of f<sup>*</sup><sub>n</sub> and y<sub>n+1</sub> is larger. Pulling the constant inside the expectation gives the familiar hinge.</p></div>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>4</span><span class='dstep-goal'>Name the result.</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>&#120124;<sub>n</sub>[ max( y<sub>n+1</sub> &minus; f<sup>*</sup><sub>n</sub>, 0 ) ] = EI<sub>n</sub>(x)</div><p><strong>Expected improvement is the knowledge gradient under two hidden assumptions: no noise, and a final answer restricted to points you actually sampled.</strong> Drop either assumption and the two criteria genuinely differ &mdash; which is why KG earns its cost precisely in the noisy and correlated settings where EI is weakest.</p></div>
+  </div>
+  <div class='caption'>This is the cleanest way to remember the relationship: EI is not a
+  different idea from KG, it is KG with the recommendation restricted to a finite set and the
+  noise set to zero.</div>
+</div>
+
+<h3>Paying for the knowledge gradient</h3>
+<p>The definition contains an optimization inside an expectation inside an optimization. Written
+naively you would, for each candidate x, average over possible observed values, and for each of
+those refit the GP and maximize its posterior mean over the domain. That is far more expensive
+than EI's closed form, and it is the only reason KG is not the default.</p>
+<p>Three ideas make it affordable.</p>
+<p><strong>Discretize the inner maximum.</strong> Replace max over the domain with a max over a
+finite candidate set. The inner problem becomes the maximum of a collection of lines in the
+unobserved value, which has an exact and cheap solution &mdash; the discrete-prior algorithm of
+Frazier, Powell and Dayanik, extended to correlated Gaussian process beliefs by Scott, Frazier
+and Powell as the KGCP.</p>
+<p><strong>Differentiate through the sample average.</strong> Draw a fixed set of
+&ldquo;fantasy&rdquo; observations, and note that by the envelope theorem you do not need to
+differentiate through the inner argmax &mdash; only through the objective at that argmax. KG then
+becomes a stochastic optimization problem solvable with ordinary gradient methods.</p>
+<p><strong>Optimize jointly, in one shot.</strong> The one-shot reformulation of
+<a href='https://arxiv.org/abs/1910.06403'>BoTorch (arXiv:1910.06403)</a> treats the fantasy
+maximizers as decision variables alongside x, turning the nested problem into a single
+deterministic optimization over a higher-dimensional space. This is what makes KG practical in
+modern libraries.</p>
+<p>The same machinery extends where EI's closed form cannot follow.
+<a href='https://arxiv.org/abs/1606.04414'>q-KG (arXiv:1606.04414)</a> gives the Bayes-optimal
+<em>batch</em>, and unlike heuristic batch-EI it accounts for noise directly.
+<a href='https://arxiv.org/abs/1703.04389'>d-KG (arXiv:1703.04389)</a> incorporates gradient
+observations when they are available, which is common when the objective is itself a training
+run. Multi-fidelity variants value a cheap approximate evaluation by how much it will improve the
+recommendation you would make about the expensive one &mdash; a question EI cannot even phrase,
+because a low-fidelity observation never improves the true incumbent.</p>
+<div class='callout warn'>
+<p><strong>When to reach for it.</strong> With cheap, noiseless evaluations and a low-dimensional
+space, EI is close to KG and vastly cheaper &mdash; use EI. Reach for KG when observations are
+noisy, when you must commit to a final recommendation rather than return the best point seen,
+when you are combining fidelities or sources, or when gradients are available. The honest summary
+is that KG buys a better decision rule with compute, and whether that trade is worth it depends
+on how expensive your evaluations are relative to your optimizer.</p>
+</div>
+
 """
 
 QUIZ_MATH_ACQ = [
+    {
+        "question": "Under what two conditions does the knowledge gradient reduce exactly to expected improvement?",
+        "options": [
+            {"text": "Noiseless observations, and a final recommendation restricted to sampled points.",
+             "correct": True,
+             "explanation": "Noiselessness makes the posterior mean interpolate, so the best mean at sampled points equals f*_n; restricting the recommendation collapses KG's inner max to that same finite set. Both together turn KG's definition into the EI hinge."},
+            {"text": "A stationary kernel and a fitted lengthscale.",
+             "explanation": "Kernel choice affects both criteria identically — it changes the posterior, not the relationship between the two acquisition functions."},
+            {"text": "A batch size of one and a zero-mean prior.",
+             "explanation": "Both criteria are defined for a single point by default, and the prior mean cancels in both — neither is what separates them."},
+            {"text": "High dimensionality and a trust region.",
+             "explanation": "That describes TuRBO's setting from the SOTA section, which is unrelated to the KG/EI equivalence."},
+        ],
+    },
+    {
+        "question": "Evaluations are noisy and you must commit to one final input when the budget ends. Why does EI specifically struggle here?",
+        "options": [
+            {"text": "Its incumbent f*_n is the max of noisy draws, so it is biased upward and may not be real.",
+             "correct": True,
+             "explanation": "EI is anchored to the best *observed* value, and the maximum of n noisy observations is optimistically biased. KG never references an observed value — it is built from posterior means only, so no lucky draw can anchor it."},
+            {"text": "EI has no closed form once observation noise is included.",
+             "explanation": "The closed form still holds with noise in the posterior; the problem is what the incumbent means, not whether the formula exists."},
+            {"text": "EI cannot be optimized by gradient methods under noise.",
+             "explanation": "EI remains differentiable; LogEI addresses its numerical flatness, and neither issue is about the incumbent being noisy."},
+            {"text": "EI requires the final recommendation to be the global maximizer of the posterior mean.",
+             "explanation": "That is KG's assumption, not EI's. EI implicitly assumes you return the best point you sampled."},
+        ],
+    },
     {
         "question": "A candidate's posterior mean exactly ties the incumbent (μ = f*, so z = 0) with σ = 0.5. Its EI is:",
         "options": [
@@ -993,6 +1120,17 @@ budget-matched skepticism (<a href='https://arxiv.org/abs/2606.21641'>2606.21641
 <a href='https://arxiv.org/abs/2509.21403'>2509.21403</a>). Current verdict: strong for warm
 starts and priors, not yet a surrogate replacement.</p>
 
+<p><strong>The knowledge-gradient line.</strong> Frazier, Powell &amp; Dayanik (2008) introduced
+the knowledge gradient for discrete alternatives, and Scott, Frazier &amp; Powell (2011) carried it
+to Gaussian process beliefs over continuous spaces as the KGCP.
+<a href='https://arxiv.org/abs/1606.04414'>q-KG (Wu &amp; Frazier, arXiv:1606.04414)</a> gives the
+Bayes-optimal batch, <a href='https://arxiv.org/abs/1703.04389'>d-KG (Wu et al., arXiv:1703.04389)</a>
+adds gradient observations, and the one-shot reformulation in
+<a href='https://arxiv.org/abs/1910.06403'>BoTorch (arXiv:1910.06403)</a> is what made KG cheap
+enough to use by default in a modern library.
+<a href='https://arxiv.org/abs/1807.02811'>Frazier's tutorial (arXiv:1807.02811)</a> is the
+clearest single treatment of where KG beats EI and why.</p>
+
 <h3>The complete reference list</h3>
 <ol>
 <li>H. J. Kushner (1964). A New Method of Locating the Maximum Point of an Arbitrary Multipeak
@@ -1099,8 +1237,22 @@ Review</a>. arXiv:2311.13050. <em>The fidelity axis this page leaves aside.</em>
 Strategy: A Tutorial</a>. arXiv:1604.00772. <em>The evolutionary baseline in tables and quiz
 distractors.</em></li>
 <li>Peter I. Frazier, Warren B. Powell, Savas Dayanik (2008). A Knowledge-Gradient Policy for
-Sequential Information Collection. <em>SIAM J. Control Optim.</em> 47(5). <em>The
-one-step-deeper lookahead mentioned under myopia.</em></li>
+Sequential Information Collection. <em>SIAM J. Control Optim.</em> 47(5). <em>Introduces the
+knowledge gradient for discrete alternatives &mdash; the criterion derived in Part 4.</em></li>
+<li>Warren Scott, Peter I. Frazier, Warren B. Powell (2011). The Correlated Knowledge Gradient for
+Simulation Optimization of Continuous Parameters using Gaussian Process Regression.
+<em>SIAM J. Optimization</em> 21(3). <em>KGCP: carries the knowledge gradient to continuous
+spaces under a GP prior by discretizing the inner maximum.</em></li>
+<li>Jian Wu, Peter I. Frazier (2016). <a href='https://arxiv.org/abs/1606.04414'>The Parallel
+Knowledge Gradient Method for Batch Bayesian Optimization</a>. arXiv:1606.04414. <em>q-KG: the
+Bayes-optimal batch, and unlike heuristic batch-EI it handles noise directly.</em></li>
+<li>Jian Wu, Matthias Poloczek, Andrew Gordon Wilson, Peter I. Frazier (2017).
+<a href='https://arxiv.org/abs/1703.04389'>Bayesian Optimization with Gradients</a>.
+arXiv:1703.04389. <em>d-KG: uses derivative observations when the objective is itself a training
+run.</em></li>
+<li>Peter I. Frazier (2018). <a href='https://arxiv.org/abs/1807.02811'>A Tutorial on Bayesian
+Optimization</a>. arXiv:1807.02811. <em>The clearest single account of expected improvement,
+entropy search and the knowledge gradient side by side.</em></li>
 <li>Jacob R. Gardner et al. (2018). <a href='https://arxiv.org/abs/1809.11165'>GPyTorch</a>.
 NeurIPS 2018. <em>The GP engine under BoTorch.</em></li>
 </ol>

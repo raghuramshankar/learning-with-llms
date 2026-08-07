@@ -39,6 +39,13 @@ EI = (&mu;<sub>n</sub>&minus;f<sup>*</sup><sub>n</sub>)&Phi;(z) + &sigma;<sub>n<
 <p>Exploit term + explore term. <strong>At z = 0: EI = &sigma;&phi;(0) &asymp; 0.40&sigma;</strong>
 &mdash; uncertainty alone has cash value. Default since EGO (1998).</p></div>
 
+<div class='cheat-card'><h4>Knowledge gradient</h4>
+<div class='math'>KG<sub>n</sub>(x) = &#120124;<sub>n</sub>[ max<sub>x&prime;</sub> &mu;<sub>n+1</sub>(x&prime;) ] &minus; max<sub>x&prime;</sub> &mu;<sub>n</sub>(x&prime;)</div>
+<p>Values a point by the <em>recommendation</em> it enables, not the value it reveals.
+<strong>Equals EI only when noiseless AND the final answer is restricted to sampled points.</strong>
+Wins under noise (EI's incumbent is a lucky draw) and when a point informs elsewhere without
+beating the incumbent. Cost: nested optimization &mdash; use one-shot KG.</p></div>
+
 <div class='cheat-card'><h4>PI &amp; UCB</h4>
 <div class='math'>PI = &Phi;(z);&nbsp;&nbsp;&nbsp;UCB = &mu;<sub>n</sub>(x) + &beta;<sup>&frac12;</sup>&sigma;<sub>n</sub>(x)</div>
 <p>PI ignores improvement size (hugs the incumbent). UCB is explicit optimism; with

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Intuition — Fifty Evaluations to Find the Best: Bayesian Optimization</title>
+<title>The knowledge gradient: valuing what you will believe — Fifty Evaluations to Find the Best: Bayesian Optimization</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -319,13 +319,68 @@ document.documentElement.setAttribute('data-theme',t);})();</script>
  type="button" title="Toggle light/dark theme"><svg class="tt-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 0C114.6 0 0 114.6 0 256S114.6 512 256 512c68.8 0 131.3-27.2 177.3-71.4 7.3-7 9.4-17.9 5.3-27.1s-13.7-14.9-23.8-14.1c-4.9 .4-9.8 .6-14.8 .6-101.6 0-184-82.4-184-184 0-72.1 41.5-134.6 102.1-164.8 9.1-4.5 14.3-14.3 13.1-24.4S322.6 8.5 312.7 6.3C294.4 2.2 275.4 0 256 0z"/></svg><svg class="tt-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M288-32c8.4 0 16.3 4.4 20.6 11.7L364.1 72.3 468.9 46c8.2-2 16.9 .4 22.8 6.3S500 67 498 75.1l-26.3 104.7 92.7 55.5c7.2 4.3 11.7 12.2 11.7 20.6s-4.4 16.3-11.7 20.6L471.7 332.1 498 436.8c2 8.2-.4 16.9-6.3 22.8S477 468 468.9 466l-104.7-26.3-55.5 92.7c-4.3 7.2-12.2 11.7-20.6 11.7s-16.3-4.4-20.6-11.7L211.9 439.7 107.2 466c-8.2 2-16.8-.4-22.8-6.3S76 445 78 436.8l26.2-104.7-92.6-55.5C4.4 272.2 0 264.4 0 256s4.4-16.3 11.7-20.6L104.3 179.9 78 75.1c-2-8.2 .3-16.8 6.3-22.8S99 44 107.2 46l104.7 26.2 55.5-92.6 1.8-2.6c4.5-5.7 11.4-9.1 18.8-9.1zm0 144a144 144 0 1 0 0 288 144 144 0 1 0 0-288zm0 240a96 96 0 1 1 0-192 96 96 0 1 1 0 192z"/></svg></button>
 </div></div>
 <div class="topicbar"><div class="topicbar-inner"><span class="topic-title"><a href="index.html"><span class="topic-back">&larr;</span> Bayesian Optimization</a></span><nav class="topicbar-nav"><a href="2026-08-02-bayesian-optimization-review.html">review deck</a><a href="2026-08-02-bo-cheatsheet.html">cheat sheet</a><a href="https://github.com/raghuramshankar/learning-with-llms/tree/main/tutorials/bayesian-optimization">tutorials</a></nav></div></div>
-<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-02-bayesian-optimization.html">Fifty Evaluations to Find the Best: Bayesian Optimization</a></div><ol><li><a href="2026-08-02-bayesian-optimization-background.html">Background</a></li><li class="cur"><a href="2026-08-02-bayesian-optimization-intuition.html">Intuition</a><ul><li><a href="2026-08-02-bayesian-optimization-intuition-the-loop-model-decide-evaluate-repeat.html">The loop: model, decide, evaluate, repeat</a></li><li><a href="2026-08-02-bayesian-optimization-intuition-uncertainty-is-the-resource.html">Uncertainty is the resource</a></li><li><a href="2026-08-02-bayesian-optimization-intuition-drive-the-loop-yourself.html">Drive the loop yourself</a></li><li><a href="2026-08-02-bayesian-optimization-intuition-does-the-model-really-help-run-the-experiment.html">Does the model really help? Run the experiment</a></li><li><a href="2026-08-02-bayesian-optimization-intuition-the-catch-what-can-go-wrong.html">The catch: what can go wrong</a></li><li><a href="2026-08-02-bayesian-optimization-intuition-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-02-bayesian-optimization-math-gp.html">The Maths I: Gaussian Process Surrogates</a></li><li><a href="2026-08-02-bayesian-optimization-math-acq.html">The Maths II: Acquisition Functions</a></li><li><a href="2026-08-02-bayesian-optimization-math-sota.html">The Maths III: Inside the SOTA Methods</a></li><li><a href="2026-08-02-bayesian-optimization-concept-map.html">The Concept Map</a></li><li><a href="2026-08-02-bayesian-optimization-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-02-bayesian-optimization-papers.html">The Papers &amp; Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-02-bayesian-optimization-background-quiz.html">&larr; Quiz: Background</a><a href="2026-08-02-bayesian-optimization.html">&#8962; Fifty Evaluations to Find the Best: Bayesian Optimization</a><a class="tn-next" href="2026-08-02-bayesian-optimization-intuition-the-loop-model-decide-evaluate-repeat.html">The loop: model, decide, evaluate, repeat &rarr;</a></div><p class="part-eyebrow">Part 2 of 8</p><h1>Intuition</h1>
-<p>The core idea fits in one sentence: <strong>maintain a probabilistic belief about the whole
-function, and let the next evaluation be chosen by a decision rule that weighs predicted value
-against remaining ignorance.</strong> Everything else is machinery for making that sentence
-precise.</p>
+<div class="layout"><aside class="sidebar"><nav><div class="side-topic"><a href="2026-08-02-bayesian-optimization.html">Fifty Evaluations to Find the Best: Bayesian Optimization</a></div><ol><li><a href="2026-08-02-bayesian-optimization-background.html">Background</a></li><li><a href="2026-08-02-bayesian-optimization-intuition.html">Intuition</a></li><li><a href="2026-08-02-bayesian-optimization-math-gp.html">The Maths I: Gaussian Process Surrogates</a></li><li class="cur"><a href="2026-08-02-bayesian-optimization-math-acq.html">The Maths II: Acquisition Functions</a><ul><li><a href="2026-08-02-bayesian-optimization-math-acq-improvement-and-its-expectation.html">Improvement, and its expectation</a></li><li><a href="2026-08-02-bayesian-optimization-math-acq-the-acquisition-zoo.html">The acquisition zoo</a></li><li><a href="2026-08-02-bayesian-optimization-math-acq-numerics-and-batches-logei-and-qei.html">Numerics and batches: LogEI and qEI</a></li><li class="cur"><a href="2026-08-02-bayesian-optimization-math-acq-the-knowledge-gradient-valuing-what-you-will-believe.html">The knowledge gradient: valuing what you will believe</a></li><li><a href="2026-08-02-bayesian-optimization-math-acq-paying-for-the-knowledge-gradient.html">Paying for the knowledge gradient</a></li><li><a href="2026-08-02-bayesian-optimization-math-acq-quiz.html">Quiz</a></li></ul></li><li><a href="2026-08-02-bayesian-optimization-math-sota.html">The Maths III: Inside the SOTA Methods</a></li><li><a href="2026-08-02-bayesian-optimization-concept-map.html">The Concept Map</a></li><li><a href="2026-08-02-bayesian-optimization-keep-learning.html">Keep Learning</a></li><li><a href="2026-08-02-bayesian-optimization-papers.html">The Papers &amp; Sources</a></li></ol><div class="side-foot"><a href="index.html">&larr; all topics</a></div></nav></aside><main class="content"><div class="topnav"><a href="2026-08-02-bayesian-optimization-math-acq-numerics-and-batches-logei-and-qei.html">&larr; Numerics and batches: LogEI and qEI</a><a href="2026-08-02-bayesian-optimization.html">&#8962; Fifty Evaluations to Find the Best: Bayesian Optimization</a><a class="tn-next" href="2026-08-02-bayesian-optimization-math-acq-paying-for-the-knowledge-gradient.html">Paying for the knowledge gradient &rarr;</a></div><p class="part-eyebrow">Part 4 &middot; The Maths II: Acquisition Functions</p><h1>The knowledge gradient: valuing what you will believe</h1>
+<p>Every criterion so far scores a point by what it might <em>observe</em>. The knowledge
+gradient scores it by what you will be able to <em>conclude</em>. The difference sounds
+philosophical and is entirely practical.</p>
+<p>Suppose that when the budget runs out you must name a single answer &mdash; the input you
+would actually put into production. The sensible choice is the maximizer of the posterior mean.
+So the quantity worth buying is not a better observation, it is a better final recommendation:</p>
+<div class='math'>KG<sub>n</sub>(x) = &#120124;<sub>n</sub>[ max<sub>x&prime;</sub> &mu;<sub>n+1</sub>(x&prime;) &#8739; x<sub>n+1</sub> = x ] &minus; max<sub>x&prime;</sub> &mu;<sub>n</sub>(x&prime;)</div>
+<p class='where'><b>&mu;<sub>n</sub></b> the posterior mean after n observations &middot; <b>&mu;<sub>n+1</sub></b> the posterior mean <em>after</em> sampling at x, which is random because the value has not been seen yet &middot; <b>&#120124;<sub>n</sub></b> averages over that unseen value &middot; the max runs over the whole domain, not just sampled points</p>
+<div class='callout'>
+<p><strong>Why this matters.</strong> KG is one-step Bayes-optimal for the decision you actually
+face: name the best input you can. EI is one-step Bayes-optimal for a different objective &mdash;
+improving the best value you have <em>seen</em>. When those two objectives diverge, EI optimizes
+the wrong thing.</p>
+</div>
 
-<ol class="parts"><li><a href="2026-08-02-bayesian-optimization-intuition-the-loop-model-decide-evaluate-repeat.html">The loop: model, decide, evaluate, repeat</a></li><li><a href="2026-08-02-bayesian-optimization-intuition-uncertainty-is-the-resource.html">Uncertainty is the resource</a></li><li><a href="2026-08-02-bayesian-optimization-intuition-drive-the-loop-yourself.html">Drive the loop yourself</a></li><li><a href="2026-08-02-bayesian-optimization-intuition-does-the-model-really-help-run-the-experiment.html">Does the model really help? Run the experiment</a></li><li><a href="2026-08-02-bayesian-optimization-intuition-the-catch-what-can-go-wrong.html">The catch: what can go wrong</a></li><li><a href="2026-08-02-bayesian-optimization-intuition-quiz.html">Quiz: 5 questions</a></li></ol><div class="pn"><a class="pn-prev" href="2026-08-02-bayesian-optimization-background-quiz.html">&larr; Quiz: Background</a><a class="pn-next" href="2026-08-02-bayesian-optimization-intuition-the-loop-model-decide-evaluate-repeat.html">The loop: model, decide, evaluate, repeat &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-07 09:36:27 UTC</footer></main></div>
+<p>They diverge in exactly two situations, and both are common.</p>
+<p><strong>Noise.</strong> EI is anchored to f<sup>*</sup><sub>n</sub>, the best observed value.
+Under noise that anchor is itself a random variable, and it is biased upward &mdash; the largest
+of n noisy draws tends to be a lucky one. EI then chases an incumbent that may not be real. KG
+never mentions an observed value; it is built entirely from posterior means, so nothing lucky
+can anchor it.</p>
+<p><strong>Points that move the recommendation.</strong> EI scores a point by whether it might
+beat the observed best, so it clusters tightly around the incumbent. KG asks a different question
+&mdash; could an observation here <em>relocate the peak of the posterior mean?</em> &mdash; which
+favours points just outside the explored cluster, where a good draw would genuinely change your
+answer. The tutorial makes the split visible on a single-peak problem: EI proposes x&nbsp;&asymp;
+&nbsp;0.13, essentially resampling the peak it already found, while KG proposes
+x&nbsp;&asymp;&nbsp;0.38.</p>
+<p>The mechanism to hold on to is that KG rewards <em>decision-relevant</em> information
+specifically. A candidate is worth something exactly insofar as some plausible value there would
+change which point you would name at the end &mdash; not because it reduces uncertainty in the
+abstract.</p>
+
+<div class='deriv'>
+  <div class='deriv-head'>
+    <span class='deriv-title'>Faded derivation: when the knowledge gradient IS expected improvement</span>
+    <button class='wbtn deriv-practice'>practice (hide all)</button>
+    <button class='wbtn deriv-worked'>worked (show all)</button>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>1</span><span class='dstep-goal'>Restrict the final recommendation to points you have already sampled. What does max<sub>x&prime;</sub> &mu;<sub>n</sub>(x&prime;) become?</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>max<sub>x&prime;</sub> &mu;<sub>n</sub>(x&prime;) &rarr; max<sub>i &le; n</sub> &mu;<sub>n</sub>(x<sub>i</sub>)</div><p>The domain of the inner maximization collapses from the whole space to the n sampled locations.</p></div>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>2</span><span class='dstep-goal'>Now assume observations are noiseless. What is &mu;<sub>n</sub>(x<sub>i</sub>) at a sampled point?</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>&mu;<sub>n</sub>(x<sub>i</sub>) = y<sub>i</sub>&nbsp;&nbsp;&rArr;&nbsp;&nbsp; max<sub>i &le; n</sub> &mu;<sub>n</sub>(x<sub>i</sub>) = f<sup>*</sup><sub>n</sub></div><p>A noiseless GP interpolates: the posterior mean passes exactly through every observation. So the best posterior mean over sampled points is precisely the best observed value.</p></div>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>3</span><span class='dstep-goal'>Substitute both into the KG definition. What is left?</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>&#120124;<sub>n</sub>[ max( f<sup>*</sup><sub>n</sub>, y<sub>n+1</sub> ) ] &minus; f<sup>*</sup><sub>n</sub> = &#120124;<sub>n</sub>[ max( y<sub>n+1</sub> &minus; f<sup>*</sup><sub>n</sub>, 0 ) ]</div><p>After the new sample the candidate set is the old points plus x, so the new best is whichever of f<sup>*</sup><sub>n</sub> and y<sub>n+1</sub> is larger. Pulling the constant inside the expectation gives the familiar hinge.</p></div>
+  </div>
+  <div class='dstep'>
+    <div class='dstep-label'><span class='tag'>4</span><span class='dstep-goal'>Name the result.</span><button class='wbtn dstep-toggle'>reveal</button></div>
+    <div class='dstep-body'><div class='math'>&#120124;<sub>n</sub>[ max( y<sub>n+1</sub> &minus; f<sup>*</sup><sub>n</sub>, 0 ) ] = EI<sub>n</sub>(x)</div><p><strong>Expected improvement is the knowledge gradient under two hidden assumptions: no noise, and a final answer restricted to points you actually sampled.</strong> Drop either assumption and the two criteria genuinely differ &mdash; which is why KG earns its cost precisely in the noisy and correlated settings where EI is weakest.</p></div>
+  </div>
+  <div class='caption'>This is the cleanest way to remember the relationship: EI is not a
+  different idea from KG, it is KG with the recommendation restricted to a finite set and the
+  noise set to zero.</div>
+</div>
+
+<div class="pn"><a class="pn-prev" href="2026-08-02-bayesian-optimization-math-acq-numerics-and-batches-logei-and-qei.html">&larr; Numerics and batches: LogEI and qEI</a><a class="pn-next" href="2026-08-02-bayesian-optimization-math-acq-paying-for-the-knowledge-gradient.html">Paying for the knowledge gradient &rarr;</a></div><footer class="pagefoot">Generated by the <a href="https://github.com/raghuramshankar/learning-with-llms/blob/main/skills/learning-new-topic/SKILL.md">learning-new-topic</a> skill using Claude Fable 5 on 2026-08-07 09:36:27 UTC</footer></main></div>
 <script>window.__PAGES__ = {"background": "2026-08-02-bayesian-optimization-background.html", "intuition": "2026-08-02-bayesian-optimization-intuition.html", "math-gp": "2026-08-02-bayesian-optimization-math-gp.html", "math-acq": "2026-08-02-bayesian-optimization-math-acq.html", "math-sota": "2026-08-02-bayesian-optimization-math-sota.html", "concept-map": "2026-08-02-bayesian-optimization-concept-map.html", "keep-learning": "2026-08-02-bayesian-optimization-keep-learning.html", "papers": "2026-08-02-bayesian-optimization-papers.html"};</script>
 <script>window.__QUIZZES__ = [];</script>
 <script>
